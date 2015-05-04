@@ -155,12 +155,30 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Init_GLEW.cpp" />
+    <ClCompile Include="Init_GLUT.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Shader_Loader.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Models_Manager.cpp" />
+    <ClCompile Include="Scene_Manager.cpp" />
+    <ClCompile Include="Shader_Manager.cpp" />
+    <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ContextInfo.h" />
+    <ClInclude Include="FrameBufferInfo.h" />
+    <ClInclude Include="IGameObject.h" />
+    <ClInclude Include="IListener.h" />
+    <ClInclude Include="Init_GLEW.h" />
+    <ClInclude Include="Init_GLUT.h" />
     <ClInclude Include="Kernel.cuh" />
-    <ClInclude Include="Shader_Loader.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="Models_Manager.h" />
+    <ClInclude Include="Scene_Manager.h" />
+    <ClInclude Include="Shader_Manager.h" />
+    <ClInclude Include="Triangle.h" />
+    <ClInclude Include="VertexFormat.h" />
+    <ClInclude Include="WindowInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Fragment_Shader.glsl" />

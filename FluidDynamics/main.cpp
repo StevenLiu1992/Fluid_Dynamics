@@ -1,11 +1,15 @@
 #include "Dependencies\glew\glew.h"
 #include "Dependencies\freeglut\freeglut.h"
+#include "Dependencies\glm\glm.hpp"
 #include <iostream>
 
 #include <stdio.h>
 
 #include "kernel.cuh"
-#include "Shader_Loader.h";
+
+#include "Shader_Manager.h";
+#include "Init_GLUT.h"
+#include "Scene_Manager.h"
 
 extern "C" cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
@@ -36,68 +40,28 @@ int CUDAstuff(){
 }
 
 using namespace Core;
-
-GLuint program;
-
-
-void renderScene(void)
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0, 0.0, 0.0, 1.0);//clear red
-
-	//use the created program
-	glUseProgram(program);
-
-	//draw 3 vertices as triangles
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-	glutSwapBuffers();
-}
+using namespace Init;
+using namespace Managers;
 
 
 
-void Init()
-{
-
-	glEnable(GL_DEPTH_TEST);
-
-	//load and compile shaders
-	Core::Shader_Loader shaderLoader;
-	program = shaderLoader.CreateProgram("Vertex_Shader.glsl",
-		"Fragment_Shader.glsl");
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
 
 int main(int argc, char **argv){
 	CUDAstuff();
 	
 
 
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(50, 50);
-	glutInitWindowSize(800, 600);
-	glutCreateWindow("XXX");
-	// Must be done after glut is initialized!
-	GLenum res = glewInit();
-	if (res != GLEW_OK) {
-		fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
-		return 1;
-	}
+	WindowInfo window(std::string("XXX"),
+		50, 50,//position
+		800, 600, //size
+		true);//reshape
 
-	printf("GL version: %s\n", glGetString(GL_VERSION));
-
-	Init();
-
-	// register callbacks
-	glutDisplayFunc(renderScene);
-	glutMainLoop();
-	glDeleteProgram(program);
-	return 0;
-
-
-
-	
-
+	ContextInfo context(4, 5, true);
+	FramebufferInfo frameBufferInfo(true, true, true, true);
+	Init_GLUT::init(window, context, frameBufferInfo);
+	IListener* scene = new Managers::Scene_Manager();
+	Init::Init_GLUT::setListener(scene);
+	Init_GLUT::run();
+	delete scene;
 	return 0;
 }
