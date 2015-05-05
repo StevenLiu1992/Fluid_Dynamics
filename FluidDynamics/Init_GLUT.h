@@ -7,12 +7,13 @@
 #include "Init_GLEW.h"
 #include "IListener.h"
 
+
 namespace Core {
 	namespace Init{//two namespaces
 
 		class Init_GLUT{
 
-		public:             //use the structures from Part II
+		public:
 			static void init(const Core::WindowInfo& window,
 				const Core::ContextInfo& context,
 				const Core::FramebufferInfo& framebufferInfo);
@@ -23,7 +24,7 @@ namespace Core {
 
 			void enterFullscreen();
 			void exitFullscreen();
-
+	//		static Camera* camera;
 			//used to print info about GL
 			static void printOpenGLInfo(const Core::WindowInfo& windowInfo,
 				const Core::ContextInfo& context);
@@ -32,11 +33,13 @@ namespace Core {
 			static void displayCallback(void);
 			static void reshapeCallback(int width, int height);
 			static void closeCallback();
+			static void keyboardCallback(unsigned char Key, int x, int y);
+	//		static void SpecialKeyboardCB(int Key, int x, int y);
 
 		private:
 			static Core::IListener* listener;
 			static Core::WindowInfo windowInformation;
-
+			
 		public:
 			static void setListener(Core::IListener*& iListener);
 		};

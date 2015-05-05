@@ -12,7 +12,7 @@ namespace Rendering
 			~Triangle();
 
 			void Create();
-			virtual void Update() override final;
+			virtual void Update(Matrix4 viewMatrix) override final;
 			virtual void Draw() override final;
 		};
 	}

@@ -15,11 +15,12 @@ void Model::Draw()
 	//this will be again overridden
 }
 
-void Model::Update()
+void Model::Update(Matrix4 viewMatrix)
 {
 	//this will be again overridden
 	worldTransform = orientation.ToMatrix();
 	worldTransform.SetPositionVector(position);
+	this->viewMatrix = viewMatrix;
 }
 
 void Model::SetProgram(GLuint program)

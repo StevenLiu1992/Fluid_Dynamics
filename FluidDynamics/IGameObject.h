@@ -8,6 +8,7 @@
 #include "Vector3.h"
 #include "Quaternion.h"
 
+
 namespace Rendering
 {
 	class IGameObject
@@ -16,7 +17,7 @@ namespace Rendering
 		virtual ~IGameObject() = 0;
 
 		virtual void Draw() = 0;
-		virtual void Update() = 0;
+		virtual void Update(Matrix4 viewMatrix) = 0;
 		virtual void SetProgram(GLuint shaderName) = 0;
 		virtual void Destroy() = 0;
 

@@ -35,12 +35,13 @@ const IGameObject& Models_Manager::GetModel(const std::string& gameModelName) co
 	return (*gameModelList.at(gameModelName));
 }
 
-void Models_Manager::Update()
+void Models_Manager::Update(Matrix4 viewMatrix)
 {
 	//auto -it's a map iterator
 	for (auto model : gameModelList)
 	{
-		model.second->Update();
+		model.second->Update(viewMatrix);
+	
 	}
 }
 

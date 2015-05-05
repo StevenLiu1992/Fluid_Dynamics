@@ -6,7 +6,10 @@ namespace Core{
 	public:
 		virtual ~IListener() = 0;
 
+		virtual void notifyKeyboardEvent(unsigned char key) = 0;
+
 		//drawing functions
+
 		virtual void notifyBeginFrame() = 0;
 		virtual void notifyDisplayFrame() = 0;
 		virtual void notifyEndFrame() = 0;

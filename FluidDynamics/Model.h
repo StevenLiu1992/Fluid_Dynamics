@@ -13,13 +13,14 @@ namespace Rendering
 			virtual ~Model();
 			// methods from interface
 			virtual void Draw() override;
-			virtual void Update() override;
+			virtual void Update(Matrix4 viewMatrix) override;
 			virtual void SetProgram(GLuint shaderName) override;
 			virtual void Destroy() override;
 
 			virtual GLuint GetVao() const override;
 			virtual const std::vector<GLuint>& GetVbos() const override;
 
+	//		void setViewMatrix(Matrix4 viewMatrix){ this->viewMatrix = viewMatrix; }
 		protected:
 			GLuint vao;
 			GLuint program;
@@ -27,6 +28,7 @@ namespace Rendering
 			Matrix4 worldTransform;
 			Vector3 position;
 			Quaternion orientation;
+			Matrix4 viewMatrix;
 		};
 	}
 }

@@ -16,7 +16,7 @@ namespace Managers
 		~Models_Manager();
 
 		void Draw();
-		void Update();
+		void Update(Matrix4 viewMatrix);
 		void DeleteModel(const std::string& gameModelName);
 		const IGameObject& GetModel(const std::string& gameModelName) const;
 

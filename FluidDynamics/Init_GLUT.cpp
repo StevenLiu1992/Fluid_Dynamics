@@ -6,6 +6,7 @@ using namespace Core::Init;
 Core::IListener* Init_GLUT::listener = NULL;
 Core::WindowInfo Init_GLUT::windowInformation;
 
+
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
 	const Core::FramebufferInfo& framebufferInfo)
@@ -43,7 +44,10 @@ void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	glutCloseFunc(closeCallback);
 	glutDisplayFunc(displayCallback);
 	glutReshapeFunc(reshapeCallback);
+	glutKeyboardFunc(keyboardCallback);
+	
 
+	
 	//init GLEW, this can be called in main.cpp
 	Init::Init_GLEW::Init();
 
@@ -68,6 +72,18 @@ void Init_GLUT::close()
 	std::cout << "GLUT:\t Finished" << std::endl;
 	glutLeaveMainLoop();
 }
+
+void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)
+{
+	listener->notifyKeyboardEvent(key);
+//	camera->keyboardEvents(key);
+	switch (key) {
+	case 27:	//ESC
+		glutLeaveMainLoop();
+	}
+}
+
+
 
 void Init_GLUT::idleCallback(void)
 {
