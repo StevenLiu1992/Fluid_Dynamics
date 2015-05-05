@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "IGameObject.h"
+
 namespace Rendering
 {
 	namespace Models{
@@ -23,6 +24,9 @@ namespace Rendering
 			GLuint vao;
 			GLuint program;
 			std::vector<GLuint> vbos;
+			Matrix4 worldTransform;
+			Vector3 position;
+			Quaternion orientation;
 		};
 	}
 }

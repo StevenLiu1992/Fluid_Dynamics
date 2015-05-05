@@ -56,12 +56,13 @@ int main(int argc, char **argv){
 		800, 600, //size
 		true);//reshape
 
-	ContextInfo context(4, 5, true);
+	ContextInfo context(3, 3, true);
 	FramebufferInfo frameBufferInfo(true, true, true, true);
 	Init_GLUT::init(window, context, frameBufferInfo);
 	IListener* scene = new Managers::Scene_Manager();
 	Init::Init_GLUT::setListener(scene);
 	Init_GLUT::run();
+//	system("PAUSE");
 	delete scene;
 	return 0;
 }

@@ -4,6 +4,9 @@
 #include "Dependencies/glew/glew.h"
 #include "Dependencies/freeglut/freeglut.h"
 #include "VertexFormat.h"
+#include "Matrix4.h"
+#include "Vector3.h"
+#include "Quaternion.h"
 
 namespace Rendering
 {

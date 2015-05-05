@@ -50,11 +50,17 @@ void Triangle::Create()
 void Triangle::Update()
 {
 	//for triangle there is nothing to update for now
+	
+	
+	Model::Update();
 }
 
 void Triangle::Draw()
 {
 	glUseProgram(program);
+	Matrix4 modelMatrix = worldTransform;
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }

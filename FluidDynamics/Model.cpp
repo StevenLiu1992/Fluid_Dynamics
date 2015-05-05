@@ -2,7 +2,8 @@
 using namespace Rendering;
 using namespace Models;
 
-Model::Model(){}
+Model::Model(){
+}
 
 Model::~Model()
 {
@@ -17,6 +18,8 @@ void Model::Draw()
 void Model::Update()
 {
 	//this will be again overridden
+	worldTransform = orientation.ToMatrix();
+	worldTransform.SetPositionVector(position);
 }
 
 void Model::SetProgram(GLuint program)
