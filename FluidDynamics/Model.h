@@ -24,6 +24,7 @@ namespace Rendering
 		protected:
 			GLuint vao;
 			GLuint program;
+			GLuint texture;
 			std::vector<GLuint> vbos;
 			Matrix4 worldTransform;
 			Vector3 position;

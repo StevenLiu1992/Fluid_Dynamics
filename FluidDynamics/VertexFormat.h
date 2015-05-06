@@ -9,11 +9,12 @@ namespace Rendering{
 
 		glm::vec3 position;
 		glm::vec4 color;
-
-		VertexFormat(const glm::vec3 &iPos, const glm::vec4 &iColor)
+		glm::vec2 textureCoords;
+		VertexFormat(const glm::vec3 &iPos, const glm::vec4 &iColor, const glm::vec2 &cords)
 		{
 			position = iPos;
 			color = iColor;
+			textureCoords = cords;
 		}
 
 	};

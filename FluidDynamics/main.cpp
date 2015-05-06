@@ -5,8 +5,17 @@
 
 #include <stdio.h>
 
-#include "kernel.cuh"
+// CUDA standard includes
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
+// CUDA helper functions
+#include <helper_functions.h>
+#include <rendercheck_gl.h>
+#include <helper_cuda.h>
+#include <helper_cuda_gl.h>
+
+#include "kernel.cuh"
 #include "Shader_Manager.h";
 #include "Init_GLUT.h"
 #include "Scene_Manager.h"
@@ -20,6 +29,14 @@ int CUDAstuff(){
 	const int b[arraySize] = { 10, 20, 30, 40, 50 };
 	int c[arraySize] = { 0 };
 
+	/*int fakeargc = 1;
+	char *fakeargv[] = { "fake", NULL };
+	cudaDeviceProp deviceProps;
+	int devID;
+	devID = findCudaGLDevice(fakeargc, (const char **)fakeargv);
+	checkCudaErrors(cudaGetDeviceProperties(&deviceProps, devID));
+	printf("CUDA device [%s] has %d Multi-Processors\n",
+		deviceProps.name, deviceProps.multiProcessorCount);*/
 	// Add vectors in parallel.
 	cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
 	if (cudaStatus != cudaSuccess) {

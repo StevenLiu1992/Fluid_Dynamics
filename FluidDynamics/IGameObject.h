@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Dependencies/glew/glew.h"
 #include "Dependencies/freeglut/freeglut.h"
+#include "Dependencies/soil/soil.h"
 #include "VertexFormat.h"
 #include "Matrix4.h"
 #include "Vector3.h"
