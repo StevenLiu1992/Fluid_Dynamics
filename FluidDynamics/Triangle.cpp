@@ -5,6 +5,7 @@ using namespace Models;
 
 Triangle::Triangle()
 {
+	position = Vector3(0, 0, 0);
 }
 
 Triangle::~Triangle()
@@ -23,11 +24,11 @@ void Triangle::Create()
 	glBindVertexArray(vao);
 
 	std::vector<VertexFormat> vertices;
-	vertices.push_back(VertexFormat(glm::vec3(0.25, -0.25, 0.0),
+	vertices.push_back(VertexFormat(glm::vec3(0, 0, 0.0),
 		glm::vec4(1, 0, 0, 1), glm::vec2(0, 0)));
-	vertices.push_back(VertexFormat(glm::vec3(-0.25, -0.25, 0.0),
+	vertices.push_back(VertexFormat(glm::vec3(1, 0, 0.0),
 		glm::vec4(0, 1, 0, 1), glm::vec2(1, 0)));
-	vertices.push_back(VertexFormat(glm::vec3(0.25, 0.25, 0.0),
+	vertices.push_back(VertexFormat(glm::vec3(0, 1, 0.0),
 		glm::vec4(0, 0, 1, 1), glm::vec2(1, 1)));
 
 	glGenBuffers(1, &vbo);
@@ -67,14 +68,15 @@ void Triangle::Draw()
 	glBindTexture(GL_TEXTURE_2D, texture);
 	
 	Matrix4 modelMatrix = worldTransform; 
-	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
+//	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
 //	std::cout << viewMatrix.GetPositionVector() << std::endl;
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&viewMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program, "viewMatrix"), 1, false, (float*)&modelMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(program, "viewMatrix"), 1, false, (float*)&viewMatrix);
 
 	glUniform1i(glGetUniformLocation(program, "diffuse_texture"), 0);
 
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glUseProgram(0);
 }

@@ -187,6 +187,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Models_Manager.cpp" />
+    <ClCompile Include="Quad.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Scene_Manager.cpp" />
     <ClCompile Include="Shader_Manager.cpp" />
@@ -205,6 +206,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Models_Manager.h" />
+    <ClInclude Include="Quad.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Scene_Manager.h" />
     <ClInclude Include="Shader_Manager.h" />

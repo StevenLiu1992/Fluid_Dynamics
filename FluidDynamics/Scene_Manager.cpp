@@ -13,7 +13,7 @@ Scene_Manager::Scene_Manager()
 		"../Shaders/Vertex_Shader.glsl",
 		"../Shaders/Fragment_Shader.glsl");
 	models_manager = new Models_Manager();
-	camera = new Core::Camera(0, 0, Vector3(0,0,-1));
+	camera = new Core::Camera(0, 0, Vector3(0,2,10));
 }
 
 Scene_Manager::~Scene_Manager()

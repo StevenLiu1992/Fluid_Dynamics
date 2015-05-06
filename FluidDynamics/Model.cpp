@@ -3,6 +3,8 @@ using namespace Rendering;
 using namespace Models;
 
 Model::Model(){
+	
+	
 	projMatrix = Matrix4::Perspective(1.0f, 10000.0f, (float)800 / (float)600, 45.0f);
 }
 

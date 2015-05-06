@@ -3,6 +3,7 @@
 #include "Shader_Manager.h"
 #include "IGameObject.h"
 #include "Triangle.h"
+#include "Quad.h"
 #include "Matrix4.h"
 #include "Vector3.h"
 

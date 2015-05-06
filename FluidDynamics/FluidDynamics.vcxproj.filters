@@ -88,6 +88,9 @@
     <ClInclude Include="Camera.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Quad.h">
+      <Filter>Rendering\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -120,6 +123,9 @@
     </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad.cpp">
+      <Filter>Rendering\Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
