@@ -7,7 +7,7 @@ namespace Core{
 		virtual ~IListener() = 0;
 
 		virtual void notifyKeyboardEvent(unsigned char key) = 0;
-
+		virtual void notifyMouseMoveEvent(int delta_x, int delta_y) = 0;
 		//drawing functions
 
 		virtual void notifyBeginFrame() = 0;

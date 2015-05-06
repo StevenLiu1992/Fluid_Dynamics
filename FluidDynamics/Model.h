@@ -29,6 +29,7 @@ namespace Rendering
 			Vector3 position;
 			Quaternion orientation;
 			Matrix4 viewMatrix;
+			Matrix4 projMatrix;
 		};
 	}
 }

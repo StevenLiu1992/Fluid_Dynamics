@@ -55,6 +55,7 @@ namespace Core{
 		//Sets pitch, in degrees
 		void	SetPitch(float p) { pitch = p; }
 		void keyboardEvents(char key);
+		void mouseMoveEvents(int x, int y);
 	protected:
 		float	yaw;
 		float	pitch;

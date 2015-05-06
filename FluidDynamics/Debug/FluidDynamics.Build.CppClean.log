@@ -1,15 +1,22 @@
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\vc120.pdb
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\vc120.idb
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\main.obj
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\shader_loader.obj
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\debug\fluiddynamics.ilk
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\debug\fluiddynamics.exe
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\debug\fluiddynamics.pdb
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\kernel.cu.cache
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\kernel.cu.obj
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.command.1.tlog
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.read.1.tlog
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.write.1.tlog
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\link.command.1.tlog
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\link.read.1.tlog
-c:\users\siyu\documents\visual studio 2013\projects\fluiddynamics\fluiddynamics\debug\fluiddynamics.tlog\link.write.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\vc120.pdb
+d:\github\fluid_dynamics\fluiddynamics\debug\vc120.idb
+d:\github\fluid_dynamics\fluiddynamics\debug\camera.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\init_glew.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\init_glut.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\main.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\matrix4.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\model.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\models_manager.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\quaternion.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\scene_manager.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\shader_manager.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\triangle.obj
+d:\github\fluid_dynamics\fluiddynamics\debug\kernel.cu.cache
+d:\github\fluid_dynamics\fluiddynamics\debug\kernel.cu.obj
+d:\github\fluid_dynamics\debug\fluiddynamics.pdb
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.command.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.read.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\cl.write.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\link.command.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\link.read.1.tlog
+d:\github\fluid_dynamics\fluiddynamics\debug\fluiddynamics.tlog\link.write.1.tlog

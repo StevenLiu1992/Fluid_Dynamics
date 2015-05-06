@@ -34,12 +34,23 @@ namespace Core {
 			static void reshapeCallback(int width, int height);
 			static void closeCallback();
 			static void keyboardCallback(unsigned char Key, int x, int y);
-	//		static void SpecialKeyboardCB(int Key, int x, int y);
-
+			static void keyboardUpCallback(unsigned char key, int x, int y);
+			static void mouseMove(int x, int y);
+			
 		private:
 			static Core::IListener* listener;
 			static Core::WindowInfo windowInformation;
-			
+			static bool wPressed;
+			static bool sPressed;
+			static bool aPressed;
+			static bool dPressed;
+			static bool qPressed;
+			static bool ePressed;
+			static int xOrigin;
+			static int yOrigin;
+			static int delta_x;
+			static int delta_y;
+			static bool mouseFirstMotion;
 		public:
 			static void setListener(Core::IListener*& iListener);
 		};

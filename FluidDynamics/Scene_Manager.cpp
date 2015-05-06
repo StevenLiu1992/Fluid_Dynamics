@@ -35,6 +35,9 @@ void Scene_Manager::notifyDisplayFrame()
 	models_manager->Draw();
 }
 
+void Scene_Manager::notifyMouseMoveEvent(int delta_x, int delta_y){
+	camera->mouseMoveEvents(delta_x, delta_y);
+}
 
 void Scene_Manager::notifyKeyboardEvent(unsigned char key){
 	camera->keyboardEvents(key);

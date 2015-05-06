@@ -61,8 +61,8 @@ void Triangle::Draw()
 	glUseProgram(program);
 	Matrix4 modelMatrix = worldTransform; 
 	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
-	std::cout << viewMatrix.GetPositionVector() << std::endl;
-	Matrix4 projMatrix = Matrix4::Perspective(1.0f, 10000.0f, (float)800 / (float)600, 45.0f);
+//	std::cout << viewMatrix.GetPositionVector() << std::endl;
+	
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&viewMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "viewMatrix"), 1, false, (float*)&modelMatrix);

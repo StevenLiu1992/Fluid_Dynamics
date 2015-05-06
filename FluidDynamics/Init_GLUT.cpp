@@ -5,7 +5,17 @@ using namespace Core::Init;
 
 Core::IListener* Init_GLUT::listener = NULL;
 Core::WindowInfo Init_GLUT::windowInformation;
-
+bool Init_GLUT::wPressed = false;
+bool Init_GLUT::sPressed = false;
+bool Init_GLUT::aPressed = false;
+bool Init_GLUT::dPressed = false;
+bool Init_GLUT::qPressed = false;
+bool Init_GLUT::ePressed = false;
+int Init_GLUT::xOrigin = 0;
+int Init_GLUT::yOrigin = 0;
+bool Init_GLUT::mouseFirstMotion = true;
+int Init_GLUT::delta_x = 0;
+int Init_GLUT::delta_y = 0;
 
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
@@ -45,7 +55,8 @@ void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	glutDisplayFunc(displayCallback);
 	glutReshapeFunc(reshapeCallback);
 	glutKeyboardFunc(keyboardCallback);
-	
+	glutKeyboardUpFunc(keyboardUpCallback);
+	glutPassiveMotionFunc(mouseMove);
 
 	
 	//init GLEW, this can be called in main.cpp
@@ -75,19 +86,95 @@ void Init_GLUT::close()
 
 void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)
 {
-	listener->notifyKeyboardEvent(key);
+	
 //	camera->keyboardEvents(key);
 	switch (key) {
-	case 27:	//ESC
+	case 27:{
+		//ESC
 		glutLeaveMainLoop();
+		break;
+	}
+	case 'w':{	//ESC
+		wPressed = true;
+		break;
+	}
+	case 's':{	//ESC
+		sPressed = true;
+		break;
+	}
+	case 'a':{	//ESC
+		aPressed = true;
+		break;
+	}
+	case 'd':{	//ESC
+		dPressed = true;
+		break;
+	}
+	case 'q':{	//ESC
+		qPressed = true;
+		break;
+	}
+	case 'e':{	//ESC
+		ePressed = true;
+		break;
+	}
 	}
 }
 
-
+void Init_GLUT::keyboardUpCallback(unsigned char key, int x, int y)
+{
+	
+	//	camera->keyboardEvents(key);
+	switch (key) {
+	case 'w':{	//ESC
+		wPressed = false;
+		break;
+	}
+	case 's':{	//ESC
+		sPressed = false; 
+		break;
+	}
+	case 'a':{	//ESC
+		aPressed = false;
+		break;
+	}
+	case 'd':{	//ESC
+		dPressed = false;
+		break;
+	}
+	case 'q':{	//ESC
+		qPressed = false;
+		break;
+	}
+	case 'e':{	//ESC
+		ePressed = false;
+		break;
+	}
+	}
+}
 
 void Init_GLUT::idleCallback(void)
 {
-	//do nothing, just redisplay
+	//camera movement
+	if (wPressed)
+		listener->notifyKeyboardEvent('w');
+	if (sPressed)
+		listener->notifyKeyboardEvent('s');
+	if (aPressed)
+		listener->notifyKeyboardEvent('a');
+	if (dPressed)
+		listener->notifyKeyboardEvent('d');
+	if (qPressed)
+		listener->notifyKeyboardEvent('q');
+	if (ePressed)
+		listener->notifyKeyboardEvent('e');
+
+
+	listener->notifyMouseMoveEvent(delta_x, delta_y);
+	//stop move when mouse donot move
+	delta_x = 0;
+	delta_y = 0;
+	
 	glutPostRedisplay();
 }
 
@@ -123,6 +210,22 @@ void Init_GLUT::reshapeCallback(int width, int height)
 
 }
 
+void Init_GLUT::mouseMove(int x, int y) {
+
+	if (mouseFirstMotion){
+		//first motion for mouse
+		xOrigin = x;
+		yOrigin = y;
+		mouseFirstMotion = false;
+		
+	}
+	else{
+		delta_x = x - xOrigin;
+		delta_y = y - yOrigin;
+		xOrigin = x;
+		yOrigin = y;
+	}
+}
 
 void Init_GLUT::closeCallback()
 {

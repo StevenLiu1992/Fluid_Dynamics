@@ -9,34 +9,48 @@ last frame (default value is for simplicities sake...)
 void Core::Camera::keyboardEvents(char key){
 	switch (key) {
 	case 'w':{
-		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1) ;
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.05 ;
 		break;
 	}
 	
 	case 's':{
-		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1) ;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.05;
 		break;
 	}
 
 	case 'a':{
-		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) ;
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.05;
 		break;
 	}
 	case 'd':{
-		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) ;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.05;
 		break;
 	}
 	case 'q':{
-				 position.y += 10;
-				 break;
+		position.y += 0.05;
+		break;
 	}
 	case 'e':{
-				 position.y -= 10;
-				 break;
+		position.y -= 0.05;
+		break;
 	}
 	}
 }
-
+void Core::Camera::mouseMoveEvents(int delta_x, int delta_y){
+	pitch -= delta_y * 0.07;
+	yaw -= delta_x * 0.07;
+	
+	//Bounds check the pitch, to be between straight up and straight down ;)
+	pitch = min(pitch,90.0f);
+	pitch = max(pitch,-90.0f);
+	
+	if(yaw <0) {
+		yaw+= 360.0f;
+	}
+	if(yaw > 360.0f) {
+		yaw -= 360.0f;
+	}
+}
 //void Camera::UpdateCamera(float msec)	{
 //	this->msec = msec;
 //	//Update the mouse by how much

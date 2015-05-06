@@ -13,7 +13,7 @@ namespace Managers
 		~Scene_Manager();
 
 		virtual void notifyKeyboardEvent(unsigned char key);
-
+		virtual void notifyMouseMoveEvent(int delta_x, int delta_y);
 		virtual void notifyBeginFrame();
 		virtual void notifyDisplayFrame();
 		virtual void notifyEndFrame();
