@@ -8,7 +8,7 @@ namespace Core{
 
 		virtual void notifyKeyboardEvent(unsigned char key) = 0;
 		virtual void notifyMouseMoveEvent(int delta_x, int delta_y) = 0;
-		//drawing functions
+		virtual void notifyMouseClick(int, int, float, float) = 0;
 
 		virtual void notifyBeginFrame() = 0;
 		virtual void notifyDisplayFrame() = 0;

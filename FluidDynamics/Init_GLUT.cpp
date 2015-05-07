@@ -17,6 +17,14 @@ bool Init_GLUT::mouseFirstMotion = true;
 int Init_GLUT::delta_x = 0;
 int Init_GLUT::delta_y = 0;
 
+int  Init_GLUT::lastx = 0;
+int  Init_GLUT::lasty = 0;
+bool Init_GLUT::clicked = false;
+
+int Init_GLUT::wWidth = 0;
+int Init_GLUT::wHeight = 0;
+
+
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
 	const Core::FramebufferInfo& framebufferInfo)
@@ -25,6 +33,9 @@ void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	int fakeargc = 1;
 	char *fakeargv[] = { "fake", NULL };
 	glutInit(&fakeargc, fakeargv);
+
+	wWidth = windowInfo.width;
+	wHeight = windowInfo.height;
 
 	if (contextInfo.core)
 	{
@@ -57,8 +68,9 @@ void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	glutKeyboardFunc(keyboardCallback);
 	glutKeyboardUpFunc(keyboardUpCallback);
 	glutPassiveMotionFunc(mouseMove);
+	glutMouseFunc(click);
+	glutMotionFunc(motion);
 
-	
 	//init GLEW, this can be called in main.cpp
 	Init::Init_GLEW::Init();
 
@@ -82,6 +94,39 @@ void Init_GLUT::close()
 {
 	std::cout << "GLUT:\t Finished" << std::endl;
 	glutLeaveMainLoop();
+}
+
+void Init_GLUT::click(int button, int updown, int x, int y)
+{
+	lastx = x;
+	lasty = y;
+	clicked = !clicked;
+}
+
+void Init_GLUT::motion(int x, int y)
+{
+	// Convert motion coordinates to domain
+	float fx = (lastx / (float)wWidth);
+	float fy = (lasty / (float)wHeight);
+	int nx = (int)(fx * DIM);
+	int ny = (int)(fy * DIM);
+
+	if (clicked && nx < DIM - FR && nx > FR - 1 && ny < DIM - FR && ny > FR - 1)
+	{
+		int ddx = x - lastx;
+		int ddy = y - lasty;
+		fx = ddx / (float)wWidth;
+		fy = ddy / (float)wHeight;
+		int spy = ny - FR;
+		int spx = nx - FR;
+
+//		addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
+		listener->notifyMouseClick(spx, spy, fx, fy);
+		lastx = x;
+		lasty = y;
+	}
+
+	glutPostRedisplay();
 }
 
 void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)

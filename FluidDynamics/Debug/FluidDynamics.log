@@ -1,10 +1,19 @@
-﻿Build started 06/05/2015 17:54:39.
+﻿Build started 07/05/2015 17:43:11.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Scene_Manager.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Init_GLUT.cpp Models_Manager.cpp Scene_Manager.cpp Water.cpp main.cpp
+         Water.cpp
          Scene_Manager.cpp
+         Init_GLUT.cpp
+         Generating Code...
+         Compiling...
+         main.cpp
+     1>d:\github\fluid_dynamics\fluiddynamics\main.cpp(11): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+         Generating Code...
+         Skipping... (no relevant changes detected)
+         Models_Manager.cpp
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\kernel.cu.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\Waterkernel.cu.obj
          Debug\Camera.obj
          Debug\Init_GLEW.obj
          Debug\Init_GLUT.obj
@@ -17,6 +26,11 @@
          Debug\Scene_Manager.obj
          Debug\Shader_Manager.obj
          Debug\Triangle.obj
+         Debug\Water.obj
+     1>SOIL.lib(image_DXT.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(image_DXT.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
+     1>SOIL.lib(image_helper.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(image_helper.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
+     1>SOIL.lib(SOIL.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(SOIL.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
+     1>SOIL.lib(stb_image_aug.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(stb_image_aug.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
          FluidDynamics.vcxproj -> D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe
        PostBuildEvent:
          echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "D:\GitHub\Fluid_Dynamics\Debug\"
@@ -30,4 +44,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.76
+Time Elapsed 00:00:03.03

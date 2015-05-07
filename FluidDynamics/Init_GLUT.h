@@ -6,7 +6,7 @@
 #include <iostream>
 #include "Init_GLEW.h"
 #include "IListener.h"
-
+#include "WaterDefine.h"
 
 namespace Core {
 	namespace Init{//two namespaces
@@ -36,7 +36,8 @@ namespace Core {
 			static void keyboardCallback(unsigned char Key, int x, int y);
 			static void keyboardUpCallback(unsigned char key, int x, int y);
 			static void mouseMove(int x, int y);
-			
+			static void click(int button, int updown, int x, int y);
+			static void motion(int x, int y);
 		private:
 			static Core::IListener* listener;
 			static Core::WindowInfo windowInformation;
@@ -51,6 +52,12 @@ namespace Core {
 			static int delta_x;
 			static int delta_y;
 			static bool mouseFirstMotion;
+			static int lastx;
+			static int lasty;
+			static bool clicked;
+
+			static int wWidth;
+			static int wHeight;
 		public:
 			static void setListener(Core::IListener*& iListener);
 		};

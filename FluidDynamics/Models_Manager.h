@@ -4,6 +4,7 @@
 #include "IGameObject.h"
 #include "Triangle.h"
 #include "Quad.h"
+#include "Water.h"
 #include "Matrix4.h"
 #include "Vector3.h"
 
