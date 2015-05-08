@@ -9,7 +9,7 @@ static float2 *vxfield = NULL;
 static float2 *vyfield = NULL;
 
 float2 *hvfield = NULL;
-float2 *dvfield = NULL;
+extern float2 *dvfield = NULL;
 
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
@@ -26,6 +26,7 @@ extern "C" void advectParticles(GLuint vbo, float2 *v, int dx, int dy, float dt)
 Water::Water()
 {
 	position = Vector3(0, 0, 0);
+//	orientation = Quaternion::AxisAngleToQuaterion(Vector3(1,0,0),180);
 }
 
 Water::~Water()
@@ -133,6 +134,7 @@ void Water::Update(Matrix4 viewMatrix)
 
 void Water::Draw()
 {
+//	addForces(dvfield, DIM, DIM, 10, 10, FORCE * DT * 0.01, FORCE * DT * 0.01, FR);
 	glUseProgram(program);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -148,6 +150,14 @@ void Water::Draw()
 	glUniform1i(glGetUniformLocation(program, "diffuse_texture"), 0);
 	glPointSize(6);
 	glBindVertexArray(vao);
+
+//	glEnable(GL_POINT_SMOOTH);
+//	glEnable(GL_BLEND);
+//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+////	glEnableClientState(GL_VERTEX_ARRAY);
+//	glDisable(GL_DEPTH_TEST);
+//	glDisable(GL_CULL_FACE);
+
 	glDrawArrays(GL_POINTS, 0, DS);
 	glUseProgram(0);
 	/*glColor4f(0, 1, 0, 1);

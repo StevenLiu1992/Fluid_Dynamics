@@ -3,6 +3,10 @@
 
 using namespace Core::Init;
 
+
+extern "C" void addForces(float2 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r);
+extern float2 *dvfield;
+
 Core::IListener* Init_GLUT::listener = NULL;
 Core::WindowInfo Init_GLUT::windowInformation;
 bool Init_GLUT::wPressed = false;
@@ -120,8 +124,8 @@ void Init_GLUT::motion(int x, int y)
 		int spy = ny - FR;
 		int spx = nx - FR;
 
-//		addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
-		listener->notifyMouseClick(spx, spy, fx, fy);
+		addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
+//		listener->notifyMouseClick(spx, spy, fx, fy);
 		lastx = x;
 		lasty = y;
 	}

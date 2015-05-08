@@ -7,6 +7,7 @@
 #include "Init_GLEW.h"
 #include "IListener.h"
 #include "WaterDefine.h"
+#include "WaterKernel.cuh"
 
 namespace Core {
 	namespace Init{//two namespaces
