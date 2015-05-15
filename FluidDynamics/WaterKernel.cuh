@@ -11,9 +11,10 @@
 #include <cufft.h>          // CUDA FFT Libraries
 #include <helper_cuda.h>    // Helper functions for CUDA Error handling
 
+
 // OpenGL Graphics includes
-#include <glew.h>
-#include <freeglut.h>
+#include "Dependencies/glew/glew.h"
+#include "Dependencies/freeglut/freeglut.h"
 
 void setupTexture(int x, int y);
 void bindTexture(void);
