@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaterDefine.h"
+#include "fluidDefine.h"
 
 #include "Model.h"
 #include "Vector2.h"
@@ -18,7 +18,7 @@
 #include <helper_cuda.h>
 #include <helper_cuda_gl.h>
 
-#include "WaterKernel.cuh"
+#include "fluidKernel.cuh"
 
 namespace Rendering
 {
@@ -33,7 +33,7 @@ namespace Rendering
 			void Create();
 			virtual void Update(Matrix4 viewMatrix) override final;
 			virtual void Draw() override final;
-			void initParticles(float2 * particles, int, int);
+			void initParticles(float3 *p, int dx, int dy, int dz);
 			void simulateFluids(void);
 			void addSomeForce(int spx, int spy, float fx, float fy) const;
 		private:
@@ -42,7 +42,7 @@ namespace Rendering
 
 			
 			GLuint vao;
-			float2 *particles;
+			float3 *particles;
 		
 		};
 		

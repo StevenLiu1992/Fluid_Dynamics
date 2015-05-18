@@ -3,13 +3,10 @@ using namespace Rendering;
 using namespace Models;
 
 
-cufftHandle planr2c;
-cufftHandle planc2r;
-static float2 *vxfield = NULL;
-static float2 *vyfield = NULL;
 
-float2 *hvfield = NULL;
-extern float2 *dvfield = NULL;
+
+float3 *hvfield = NULL;
+extern float3 *dvfield = NULL;
 
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
@@ -65,35 +62,24 @@ void Water::Create()
 	printf("CUDA device [%s] has %d Multi-Processors\n",
 		deviceProps.name, deviceProps.multiProcessorCount);
 
-	hvfield = (float2 *)malloc(sizeof(float2) * DS);
-	memset(hvfield, 0, sizeof(float2) * DS);
+	hvfield = (float3 *)malloc(sizeof(float3) * DS);
+	memset(hvfield, 0, sizeof(float3) * DS);
 
 	// Allocate and initialize device data
-	cudaMallocPitch((void **)&dvfield, &tPitch, sizeof(float2)*DIM, DIM);
+	cudaMallocPitch((void **)&dvfield, &tPitch, sizeof(float3)*NX*NY, NZ);
 
-	cudaMemcpy(dvfield, hvfield, sizeof(float2) * DS,
+	cudaMemcpy(dvfield, hvfield, sizeof(float3) * DS,
 		cudaMemcpyHostToDevice);
-	// Temporary complex velocity field data
-	cudaMalloc((void **)&vxfield, sizeof(float2) * PDS);
-	cudaMalloc((void **)&vyfield, sizeof(float2) * PDS);
 
-
-	setupTexture(DIM, DIM);
+	setupTexture(NX,NY,NZ);
 	bindTexture();
 
 	// Create particle array
-	particles = (float2 *)malloc(sizeof(float2) * DS);
-	memset(particles, 0, sizeof(float2) * DS);
+	particles = (float3 *)malloc(sizeof(float3) * DS);
+	memset(particles, 0, sizeof(float3) * DS);
 
-	initParticles(particles, DIM, DIM);
+	initParticles(particles, NX, NY, NZ);
 
-	// Create CUFFT transform plan configuration
-	checkCudaErrors(cufftPlan2d(&planr2c, DIM, DIM, CUFFT_R2C));
-	checkCudaErrors(cufftPlan2d(&planc2r, DIM, DIM, CUFFT_C2R));
-	// TODO: update kernels to use the new unpadded memory layout for perf
-	// rather than the old FFTW-compatible layout
-	cufftSetCompatibilityMode(planr2c, CUFFT_COMPATIBILITY_FFTW_PADDING);
-	cufftSetCompatibilityMode(planc2r, CUFFT_COMPATIBILITY_FFTW_PADDING);
 	
 	
 	GLuint vao;
@@ -102,15 +88,15 @@ void Water::Create()
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float2) * DS, particles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * DS, particles, GL_DYNAMIC_DRAW);
 
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
 
-	if (bsize != (sizeof(float2) * DS))
+	if (bsize != (sizeof(float3) * DS))
 		return;
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float2), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -181,15 +167,18 @@ void Water::Draw()
 #define MYRAND (rand() / (float)RAND_MAX)
 
 
-void Water::initParticles(float2 *p, int dx, int dy){
-	int i, j;
+void Water::initParticles(float3 *p, int dx, int dy, int dz){
+	int i, j, k;
+	for (k = 0; k < dz; k++){
 
-	for (i = 0; i < dy; i++)
-	{
-		for (j = 0; j < dx; j++)
+		for (i = 0; i < dy; i++)
 		{
-			p[i*dx + j].x = (j + 0.5f + (MYRAND - 0.5f)) / dx;
-			p[i*dx + j].y = (i + 0.5f + (MYRAND - 0.5f)) / dy;
+			for (j = 0; j < dx; j++)
+			{
+				p[k*dx*dy + i*dx + j].x = (j + 0.5f + (MYRAND - 0.5f)) / dx;
+				p[k*dx*dy + i*dx + j].y = (i + 0.5f + (MYRAND - 0.5f)) / dy;
+				p[k*dx*dy + i*dx + j].z = (i + 0.5f + (MYRAND - 0.5f)) / dz;
+			}
 		}
 	}
 }
@@ -197,12 +186,7 @@ void Water::initParticles(float2 *p, int dx, int dy){
 void Water::simulateFluids(void)
 {
 	// simulate fluid
-	advectVelocity(dvfield, (float *)vxfield, (float *)vyfield, DIM, RPADW, DIM, DT);
-	diffuseProject(vxfield, vyfield, CPADW, DIM, DT, VIS);
-	updateVelocity(dvfield, (float *)vxfield, (float *)vyfield, DIM, RPADW, DIM);
-	advectParticles(vbo, dvfield, DIM, DIM, DT);
+	
 }
-void Water::addSomeForce(int spx, int spy, float fx, float fy) const{
-	addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
-}
+
 
