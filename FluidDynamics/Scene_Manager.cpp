@@ -22,11 +22,11 @@ Scene_Manager::~Scene_Manager()
 	delete models_manager;
 }
 
-void Scene_Manager::notifyMouseClick(int spx, int spy, float fx, float fy){
-	const Models::Water tempModel = (const Models::Water&)models_manager->GetModel("water");
-	tempModel.addSomeForce(spx, spy, fx, fy);
-	
-}
+//void Scene_Manager::notifyMouseClick(int spx, int spy, float fx, float fy){
+//	const Models::Water tempModel = (const Models::Water&)models_manager->GetModel("water");
+//	tempModel.addSomeForce(spx, spy, fx, fy);
+//	
+//}
 
 void Scene_Manager::notifyBeginFrame()
 {

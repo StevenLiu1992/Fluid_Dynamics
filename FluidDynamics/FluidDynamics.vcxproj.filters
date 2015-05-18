@@ -93,12 +93,6 @@
     <ClInclude Include="Water.h">
       <Filter>Rendering\Models\WaterModel</Filter>
     </ClInclude>
-    <ClInclude Include="WaterDefine.h">
-      <Filter>Rendering\Models\WaterModel</Filter>
-    </ClInclude>
-    <ClInclude Include="WaterKernel.cuh">
-      <Filter>Rendering\Models\WaterModel</Filter>
-    </ClInclude>
     <ClInclude Include="fluidDefine.h">
       <Filter>Rendering\Models\WaterModel</Filter>
     </ClInclude>
@@ -154,9 +148,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Waterkernel.cu">
-      <Filter>Rendering\Models\WaterModel</Filter>
-    </CudaCompile>
     <CudaCompile Include="fluidKernel.cu">
       <Filter>Rendering\Models\WaterModel</Filter>
     </CudaCompile>

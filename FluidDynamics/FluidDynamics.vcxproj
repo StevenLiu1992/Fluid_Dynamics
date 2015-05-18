@@ -178,7 +178,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="fluidKernel.cu" />
-    <CudaCompile Include="Waterkernel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -206,7 +205,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="IListener.h" />
     <ClInclude Include="Init_GLEW.h" />
     <ClInclude Include="Init_GLUT.h" />
-    <ClInclude Include="WaterKernel.cuh" />
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Models_Manager.h" />
@@ -220,7 +218,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="Vector4.h" />
     <ClInclude Include="VertexFormat.h" />
     <ClInclude Include="Water.h" />
-    <ClInclude Include="WaterDefine.h" />
     <ClInclude Include="WindowInfo.h" />
   </ItemGroup>
   <ItemGroup>

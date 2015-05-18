@@ -3,14 +3,13 @@
 #include "fluidDefine.h"
 
 #include "Model.h"
-#include "Vector2.h"
+
 
 // CUDA standard includes
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
-// CUDA FFT Libraries
-#include <cufft.h>
+
 
 // CUDA helper functions
 #include <helper_functions.h>

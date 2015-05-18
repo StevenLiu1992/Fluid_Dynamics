@@ -18,14 +18,14 @@
 void setupTexture(int x, int y, int z);
 void bindTexture(void);
 void unbindTexture(void);
-void updateTexture(float2 *data, size_t w, size_t h, size_t pitch);
+void updateTexture(float3 *data, size_t w, size_t h, size_t pitch);
 void deleteTexture(void);
 
 #define SWAP(x0, x) {float3 *tmp = x0; x0 = x; x = tmp;}
 
 
 __global__ void
-forces_k(float2 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r, size_t pitch);
+forces_k(float3 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r, size_t pitch);
 
 __global__ void
 advect_k(float3 *v, float3 *temp,

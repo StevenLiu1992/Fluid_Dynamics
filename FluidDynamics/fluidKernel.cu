@@ -1,6 +1,6 @@
 #include "fluidKernel.cuh"
 
-texture<float3, 3> texref;
+texture<float4, 3> texref;
 static cudaArray *array = NULL;
 cudaChannelFormatDesc ca_descriptor;
 cudaExtent volumeSize;
@@ -80,10 +80,9 @@ advect_k(float3 *v, float3 *temp,
 	// ez is the domain location in z for this thread
 	int ez = blockIdx.y * 4 + blockIdx.x;
 
-	float3 velocity, ploc;
-	
+	float4 velocity;
+	float3 ploc;
 
-	
 	for (int i = 0; i < lb; i++)
 	{
 		// ey is the domain location in y for this thread
@@ -93,16 +92,18 @@ advect_k(float3 *v, float3 *temp,
 		{
 			
 			float3 texcoord = { ex, ey, ez };
-			velocity = tex3D(texref, texcoord);
+			velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
 			ploc.x = (ex + 0.5f) - (dt * velocity.x);
 			ploc.y = (ey + 0.5f) - (dt * velocity.y);
 			ploc.z = (ez + 0.5f) - (dt * velocity.z);
 		
-			velocity = tex3D(texref, ploc);
+			velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
 			
 
 			float3 *f = (float3 *)((char *)temp + ez * pitch) + ey * dy + ex;
-			*f = velocity;
+			(*f).x = velocity.x;
+			(*f).y = velocity.y;
+			(*f).z = velocity.z;
 		}
 	}
 	
@@ -334,7 +335,7 @@ void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 }
 
 extern "C"
-void projection(float3 *v, float3 *temp, float3 *pressure, float* divergence, int dx, int dy, int dz, float dt)
+void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, int dx, int dy, int dz, float dt)
 {
 	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
 
@@ -354,13 +355,13 @@ void projection(float3 *v, float3 *temp, float3 *pressure, float* divergence, in
 
 
 extern "C"
-void advectParticles(GLuint vbo, float2 *v, int dx, int dy, int dz, float dt)
+void advectParticles(GLuint vbo, float3 *v, int dx, int dy, int dz, float dt)
 {
 	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
 
 	dim3 threads_size(THREAD_X, THREAD_Y);
 
-	float2 *p;
+	float3 *p;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");
 

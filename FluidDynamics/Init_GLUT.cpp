@@ -4,8 +4,8 @@
 using namespace Core::Init;
 
 
-extern "C" void addForces(float2 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r);
-extern float2 *dvfield;
+//extern "C" void addForces(float2 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r);
+//extern float2 *dvfield;
 
 Core::IListener* Init_GLUT::listener = NULL;
 Core::WindowInfo Init_GLUT::windowInformation;
@@ -109,28 +109,28 @@ void Init_GLUT::click(int button, int updown, int x, int y)
 
 void Init_GLUT::motion(int x, int y)
 {
-	// Convert motion coordinates to domain
-	float fx = (lastx / (float)wWidth);
-	float fy = (lasty / (float)wHeight);
-	int nx = (int)(fx * DIM);
-	int ny = (int)(fy * DIM);
-
-	if (clicked && nx < DIM - FR && nx > FR - 1 && ny < DIM - FR && ny > FR - 1)
-	{
-		int ddx = x - lastx;
-		int ddy = y - lasty;
-		fx = ddx / (float)wWidth;
-		fy = ddy / (float)wHeight;
-		int spy = ny - FR;
-		int spx = nx - FR;
-
-		addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
-//		listener->notifyMouseClick(spx, spy, fx, fy);
-		lastx = x;
-		lasty = y;
-	}
-
-	glutPostRedisplay();
+//	// Convert motion coordinates to domain
+//	float fx = (lastx / (float)wWidth);
+//	float fy = (lasty / (float)wHeight);
+//	int nx = (int)(fx * DIM);
+//	int ny = (int)(fy * DIM);
+//
+//	if (clicked && nx < DIM - FR && nx > FR - 1 && ny < DIM - FR && ny > FR - 1)
+//	{
+//		int ddx = x - lastx;
+//		int ddy = y - lasty;
+//		fx = ddx / (float)wWidth;
+//		fy = ddy / (float)wHeight;
+//		int spy = ny - FR;
+//		int spx = nx - FR;
+//
+//	//	addForces(dvfield, DIM, DIM, spx, spy, FORCE * DT * fx, FORCE * DT * fy, FR);
+////		listener->notifyMouseClick(spx, spy, fx, fy);
+//		lastx = x;
+//		lasty = y;
+//	}
+//
+//	glutPostRedisplay();
 }
 
 void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)
