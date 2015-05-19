@@ -80,30 +80,33 @@ advect_k(float3 *v, float3 *temp,
 	// ez is the domain location in z for this thread
 	int ez = blockIdx.y * 4 + blockIdx.x;
 
-	float4 velocity;
-	float3 ploc;
+	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
 
-	for (int i = 0; i < lb; i++)
-	{
-		// ey is the domain location in y for this thread
-		int ey = threadIdx.y * lb + i;
+		float4 velocity;
+		float3 ploc;
 
-		if (ey < dy)
+		for (int i = 0; i < lb; i++)
 		{
-			
-			float3 texcoord = { ex, ey, ez };
-			velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
-			ploc.x = (ex + 0.5f) - (dt * velocity.x);
-			ploc.y = (ey + 0.5f) - (dt * velocity.y);
-			ploc.z = (ez + 0.5f) - (dt * velocity.z);
-		
-			velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
-			
+			// ey is the domain location in y for this thread
+			int ey = threadIdx.y * lb + i;
 
-			float3 *f = (float3 *)((char *)temp + ez * pitch) + ey * dy + ex;
-			(*f).x = velocity.x;
-			(*f).y = velocity.y;
-			(*f).z = velocity.z;
+			if (ey!=0 && ey != dy)
+			{
+
+				//	float3 texcoord = { ex, ey, ez };
+				velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
+				ploc.x = (ex + 0.5f) - (dt * velocity.x);
+				ploc.y = (ey + 0.5f) - (dt * velocity.y);
+				ploc.z = (ez + 0.5f) - (dt * velocity.z);
+
+				velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
+
+
+				float3 *f = (float3 *)((char *)temp + ez * pitch) + ey * dy + ex;
+				(*f).x = velocity.x;
+				(*f).y = velocity.y;
+				(*f).z = velocity.z;
+			}
 		}
 	}
 	
@@ -124,41 +127,40 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = blockIdx.y * 4 + blockIdx.x;
 
+	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
+		for (int i = 0; i < lb; i++){
 
-	for (int i = 0; i < lb; i++)
-	{
-		// ey is the domain location in y for this thread
-		int ey = threadIdx.y * lb + i;
+			// ey is the domain location in y for this thread
+			int ey = threadIdx.y * lb + i;
 
-		if (ey < dy)
-		{
+			if (ey!=0 && ey != dy){
 
-			
-			//value b
-			float3 *p0 = (float3 *)
-				((char *)b + ez * pitch) + ey * dy + ex;
-			//left x
-			float3 *p1 = (float3 *)
-				((char *)temp + ez * pitch) + ey * dy + (ex-1);
-			//right x
-			float3 *p2 = (float3 *)
-				((char *)temp + ez * pitch) + ey * dy + (ex+1);
-			//top x
-			float3 *p3 = (float3 *)
-				((char *)temp + ez * pitch) + (ey-1) * dy + ex;
-			//bottom x
-			float3 *p4 = (float3 *)
-				((char *)temp + ez * pitch) + (ey+1) * dy + ex;
-			//front x
-			float3 *p5 = (float3 *)
-				((char *)temp + (ez-1) * pitch) + ey * dy + ex;
-			//behind x
-			float3 *p6 = (float3 *)
-				((char *)temp + (ez+1) * pitch) + ey * dy + ex;
-			
-			float3 *New = (float3 *)
-				((char *)v + ez * pitch) + ey * dy + ex;
-			*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
+				//value b
+				float3 *p0 = (float3 *)
+					((char *)b + ez * pitch) + ey * dy + ex;
+				//left x
+				float3 *p1 = (float3 *)
+					((char *)temp + ez * pitch) + ey * dy + (ex - 1);
+				//right x
+				float3 *p2 = (float3 *)
+					((char *)temp + ez * pitch) + ey * dy + (ex + 1);
+				//top x
+				float3 *p3 = (float3 *)
+					((char *)temp + ez * pitch) + (ey - 1) * dy + ex;
+				//bottom x
+				float3 *p4 = (float3 *)
+					((char *)temp + ez * pitch) + (ey + 1) * dy + ex;
+				//front x
+				float3 *p5 = (float3 *)
+					((char *)temp + (ez - 1) * pitch) + ey * dy + ex;
+				//behind x
+				float3 *p6 = (float3 *)
+					((char *)temp + (ez + 1) * pitch) + ey * dy + ex;
+
+				float3 *New = (float3 *)
+					((char *)v + ez * pitch) + ey * dy + ex;
+				*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
+			}
 		}
 	}
 }
@@ -178,39 +180,39 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = blockIdx.y * 4 + blockIdx.x;
 
-
-	for (int i = 0; i < lb; i++)
-	{
-		// ey is the domain location in y for this thread
-		int ey = threadIdx.y * lb + i;
-
-		if (ey < dy)
+	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
+		for (int i = 0; i < lb; i++)
 		{
+			// ey is the domain location in y for this thread
+			int ey = threadIdx.y * lb + i;
 
-			//left x
-			float3 *p1 = (float3 *)
-				((char *)v + ez * pitch) + ey * dy + (ex-1);
-			//right x
-			float3 *p2 = (float3 *)
-				((char *)v + ez * pitch) + ey * dy + (ex+1);
-			//top x
-			float3 *p3 = (float3 *)
-				((char *)v + ez * pitch) + (ey-1) * dy + ex;
-			//bottom x
-			float3 *p4 = (float3 *)
-				((char *)v + ez * pitch) + (ey+1) * dy + ex;
-			//front x
-			float3 *p5 = (float3 *)
-				((char *)v + (ez-1) * pitch) + ey * dy + ex;
-			//behind x
-			float3 *p6 = (float3 *)
-				((char *)v + (ez+1) * pitch) + ey * dy + ex;
-			
-			float3 *New = (float3 *)
-				((char *)d + ez * pitch) + ey * dy + ex;
-			(*New).x = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
-			(*New).y = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
-			(*New).z = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
+			if (ey != 0 && ey != dy){
+
+				//left x
+				float3 *p1 = (float3 *)
+					((char *)v + ez * pitch) + ey * dy + (ex - 1);
+				//right x
+				float3 *p2 = (float3 *)
+					((char *)v + ez * pitch) + ey * dy + (ex + 1);
+				//top x
+				float3 *p3 = (float3 *)
+					((char *)v + ez * pitch) + (ey - 1) * dy + ex;
+				//bottom x
+				float3 *p4 = (float3 *)
+					((char *)v + ez * pitch) + (ey + 1) * dy + ex;
+				//front x
+				float3 *p5 = (float3 *)
+					((char *)v + (ez - 1) * pitch) + ey * dy + ex;
+				//behind x
+				float3 *p6 = (float3 *)
+					((char *)v + (ez + 1) * pitch) + ey * dy + ex;
+
+				float3 *New = (float3 *)
+					((char *)d + ez * pitch) + ey * dy + ex;
+				(*New).x = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
+				(*New).y = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
+				(*New).z = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
+			}
 		}
 	}
 }
@@ -232,40 +234,40 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = blockIdx.y * 4 + blockIdx.x;
 
-
-	for (int i = 0; i < lb; i++)
-	{
-		// ey is the domain location in y for this thread
-		int ey = threadIdx.y * lb + i;
-
-		if (ey < dy)
+	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
+		for (int i = 0; i < lb; i++)
 		{
+			// ey is the domain location in y for this thread
+			int ey = threadIdx.y * lb + i;
 
-			//left x
-			float3 *p1 = (float3 *)
-				((char *)p + ez * pitch) + ey * dy + (ex - 1);
-			//right x
-			float3 *p2 = (float3 *)
-				((char *)p + ez * pitch) + ey * dy + (ex + 1);
-			//top x
-			float3 *p3 = (float3 *)
-				((char *)p + ez * pitch) + (ey - 1) * dy + ex;
-			//bottom x
-			float3 *p4 = (float3 *)
-				((char *)p + ez * pitch) + (ey + 1) * dy + ex;
-			//front x
-			float3 *p5 = (float3 *)
-				((char *)p + (ez - 1) * pitch) + ey * dy + ex;
-			//behind x
-			float3 *p6 = (float3 *)
-				((char *)p + (ez + 1) * pitch) + ey * dy + ex;
+			if (ey != 0 && ey != dy){
+				//left x
+				float3 *p1 = (float3 *)
+					((char *)p + ez * pitch) + ey * dy + (ex - 1);
+				//right x
+				float3 *p2 = (float3 *)
+					((char *)p + ez * pitch) + ey * dy + (ex + 1);
+				//top x
+				float3 *p3 = (float3 *)
+					((char *)p + ez * pitch) + (ey - 1) * dy + ex;
+				//bottom x
+				float3 *p4 = (float3 *)
+					((char *)p + ez * pitch) + (ey + 1) * dy + ex;
+				//front x
+				float3 *p5 = (float3 *)
+					((char *)p + (ez - 1) * pitch) + ey * dy + ex;
+				//behind x
+				float3 *p6 = (float3 *)
+					((char *)p + (ez + 1) * pitch) + ey * dy + ex;
 
-			float3 *New = (float3 *)
-				((char *)v + ez * pitch) + ey * dy + ex;
-			float3 t = (*New) - 0.5 * (((*p2) - (*p1)) + ((*p4) - (*p3)) + ((*p6) - (*p5)));
-			*New = t;
+				float3 *New = (float3 *)
+					((char *)v + ez * pitch) + ey * dy + ex;
+				float3 t = (*New) - 0.5 * (((*p2) - (*p1)) + ((*p4) - (*p3)) + ((*p6) - (*p5)));
+				*New = t;
+			}
 		}
 	}
+	
 }
 
 __global__ void
@@ -294,7 +296,7 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 			
 			float3 *position = (float3 *)
-				((char *)particle + ez * pitch) + ey * dy + (ex - 1);
+				((char *)particle + ez * pitch) + ey * dy + ex;
 			
 			float3 *v = (float3 *)
 				((char *)v + ez * pitch) + ey * dy + ex;
