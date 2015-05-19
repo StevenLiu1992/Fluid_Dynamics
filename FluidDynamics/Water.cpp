@@ -79,7 +79,7 @@ void Water::Create()
 		deviceProps.name, deviceProps.multiProcessorCount);
 
 	hvfield = (float4 *)malloc(sizeof(float4) * DS);
-	memset(hvfield, 0, sizeof(float4) * DS);
+//	memset(hvfield, 0, sizeof(float4) * DS);
 
 	// Allocate and initialize device data
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
@@ -87,15 +87,13 @@ void Water::Create()
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float3)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float3)*NX*NY, NZ);
 
-	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS,
-		cudaMemcpyHostToDevice);
-	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS,
-		cudaMemcpyHostToDevice);
+//	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
+//	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 	
 
-
-	setupTexture(NX,NY,NZ);
-	bindTexture();
+	initParticles_velocity(hvfield, dvfield);
+//	setupTexture(NX,NY,NZ);
+//	bindTexture();
 
 	// Create particle array
 	particles = (float3 *)malloc(sizeof(float3) * DS);
@@ -189,6 +187,17 @@ void Water::Draw()
 
 #define MYRAND (rand() / (float)RAND_MAX)
 
+void Water::initParticles_velocity(float4 *h, float4 *d){
+
+	for (int j = 0; j < NZ*NY*NX; j++){
+		h[j].x = (MYRAND - 0.5f) / 100;
+		h[j].y = (MYRAND - 0.5f) / 100;
+		h[j].z = (MYRAND - 0.5f) / 100;
+	}
+	
+	cudaMemcpy(d, h, sizeof(float4)* DS, cudaMemcpyHostToDevice);
+}
+
 
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
 	int i, j, k;
@@ -209,8 +218,8 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 void Water::simulateFluids(void)
 {
 	// simulate fluid
-//	advect(dvfield, dtemp, NX, NY, NZ, DT);
-//	diffuse((float3*)dvfield, (float3*)dtemp, NX, NY, NZ, DT);
+	advect(dvfield, dtemp, NX, NY, NZ, DT);
+	diffuse((float3*)dvfield, (float3*)dtemp, NX, NY, NZ, DT);
 //	projection((float3*)dvfield, (float3*)dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }

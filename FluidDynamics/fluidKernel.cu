@@ -138,31 +138,49 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 			if (ey!=0 && ey != dy){
 
-				//value b
-				float3 *p0 = (float3 *)
-					((char *)b + ez * pitch) + ey * dy + ex;
-				//left x
-				float3 *p1 = (float3 *)
-					((char *)temp + ez * pitch) + ey * dy + (ex - 1);
-				//right x
-				float3 *p2 = (float3 *)
-					((char *)temp + ez * pitch) + ey * dy + (ex + 1);
-				//top x
-				float3 *p3 = (float3 *)
-					((char *)temp + ez * pitch) + (ey - 1) * dy + ex;
-				//bottom x
-				float3 *p4 = (float3 *)
-					((char *)temp + ez * pitch) + (ey + 1) * dy + ex;
-				//front x
-				float3 *p5 = (float3 *)
-					((char *)temp + (ez - 1) * pitch) + ey * dy + ex;
-				//behind x
-				float3 *p6 = (float3 *)
-					((char *)temp + (ez + 1) * pitch) + ey * dy + ex;
+				////value b
+				//float3 *p0 = (float3 *)
+				//	((char *)b + ez * pitch) + ey * dy + ex;
+				////left x
+				//float3 *p1 = (float3 *)
+				//	((char *)temp + ez * pitch) + ey * dy + (ex - 1);
+				////right x
+				//float3 *p2 = (float3 *)
+				//	((char *)temp + ez * pitch) + ey * dy + (ex + 1);
+				////top x
+				//float3 *p3 = (float3 *)
+				//	((char *)temp + ez * pitch) + (ey - 1) * dy + ex;
+				////bottom x
+				//float3 *p4 = (float3 *)
+				//	((char *)temp + ez * pitch) + (ey + 1) * dy + ex;
+				////front x
+				//float3 *p5 = (float3 *)
+				//	((char *)temp + (ez - 1) * pitch) + ey * dy + ex;
+				////behind x
+				//float3 *p6 = (float3 *)
+				//	((char *)temp + (ez + 1) * pitch) + ey * dy + ex;
 
-				float3 *New = (float3 *)
-					((char *)v + ez * pitch) + ey * dy + ex;
-				*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
+				//float3 *New = (float3 *)
+				//	((char *)v + ez * pitch) + ey * dy + ex;
+				//value b
+				float3 p0 = b[ez*NX*NY+ey*NX+ex];
+				//left x
+				float3 p1 = temp[ez*NX*NY + ey*NX + ex - 1];
+				//right x
+				float3 p2 = temp[ez*NX*NY + ey*NX + ex + 1];
+				//top x
+				float3 p3 = temp[ez*NX*NY + (ey-1)*NX + ex];
+				//bottom x
+				float3 p4 = temp[ez*NX*NY + (ey + 1)*NX + ex];
+				//front x
+				float3 p5 = temp[(ez-1)*NX*NY + ey*NX + ex];
+				//behind x
+				float3 p6 = temp[(ez + 1)*NX*NY + ey*NX + ex];
+
+				/*float3 *New = (float3 *)
+					((char *)v + ez * pitch) + ey * dy + ex;*/
+				v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+		//		*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
 			}
 		}
 	}
@@ -301,17 +319,19 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	
 			float3 position = particle[index];
 
-			float4 *v = (float4 *)
+			float4 *vloc = (float4 *)
 				((char *)v + ez * pitch) + ey * dy + ex;
 			float3 newPosition;
-			/*
-			newPosition.x = position.x + dt * (*v).x;
-			newPosition.y = position.y + dt * (*v).y;
-			newPosition.z = position.z + dt * (*v).z;
-			*/
-			newPosition.x = (float)ex/dx;
+			
+			newPosition.x = position.x + dt * (*vloc).x;
+			newPosition.y = position.y + dt * (*vloc).y;
+			newPosition.z = position.z + dt * (*vloc).z;
+
+		
+			
+			/*newPosition.x = (float)ex / dx;
 			newPosition.y = (float)ey / dy;
-			newPosition.z = (float)ez / dz+0.05;
+			newPosition.z = (float)ez / dz;*/
 			particle[index] = newPosition;
 		}
 	}
@@ -340,7 +360,7 @@ void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 	dim3 threads_size(THREAD_X, THREAD_Y);
 	for(int i=0;i<20;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
-		jacobi_k <<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch_v);
+		jacobi_k<<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch_v);
 		SWAP(v,temp);
 	}
 	
@@ -357,7 +377,7 @@ void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, i
 	
 	
 	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-	memset(pressure, 0, sizeof(float3) * dx*dy*dz);
+	cudaMemset(pressure, 0, sizeof(float3)*NX*NY*NZ);
 	for(int i = 0; i < 40; i++){
 		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1 / 6, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 		SWAP(pressure, temp);

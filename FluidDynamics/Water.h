@@ -33,6 +33,7 @@ namespace Rendering
 			virtual void Update(Matrix4 viewMatrix) override final;
 			virtual void Draw() override final;
 			void initParticles(float3 *p, int dx, int dy, int dz);
+			void initParticles_velocity(float4 *v, float4 *d);
 			void simulateFluids(void);
 			void addSomeForce(int spx, int spy, float fx, float fy) const;
 		private:
