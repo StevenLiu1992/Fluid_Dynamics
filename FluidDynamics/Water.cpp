@@ -5,21 +5,27 @@ using namespace Models;
 
 
 
-float3 *hvfield = NULL;
-extern float3 *dvfield = NULL;
-extern float3 *dtemp = NULL;
-extern float3 *dpressure = NULL;
-extern float3 *ddivergence = NULL;
+float4 *hvfield = NULL;
+extern float4 *dvfield = NULL;
+float4 *dtemp = NULL;
+float3 *dpressure = NULL;
+float3 *ddivergence = NULL;
 
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 
 // Texture pitch
-size_t tPitch = 0; // Now this is compatible with gcc in 64-bit
+size_t tPitch_v = 0; // Now this is compatible with gcc in 64-bit
 
+// Texture pitch
+size_t tPitch_t = 0; // Now this is compatible with gcc in 64-bit
+// Texture pitch
+size_t tPitch_d = 0; // Now this is compatible with gcc in 64-bit
+// Texture pitch
+size_t tPitch_p = 0; // Now this is compatible with gcc in 64-bit
 
 extern "C"
-void advect(float3 *v, float3 *temp, int dx, int dy, int dz, float dt);
+void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
 
 extern "C"
 void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt);
@@ -28,7 +34,7 @@ extern "C"
 void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, int dx, int dy, int dz, float dt);
 
 extern "C"
-void advectParticles(GLuint vbo, float3 *v, int dx, int dy, int dz, float dt);
+void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt);
 
 Water::Water()
 {
@@ -55,7 +61,10 @@ void Water::Create()
 {
 
 	GLint bsize;
-	tPitch = 0;
+	tPitch_v = 0;
+	tPitch_t = 0;
+	tPitch_p = 0;
+	tPitch_d = 0;
 
 	int devID;
 	cudaDeviceProp deviceProps;
@@ -69,18 +78,18 @@ void Water::Create()
 	printf("CUDA device [%s] has %d Multi-Processors\n",
 		deviceProps.name, deviceProps.multiProcessorCount);
 
-	hvfield = (float3 *)malloc(sizeof(float3) * DS);
-	memset(hvfield, 0, sizeof(float3) * DS);
+	hvfield = (float4 *)malloc(sizeof(float4) * DS);
+	memset(hvfield, 0, sizeof(float4) * DS);
 
 	// Allocate and initialize device data
-	cudaMallocPitch((void **)&dvfield, &tPitch, sizeof(float3)*NX*NY, NZ);
-	cudaMallocPitch((void **)&dtemp, &tPitch, sizeof(float3)*NX*NY, NZ);
-	cudaMallocPitch((void **)&ddivergence, &tPitch, sizeof(float3)*NX*NY, NZ);
-	cudaMallocPitch((void **)&dpressure, &tPitch, sizeof(float3)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dtemp, &tPitch_t, sizeof(float4)*NX*NY, NZ);
+	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float3)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float3)*NX*NY, NZ);
 
-	cudaMemcpy(dvfield, hvfield, sizeof(float3) * DS,
+	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS,
 		cudaMemcpyHostToDevice);
-	cudaMemcpy(dtemp, hvfield, sizeof(float3)* DS,
+	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS,
 		cudaMemcpyHostToDevice);
 	
 
@@ -191,7 +200,7 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 			{
 				p[k*dx*dy + i*dx + j].x = (j + 0.5f + (MYRAND - 0.5f)) / dx;
 				p[k*dx*dy + i*dx + j].y = (i + 0.5f + (MYRAND - 0.5f)) / dy;
-				p[k*dx*dy + i*dx + j].z = (i + 0.5f + (MYRAND - 0.5f)) / dz;
+				p[k*dx*dy + i*dx + j].z = (k + 0.5f + (MYRAND - 0.5f)) / dz;
 			}
 		}
 	}
@@ -200,9 +209,9 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 void Water::simulateFluids(void)
 {
 	// simulate fluid
-	advect(dvfield, dtemp, NX, NY, NZ, DT);
-	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
-	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
+//	advect(dvfield, dtemp, NX, NY, NZ, DT);
+//	diffuse((float3*)dvfield, (float3*)dtemp, NX, NY, NZ, DT);
+//	projection((float3*)dvfield, (float3*)dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }
 

@@ -62,7 +62,7 @@ int main(int argc, char **argv){
 
 	WindowInfo window(std::string("XXX"),
 		50, 50,//position
-		800, 600, //size
+		1080, 1080, //size
 		true);//reshape
 
 	ContextInfo context(3, 3, true);

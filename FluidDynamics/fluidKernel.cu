@@ -1,12 +1,15 @@
 #include "fluidKernel.cuh"
 
 texture<float4, 3> texref;
-static cudaArray *array = NULL;
+static cudaArray * array = NULL;
 cudaChannelFormatDesc ca_descriptor;
 cudaExtent volumeSize;
 
 // Texture pitch
-extern size_t tPitch;
+extern size_t tPitch_v;
+extern size_t tPitch_t;
+extern size_t tPitch_p;
+extern size_t tPitch_d;
 // Particle data
 extern GLuint vbo;                 // OpenGL vertex buffer object
 extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
@@ -17,11 +20,11 @@ void setupTexture(int x, int y, int z)
 	texref.filterMode = cudaFilterModeLinear;
 //	cudaChannelFormatDesc desc = cudaCreateChannelDesc<float3>();
 	volumeSize = make_cudaExtent(NX, NY, NZ);
-	ca_descriptor = cudaCreateChannelDesc<float3>();
-	ca_descriptor.x = NX;
+	ca_descriptor = cudaCreateChannelDesc<float4>();
+	/*ca_descriptor.x = NX;
 	ca_descriptor.y = NY;
-	ca_descriptor.z = NZ;
-	cudaMalloc3DArray(&array, &ca_descriptor, volumeSize);
+	ca_descriptor.z = NZ;*/
+	checkCudaErrors(cudaMalloc3DArray(&array, &ca_descriptor, volumeSize));
 	getLastCudaError("cudaMalloc failed");
 }
 
@@ -36,14 +39,14 @@ void unbindTexture(void)
 	cudaUnbindTexture(texref);
 }
 
-void updateTexture(float3 *data, size_t dimx, size_t dimy, size_t pitch)
+void updateTexture(float4 *data, int dimx, int dimy, size_t pitch)
 {
 	cudaMemcpy3DParms cpy_params = { 0 };
 	cpy_params.extent = volumeSize;
 	cpy_params.kind = cudaMemcpyDeviceToDevice;
 	cpy_params.dstArray = array;
-	cpy_params.srcPtr = make_cudaPitchedPtr((float3*)data, pitch, dimx, dimy);
-	cudaMemcpy3D(&cpy_params);
+	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float4), dimx, dimy);
+	checkCudaErrors(cudaMemcpy3D(&cpy_params));
 	getLastCudaError("cudaMemcpy failed");
 }
 
@@ -271,7 +274,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 }
 
 __global__ void
-advectParticles_k(float3 *particle, float3 *v,
+advectParticles_k(float3 *particle, float4 *v,
 int dx, int dy, int dz, float dt, int lb, size_t pitch)
 {
 	//dx = 64
@@ -293,28 +296,37 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 		if (ey < dy)
 		{
+			int index = ez*dx*dy + ey*dx + ex;
+			
+	
+			float3 position = particle[index];
 
-			
-			float3 *position = (float3 *)
-				((char *)particle + ez * pitch) + ey * dy + ex;
-			
-			float3 *v = (float3 *)
+			float4 *v = (float4 *)
 				((char *)v + ez * pitch) + ey * dy + ex;
-			float3 newPosition = (*position) + dt * (*v);
-			*position = newPosition;
+			float3 newPosition;
+			/*
+			newPosition.x = position.x + dt * (*v).x;
+			newPosition.y = position.y + dt * (*v).y;
+			newPosition.z = position.z + dt * (*v).z;
+			*/
+			newPosition.x = (float)ex/dx;
+			newPosition.y = (float)ey / dy;
+			newPosition.z = (float)ez / dz+0.05;
+			particle[index] = newPosition;
 		}
 	}
 }
 
 extern "C"
-void advect(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
+void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
+	//(dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1)
+	dim3 block_size(4,4);
 
 	dim3 threads_size(THREAD_X, THREAD_Y);
 
-	updateTexture(v, NX, NY, tPitch);
-	advect_k<<<block_size, threads_size>>>(v, temp, dx, dy, dz, dt, NY / THREAD_Y, tPitch);
+	updateTexture(v, NX, NY, tPitch_v);
+	advect_k<<<block_size, threads_size >>>((float3*)v, (float3*)temp, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
 
 	getLastCudaError("advectVelocity_k failed.");
 	
@@ -323,12 +335,12 @@ void advect(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 extern "C"
 void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
+	dim3 block_size(4, 4);
 
 	dim3 threads_size(THREAD_X, THREAD_Y);
 	for(int i=0;i<20;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
-		jacobi_k <<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch);
+		jacobi_k <<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch_v);
 		SWAP(v,temp);
 	}
 	
@@ -339,27 +351,27 @@ void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 extern "C"
 void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
+	dim3 block_size(4, 4);
 
 	dim3 threads_size(THREAD_X, THREAD_Y);
 	
 	
-	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch);
+	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 	memset(pressure, 0, sizeof(float3) * dx*dy*dz);
 	for(int i = 0; i < 40; i++){
-		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1 / 6, dx, dy, dz, NY / THREAD_Y, tPitch);
+		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1 / 6, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 		SWAP(pressure, temp);
 	}
-	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch);
+	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 
 	getLastCudaError("diffuse_k failed.");
 }
 
 
 extern "C"
-void advectParticles(GLuint vbo, float3 *v, int dx, int dy, int dz, float dt)
+void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size((dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1));
+	dim3 block_size(4,4);
 
 	dim3 threads_size(THREAD_X, THREAD_Y);
 
@@ -372,7 +384,7 @@ void advectParticles(GLuint vbo, float3 *v, int dx, int dy, int dz, float dt)
 		cuda_vbo_resource);
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
-	advectParticles_k<<<block_size, threads_size >>>(p, v, dx, dy, dz, dt, NY / THREAD_Y, tPitch);
+	advectParticles_k<<<block_size, threads_size >>>(p, v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
 	getLastCudaError("advectParticles_k failed.");
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);

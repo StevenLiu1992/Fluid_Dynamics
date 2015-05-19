@@ -14,7 +14,7 @@ namespace Core
 		WindowInfo()
 		{
 			name = "OpenGL tutorial";
-			width = 800; height = 600;
+			width = 1920; height = 1080;
 			position_x = 300;
 			position_y = 300;
 			isReshapable = true;
