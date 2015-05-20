@@ -21,26 +21,26 @@ void unbindTexture(void);
 void updateTexture(float4 *data, int w, int h, size_t pitch);
 void deleteTexture(void);
 
-#define SWAP(x0, x) {float3 *tmp = x0; x0 = x; x = tmp;}
+#define SWAP(x0, x) {float4 *tmp = x0; x0 = x; x = tmp;}
 
 
 __global__ void
-forces_k(float3 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r, size_t pitch);
+forces_k(float4 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r, size_t pitch);
 
 __global__ void
-advect_k(float3 *v, float3 *temp,
+advect_k(float4 *v, float4 *temp,
 int dx, int dy, int dz, float dt, int lb, size_t pitch);
 
 __global__ void
-jacobi_k(float3 *v, float3 *temp, float3 *b, float alpha, float rBeta,
+jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta,
 int dx, int dy, int dz, int lb, size_t pitch);
 
 __global__ void
-divergence_k(float3 *d, float3 *v,
+divergence_k(float4 *d, float4 *v,
 int dx, int dy, int dz, int lb, size_t pitch);
 
 __global__ void
-gradient_k(float3 *v, float3 *p,
+gradient_k(float4 *v, float4 *p,
 int dx, int dy, int dz, int lb, size_t pitch);
 
 __global__ void

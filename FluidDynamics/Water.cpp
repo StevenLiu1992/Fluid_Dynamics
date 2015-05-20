@@ -8,8 +8,8 @@ using namespace Models;
 float4 *hvfield = NULL;
 extern float4 *dvfield = NULL;
 float4 *dtemp = NULL;
-float3 *dpressure = NULL;
-float3 *ddivergence = NULL;
+float4 *dpressure = NULL;
+float4 *ddivergence = NULL;
 
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
@@ -28,10 +28,10 @@ extern "C"
 void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
 
 extern "C"
-void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt);
+void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
 
 extern "C"
-void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, int dx, int dy, int dz, float dt);
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt);
 
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt);
@@ -84,16 +84,16 @@ void Water::Create()
 	// Allocate and initialize device data
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dtemp, &tPitch_t, sizeof(float4)*NX*NY, NZ);
-	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float3)*NX*NY, NZ);
-	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float3)*NX*NY, NZ);
+	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 
 //	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
 //	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 	
 
 	initParticles_velocity(hvfield, dvfield);
-//	setupTexture(NX,NY,NZ);
-//	bindTexture();
+	setupTexture(NX,NY,NZ);
+	bindTexture();
 
 	// Create particle array
 	particles = (float3 *)malloc(sizeof(float3) * DS);
@@ -128,6 +128,10 @@ void Water::Create()
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 
+
+	int CUDAVersion ;
+	cudaRuntimeGetVersion(&CUDAVersion);
+	std::cout << "CUDA version: "<< CUDAVersion << std::endl;
 }
 
 
@@ -146,7 +150,7 @@ void Water::Draw()
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
-
+	//*Matrix4::Scale(Vector3(10, 10, 10))
 	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
 	//	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
 	//	std::cout << viewMatrix.GetPositionVector() << std::endl;
@@ -188,11 +192,25 @@ void Water::Draw()
 #define MYRAND (rand() / (float)RAND_MAX)
 
 void Water::initParticles_velocity(float4 *h, float4 *d){
+	int i, j, k;
+	for (k = 0; k < NZ; k++){
 
-	for (int j = 0; j < NZ*NY*NX; j++){
-		h[j].x = (MYRAND - 0.5f) / 100;
-		h[j].y = (MYRAND - 0.5f) / 100;
-		h[j].z = (MYRAND - 0.5f) / 100;
+		for (i = 0; i < NY; i++)
+		{
+			for (j = 0; j < NX; j++)
+			{
+				if (i == j && 15 == k){
+					h[k*NX*NY + i*NX + j].x = 0.01;
+					h[k*NX*NY + i*NX + j].y = 0.01;
+					h[k*NX*NY + i*NX + j].z = 0;
+				}
+				else{
+					h[k*NX*NY + i*NX + j].x = 0;
+					h[k*NX*NY + i*NX + j].y = 0;
+					h[k*NX*NY + i*NX + j].z = 0;
+				}
+			}
+		}
 	}
 	
 	cudaMemcpy(d, h, sizeof(float4)* DS, cudaMemcpyHostToDevice);
@@ -207,9 +225,9 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 		{
 			for (j = 0; j < dx; j++)
 			{
-				p[k*dx*dy + i*dx + j].x = (j + 0.5f + (MYRAND - 0.5f)) / dx;
-				p[k*dx*dy + i*dx + j].y = (i + 0.5f + (MYRAND - 0.5f)) / dy;
-				p[k*dx*dy + i*dx + j].z = (k + 0.5f + (MYRAND - 0.5f)) / dz;
+				p[k*dx*dy + i*dx + j].x = (float)j / dx;
+				p[k*dx*dy + i*dx + j].y = (float)i / dy;
+				p[k*dx*dy + i*dx + j].z = (float)k / dz;
 			}
 		}
 	}
@@ -219,8 +237,8 @@ void Water::simulateFluids(void)
 {
 	// simulate fluid
 	advect(dvfield, dtemp, NX, NY, NZ, DT);
-	diffuse((float3*)dvfield, (float3*)dtemp, NX, NY, NZ, DT);
-//	projection((float3*)dvfield, (float3*)dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
+//	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
+//	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }
 

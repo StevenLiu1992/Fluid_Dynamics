@@ -50,26 +50,26 @@ void updateTexture(float4 *data, int dimx, int dimy, size_t pitch)
 	getLastCudaError("cudaMemcpy failed");
 }
 
-__device__ float3 operator+(const float3 &a, const float3 &b) {
+__device__ float4 operator+(const float4 &a, const float4 &b) {
 
-	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
-
-}
-
-__device__ float3 operator-(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+	return make_float4(a.x + b.x, a.y + b.y, a.z + b.z,a.w+b.w);
 
 }
 
-__device__ float3 operator*(const float &a, const float3 &b) {
+__device__ float4 operator-(const float4 &a, const float4 &b) {
 
-	return make_float3(a * b.x, a * b.y, a * b.z);
+	return make_float4(a.x - b.x, a.y - b.y, a.z - b.z,a.w - b.w);
+
+}
+
+__device__ float4 operator*(const float &a, const float4 &b) {
+
+	return make_float4(a * b.x, a * b.y, a * b.z, a * b.w);
 
 }
 
 __global__ void
-advect_k(float3 *v, float3 *temp,
+advect_k(float4 *v, float4 *temp,
 	int dx, int dy, int dz, float dt, int lb, size_t pitch)
 {
 	//dx = 64
@@ -78,45 +78,38 @@ advect_k(float3 *v, float3 *temp,
 	//lb = 16
 	
 	// ex is the domain location in x for this thread
-	int ex = threadIdx.x;
-	
+	int ex = threadIdx.x + blockIdx.x*8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y*8;
 	// ez is the domain location in z for this thread
-	int ez = blockIdx.y * 4 + blockIdx.x;
+	int ez = threadIdx.z + blockIdx.z*8;
 
-	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
+	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
 
 		float4 velocity;
 		float3 ploc;
 
-		for (int i = 0; i < lb; i++)
-		{
-			// ey is the domain location in y for this thread
-			int ey = threadIdx.y * lb + i;
+		
+		//	float3 texcoord = { ex, ey, ez };
+		velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
+		ploc.x = (ex + 0.5f) - (dt * velocity.x);
+		ploc.y = (ey + 0.5f) - (dt * velocity.y);
+		ploc.z = (ez + 0.5f) - (dt * velocity.z);
 
-			if (ey!=0 && ey != dy)
-			{
-
-				//	float3 texcoord = { ex, ey, ez };
-				velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
-				ploc.x = (ex + 0.5f) - (dt * velocity.x);
-				ploc.y = (ey + 0.5f) - (dt * velocity.y);
-				ploc.z = (ez + 0.5f) - (dt * velocity.z);
-
-				velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
+		velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
 
 
-				float3 *f = (float3 *)((char *)temp + ez * pitch) + ey * dy + ex;
-				(*f).x = velocity.x;
-				(*f).y = velocity.y;
-				(*f).z = velocity.z;
-			}
-		}
+		float4 *f = (float4 *)((char *)temp + ez * pitch) + ey * dy + ex;
+		(*f).x = velocity.x;
+		(*f).y = velocity.y;
+		(*f).z = velocity.z;
+		
 	}
 	
 }
 
 __global__ void
-jacobi_k(float3 *v, float3 *temp, float3 *b, float alpha, float rBeta,
+jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta,
 int dx, int dy, int dz, int lb, size_t pitch)
 {
 	//dx = 64
@@ -125,18 +118,14 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	//lb = 16
 
 	// ex is the domain location in x for this thread
-	int ex = threadIdx.x;
-
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
-	int ez = blockIdx.y * 4 + blockIdx.x;
+	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (ex != 0 && ex != dx&&ez != 0 && ez != dz){
-		for (int i = 0; i < lb; i++){
-
-			// ey is the domain location in y for this thread
-			int ey = threadIdx.y * lb + i;
-
-			if (ey!=0 && ey != dy){
+	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
+		
 
 				////value b
 				//float3 *p0 = (float3 *)
@@ -162,32 +151,38 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 				//float3 *New = (float3 *)
 				//	((char *)v + ez * pitch) + ey * dy + ex;
-				//value b
-				float3 p0 = b[ez*NX*NY+ey*NX+ex];
-				//left x
-				float3 p1 = temp[ez*NX*NY + ey*NX + ex - 1];
-				//right x
-				float3 p2 = temp[ez*NX*NY + ey*NX + ex + 1];
-				//top x
-				float3 p3 = temp[ez*NX*NY + (ey-1)*NX + ex];
-				//bottom x
-				float3 p4 = temp[ez*NX*NY + (ey + 1)*NX + ex];
-				//front x
-				float3 p5 = temp[(ez-1)*NX*NY + ey*NX + ex];
-				//behind x
-				float3 p6 = temp[(ez + 1)*NX*NY + ey*NX + ex];
+		//		for (int count = 0; count < amount; count++){
 
-				/*float3 *New = (float3 *)
-					((char *)v + ez * pitch) + ey * dy + ex;*/
-				v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
-		//		*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
-			}
-		}
+					//value b
+					float4 p0 = b[ez*NX*NY+ey*NX+ex];
+					//left x
+					float4 p1 = temp[ez*NX*NY + ey*NX + ex - 1];
+					//right x
+					float4 p2 = temp[ez*NX*NY + ey*NX + ex + 1];
+					//top x
+					float4 p3 = temp[ez*NX*NY + (ey-1)*NX + ex];
+					//bottom x
+					float4 p4 = temp[ez*NX*NY + (ey + 1)*NX + ex];
+					//front x
+					float4 p5 = temp[(ez-1)*NX*NY + ey*NX + ex];
+					//behind x
+					float4 p6 = temp[(ez + 1)*NX*NY + ey*NX + ex];
+
+					/*float3 *New = (float3 *)
+						((char *)v + ez * pitch) + ey * dy + ex;*/
+					v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+			//		*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
+
+				/*	float4 *t = v;
+					v = temp;
+					temp = t;*/
+			//	}
+
 	}
 }
 
 __global__ void
-divergence_k(float3 *d, float3 *v,
+divergence_k(float4 *d, float4 *v,
 int dx, int dy, int dz, int lb, size_t pitch)
 {
 	//dx = 64
@@ -210,26 +205,27 @@ int dx, int dy, int dz, int lb, size_t pitch)
 			if (ey != 0 && ey != dy){
 
 				//left x
-				float3 *p1 = (float3 *)
+				float4 *p1 = (float4 *)
 					((char *)v + ez * pitch) + ey * dy + (ex - 1);
 				//right x
-				float3 *p2 = (float3 *)
+				float4 *p2 = (float4 *)
 					((char *)v + ez * pitch) + ey * dy + (ex + 1);
 				//top x
-				float3 *p3 = (float3 *)
+				float4 *p3 = (float4 *)
 					((char *)v + ez * pitch) + (ey - 1) * dy + ex;
 				//bottom x
-				float3 *p4 = (float3 *)
+				float4 *p4 = (float4 *)
 					((char *)v + ez * pitch) + (ey + 1) * dy + ex;
 				//front x
-				float3 *p5 = (float3 *)
+				float4 *p5 = (float4 *)
 					((char *)v + (ez - 1) * pitch) + ey * dy + ex;
 				//behind x
-				float3 *p6 = (float3 *)
+				float4 *p6 = (float4 *)
 					((char *)v + (ez + 1) * pitch) + ey * dy + ex;
 
-				float3 *New = (float3 *)
+				float4 *New = (float4 *)
 					((char *)d + ez * pitch) + ey * dy + ex;
+				
 				(*New).x = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
 				(*New).y = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
 				(*New).z = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
@@ -241,7 +237,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 
 __global__ void
-gradient_k(float3 *v, float3 *p,
+gradient_k(float4 *v, float4 *p,
 int dx, int dy, int dz, int lb, size_t pitch)
 {
 	//dx = 64
@@ -263,27 +259,27 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 			if (ey != 0 && ey != dy){
 				//left x
-				float3 *p1 = (float3 *)
+				float4 *p1 = (float4 *)
 					((char *)p + ez * pitch) + ey * dy + (ex - 1);
 				//right x
-				float3 *p2 = (float3 *)
+				float4 *p2 = (float4 *)
 					((char *)p + ez * pitch) + ey * dy + (ex + 1);
 				//top x
-				float3 *p3 = (float3 *)
+				float4 *p3 = (float4 *)
 					((char *)p + ez * pitch) + (ey - 1) * dy + ex;
 				//bottom x
-				float3 *p4 = (float3 *)
+				float4 *p4 = (float4 *)
 					((char *)p + ez * pitch) + (ey + 1) * dy + ex;
 				//front x
-				float3 *p5 = (float3 *)
+				float4 *p5 = (float4 *)
 					((char *)p + (ez - 1) * pitch) + ey * dy + ex;
 				//behind x
-				float3 *p6 = (float3 *)
+				float4 *p6 = (float4 *)
 					((char *)p + (ez + 1) * pitch) + ey * dy + ex;
 
-				float3 *New = (float3 *)
+				float4 *New = (float4 *)
 					((char *)v + ez * pitch) + ey * dy + ex;
-				float3 t = (*New) - 0.5 * (((*p2) - (*p1)) + ((*p4) - (*p3)) + ((*p6) - (*p5)));
+				float4 t = (*New) - 0.5 * (((*p2) - (*p1)) + ((*p4) - (*p3)) + ((*p6) - (*p5)));
 				*New = t;
 			}
 		}
@@ -301,63 +297,56 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	//lb = 16
 
 	// ex is the domain location in x for this thread
-	int ex = threadIdx.x;
-
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
-	int ez = blockIdx.y * 4 + blockIdx.x;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
+		int index = ez*dx*dy + ey*dx + ex;
 
 
-	for (int i = 0; i < lb; i++)
-	{
-		// ey is the domain location in y for this thread
-		int ey = threadIdx.y * lb + i;
+		float3 position = particle[index];
 
-		if (ey < dy)
-		{
-			int index = ez*dx*dy + ey*dx + ex;
-			
-	
-			float3 position = particle[index];
+		float4 *vloc = (float4 *)
+			((char *)v + ez * pitch) + ey * dy + ex;
+		float3 newPosition;
 
-			float4 *vloc = (float4 *)
-				((char *)v + ez * pitch) + ey * dy + ex;
-			float3 newPosition;
-			
-			newPosition.x = position.x + dt * (*vloc).x;
-			newPosition.y = position.y + dt * (*vloc).y;
-			newPosition.z = position.z + dt * (*vloc).z;
+		newPosition.x = position.x + dt * (*vloc).x;
+		newPosition.y = position.y + dt * (*vloc).y;
+		newPosition.z = position.z + dt * (*vloc).z;
 
-		
-			
-			/*newPosition.x = (float)ex / dx;
-			newPosition.y = (float)ey / dy;
-			newPosition.z = (float)ez / dz;*/
-			particle[index] = newPosition;
-		}
+
+
+		/*newPosition.x = (float)ex / dx;
+		newPosition.y = (float)ey / dy;
+		newPosition.z = (float)ez / dz;*/
+		particle[index] = newPosition;
 	}
+	
 }
 
 extern "C"
 void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 {
-	//(dx / BLOCK_X) + (!(dx%BLOCK_X) ? 0 : 1), (dy / BLOCK_Y) + (!(dy%BLOCK_Y) ? 0 : 1)
-	dim3 block_size(4,4);
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
-	dim3 threads_size(THREAD_X, THREAD_Y);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	updateTexture(v, NX, NY, tPitch_v);
-	advect_k<<<block_size, threads_size >>>((float3*)v, (float3*)temp, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
+	advect_k<<<block_size, threads_size >>>(v, temp, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
 
 	getLastCudaError("advectVelocity_k failed.");
 	
 }
 
 extern "C"
-void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
+void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size(4, 4);
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
-	dim3 threads_size(THREAD_X, THREAD_Y);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	for(int i=0;i<20;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
 		jacobi_k<<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch_v);
@@ -369,7 +358,7 @@ void diffuse(float3 *v, float3 *temp, int dx, int dy, int dz, float dt)
 }
 
 extern "C"
-void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, int dx, int dy, int dz, float dt)
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt)
 {
 	dim3 block_size(4, 4);
 
@@ -377,11 +366,11 @@ void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, i
 	
 	
 	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-	cudaMemset(pressure, 0, sizeof(float3)*NX*NY*NZ);
-	for(int i = 0; i < 40; i++){
+	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
+//	for(int i = 0; i < 40; i++){
 		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1 / 6, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-		SWAP(pressure, temp);
-	}
+	//	SWAP(pressure, temp);
+//	}
 	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 
 	getLastCudaError("diffuse_k failed.");
@@ -391,9 +380,9 @@ void projection(float3 *v, float3 *temp, float3 *pressure, float3* divergence, i
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 {
-	dim3 block_size(4,4);
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
-	dim3 threads_size(THREAD_X, THREAD_Y);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	float3 *p;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);

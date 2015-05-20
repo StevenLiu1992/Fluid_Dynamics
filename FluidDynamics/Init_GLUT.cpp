@@ -28,6 +28,9 @@ bool Init_GLUT::clicked = false;
 int Init_GLUT::wWidth = 0;
 int Init_GLUT::wHeight = 0;
 
+float Init_GLUT::current_time = 0;
+float Init_GLUT::previous_time = 0;
+
 
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
@@ -84,6 +87,10 @@ void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 
 	//our method to display some info. Needs contextInfo and windowinfo
 	printOpenGLInfo(windowInfo, contextInfo);
+
+	previous_time = GetTickCount() / 1000;
+	current_time = GetTickCount() / 1000;
+	
 
 }
 
@@ -227,6 +234,8 @@ void Init_GLUT::idleCallback(void)
 	glutPostRedisplay();
 }
 
+int count;
+
 void Init_GLUT::displayCallback()
 {
 	
@@ -236,8 +245,16 @@ void Init_GLUT::displayCallback()
 		listener->notifyBeginFrame();
 		listener->notifyDisplayFrame();
 
+		current_time = GetTickCount() / 1000;
+		if (current_time - previous_time > 1){
+			
+			std::string str = "FPS:" + std::to_string(count);
+			glutSetWindowTitle(str.c_str());
+			count = 0;
+			previous_time = current_time;
+		}
 		glutSwapBuffers();
-
+		count++;
 		listener->notifyEndFrame();
 	}
 }

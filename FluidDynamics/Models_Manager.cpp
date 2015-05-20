@@ -18,7 +18,7 @@ Models_Manager::Models_Manager()
 	gameModelList["quad"] = quad;
 
 	Models::Water* water = new Models::Water();
-	water->SetProgram(Shader_Manager::GetShader("colorShader"));
+	water->SetProgram(Shader_Manager::GetShader("particleShader"));
 	water->Create();
 	gameModelList["water"] = water;
 }

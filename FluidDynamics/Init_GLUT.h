@@ -6,6 +6,9 @@
 #include <iostream>
 #include "Init_GLEW.h"
 #include "IListener.h"
+#include "windows.h"
+#include <string>
+
 //#include "WaterDefine.h"
 //#include "WaterKernel.cuh"
 
@@ -18,7 +21,7 @@ namespace Core {
 			static void init(const Core::WindowInfo& window,
 				const Core::ContextInfo& context,
 				const Core::FramebufferInfo& framebufferInfo);
-
+			
 		public:
 			static void run();//called from outside
 			static void close();
@@ -59,6 +62,9 @@ namespace Core {
 
 			static int wWidth;
 			static int wHeight;
+
+			static float current_time;
+			static float previous_time;
 		public:
 			static void setListener(Core::IListener*& iListener);
 		};
