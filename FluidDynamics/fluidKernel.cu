@@ -1,7 +1,9 @@
 #include "fluidKernel.cuh"
 
 texture<float4, 3> texref;
+texture<float4, 3> texref1;
 static cudaArray * array = NULL;
+static cudaArray * array1 = NULL;
 cudaChannelFormatDesc ca_descriptor;
 cudaExtent volumeSize;
 
@@ -26,17 +28,23 @@ void setupTexture(int x, int y, int z)
 	ca_descriptor.z = NZ;*/
 	checkCudaErrors(cudaMalloc3DArray(&array, &ca_descriptor, volumeSize));
 	getLastCudaError("cudaMalloc failed");
+	checkCudaErrors(cudaMalloc3DArray(&array1, &ca_descriptor, volumeSize));
+	getLastCudaError("cudaMalloc failed");
 }
 
 void bindTexture(void)
 {
 	cudaBindTextureToArray(texref, array);
 	getLastCudaError("cudaBindTexture failed");
+
+	cudaBindTextureToArray(texref1, array1);
+	getLastCudaError("cudaBindTexture failed");
 }
 
 void unbindTexture(void)
 {
 	cudaUnbindTexture(texref);
+	cudaUnbindTexture(texref1);
 }
 
 void updateTexture(float4 *data, int dimx, int dimy, size_t pitch)
@@ -99,7 +107,7 @@ advect_k(float4 *v, float4 *temp,
 		velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
 
 
-		float4 *f = (float4 *)((char *)temp + ez * pitch) + ey * dy + ex;
+		float4 *f = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
 		(*f).x = velocity.x;
 		(*f).y = velocity.y;
 		(*f).z = velocity.z;
@@ -155,6 +163,13 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 					//value b
 					float4 p0 = b[ez*NX*NY+ey*NX+ex];
+	//	float4 p0 = tex3D(texref, (float)ex-1, (float)ey, (float)ez);
+					/*float4 p1 = tex3D(texref, (float)ex - 1, (float)ey, (float)ez);
+					float4 p2 = tex3D(texref, (float)ex + 1, (float)ey, (float)ez);
+					float4 p3 = tex3D(texref, (float)ex, (float)ey - 1, (float)ez);
+					float4 p4 = tex3D(texref, (float)ex, (float)ey + 1, (float)ez);
+					float4 p5 = tex3D(texref, (float)ex, (float)ey, (float)ez - 1);
+					float4 p6 = tex3D(texref, (float)ex, (float)ey, (float)ez + 1);*/
 					//left x
 					float4 p1 = temp[ez*NX*NY + ey*NX + ex - 1];
 					//right x
@@ -170,7 +185,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 					/*float3 *New = (float3 *)
 						((char *)v + ez * pitch) + ey * dy + ex;*/
-					v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+		//	v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
 			//		*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
 
 				/*	float4 *t = v;
@@ -347,10 +362,13 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-	for(int i=0;i<20;i++){
+	
+	for(int i=0;i<60;i++){
+		updateTexture(temp, NX, NY, tPitch_v);
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
 		jacobi_k<<<block_size, threads_size >>>(v, temp, temp, 1 / VISC / dt, 1 / (6 + 1 / VISC / dt), dx, dy, dz, NY / THREAD_Y, tPitch_v);
 		SWAP(v,temp);
+	//	updateTexture(temp, NX, NY, tPitch_v);
 	}
 	
 

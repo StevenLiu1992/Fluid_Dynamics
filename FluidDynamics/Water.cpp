@@ -79,7 +79,7 @@ void Water::Create()
 		deviceProps.name, deviceProps.multiProcessorCount);
 
 	hvfield = (float4 *)malloc(sizeof(float4) * DS);
-//	memset(hvfield, 0, sizeof(float4) * DS);
+	memset(hvfield, 0, sizeof(float4) * DS);
 
 	// Allocate and initialize device data
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
@@ -87,11 +87,11 @@ void Water::Create()
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 
-//	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
-//	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
+	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
+	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 	
 
-	initParticles_velocity(hvfield, dvfield);
+//	initParticles_velocity(hvfield, dvfield);
 	setupTexture(NX,NY,NZ);
 	bindTexture();
 
@@ -237,7 +237,7 @@ void Water::simulateFluids(void)
 {
 	// simulate fluid
 	advect(dvfield, dtemp, NX, NY, NZ, DT);
-//	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
+	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 //	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }

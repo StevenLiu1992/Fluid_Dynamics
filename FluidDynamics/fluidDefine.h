@@ -6,7 +6,7 @@
 
 #define NX 64
 #define NY 64
-#define NZ 16
+#define NZ 8
 #define DT 0.09f
 #define DS (NX*NY*NZ)
 
