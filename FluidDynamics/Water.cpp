@@ -52,8 +52,12 @@ Water::~Water()
 
 	// Free all host and device resources
 	free(hvfield);
+	
 	free(particles);
 	cudaFree(dvfield);
+	cudaFree(dtemp);
+	cudaFree(dpressure);
+	cudaFree(ddivergence);
 
 }
 
@@ -79,7 +83,7 @@ void Water::Create()
 		deviceProps.name, deviceProps.multiProcessorCount);
 
 	hvfield = (float4 *)malloc(sizeof(float4) * DS);
-	memset(hvfield, 0, sizeof(float4) * DS);
+//	memset(hvfield, 0, sizeof(float4) * DS);
 
 	// Allocate and initialize device data
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
@@ -87,11 +91,11 @@ void Water::Create()
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 
-	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
-	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
+//	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
+//	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 	
 
-//	initParticles_velocity(hvfield, dvfield);
+	initParticles_velocity(hvfield, dvfield);
 	setupTexture(NX,NY,NZ);
 	bindTexture();
 
@@ -151,7 +155,7 @@ void Water::Draw()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//*Matrix4::Scale(Vector3(10, 10, 10))
-	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(5, 5, 5));
 	//	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
 	//	std::cout << viewMatrix.GetPositionVector() << std::endl;
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
@@ -199,10 +203,10 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (i == j && 15 == k){
-					h[k*NX*NY + i*NX + j].x = 0.01;
-					h[k*NX*NY + i*NX + j].y = 0.01;
-					h[k*NX*NY + i*NX + j].z = 0;
+				if (i == j && i<20 &&7 == k){
+					h[k*NX*NY + i*NX + j].x = 0.1;
+					h[k*NX*NY + i*NX + j].y = 0.1;
+					h[k*NX*NY + i*NX + j].z = -0.2;
 				}
 				else{
 					h[k*NX*NY + i*NX + j].x = 0;
@@ -238,7 +242,7 @@ void Water::simulateFluids(void)
 	// simulate fluid
 	advect(dvfield, dtemp, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
-//	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
+	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }
 
