@@ -155,7 +155,7 @@ void Water::Draw()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//*Matrix4::Scale(Vector3(10, 10, 10))
-	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(5, 5, 5));
+	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
 	//	modelMatrix.SetScalingVector(Vector3(10, 10, 10));
 	//	std::cout << viewMatrix.GetPositionVector() << std::endl;
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
@@ -203,10 +203,10 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (i == j && i<20 &&7 == k){
-					h[k*NX*NY + i*NX + j].x = 0.1;
-					h[k*NX*NY + i*NX + j].y = 0.1;
-					h[k*NX*NY + i*NX + j].z = -0.2;
+				if (j>30 && j<40 && i>30 && i<40 &&4 == k){
+					h[k*NX*NY + i*NX + j].x = 0.5;
+					h[k*NX*NY + i*NX + j].y = 1;
+					h[k*NX*NY + i*NX + j].z = 0;
 				}
 				else{
 					h[k*NX*NY + i*NX + j].x = 0;
@@ -229,9 +229,9 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 		{
 			for (j = 0; j < dx; j++)
 			{
-				p[k*dx*dy + i*dx + j].x = (float)j / dx;
-				p[k*dx*dy + i*dx + j].y = (float)i / dy;
-				p[k*dx*dy + i*dx + j].z = (float)k / dz;
+				p[k*dx*dy + i*dx + j].x = (float)(0.8*j + MYRAND) / dx;
+				p[k*dx*dy + i*dx + j].y = (float)(0.8*i + MYRAND) / dy;
+				p[k*dx*dy + i*dx + j].z = (float)(0.8*k + MYRAND) / dz;
 			}
 		}
 	}

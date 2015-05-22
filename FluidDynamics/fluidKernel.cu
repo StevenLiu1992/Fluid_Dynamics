@@ -76,6 +76,79 @@ __device__ float4 operator*(const float &a, const float4 &b) {
 
 }
 
+__device__ void
+boundary_k(float4 *v, int dx, int dy, int dz,int ex,int ey, int ez, float3 offset, int scale, size_t pitch){
+	int pitch0 = pitch / sizeof(float4);
+	int ex0 = ex + offset.x;
+	int ey0 = ey + offset.y;
+	int ez0 = ez + offset.z;
+	float4 vel = v[ez0*pitch0 + ey0*dx + ex0];
+	v[ez*pitch0 + ey*dx + ex] = scale * vel;
+}
+
+__device__ void
+boundary_condition_k(float4 *v, int dx, int dy, int dz, int ex, int ey, int ez, int scale, size_t pitch){
+	if (ex == 0){
+		float3 offset = { 1, 0, 0 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == (dx - 1)){
+		float3 offset = { -1, 0, 0 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ey == 0){
+		float3 offset = { 0, 1, 0 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ey == (dy - 1)){
+		float3 offset = { 0, -1, 0 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ez == 0){
+		float3 offset = { 0, 0, 1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ez == (dz - 1)){
+		float3 offset = { 0, 0, -1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == 0 && ey == 0 && ez == 0){
+		float3 offset = { 1, 1, 1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == (dx - 1) && ey == 0 && ez == 0){
+		float3 offset = { -1, 1, 1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == 0 && ey == (dy - 1) && ez == 0){
+		float3 offset = { 1, -1, 1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == 0 && ey == 0 && ez == (dz - 1)){
+		float3 offset = { 1, 1, -1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+
+	if (ex == (dx - 1) && ey == (dy - 1) && ez == 0){
+		float3 offset = { -1, -1, 1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == (dx - 1) && ey == 0 && ez == (dz - 1)){
+		float3 offset = { -1, 1, -1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == 0 && ey == (dy - 1) && ez == (dz - 1)){
+		float3 offset = { 1, -1, -1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+	if (ex == (dx - 1) && ey == (dy - 1) && ez == (dz - 1)){
+		float3 offset = { -1, -1, -1 };
+		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	}
+
+}
+
+
 __global__ void
 advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 {
@@ -91,7 +164,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z*8;
 
-	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
+	if (ex != 0 && ex != (dx-1)&&ey != 0 && ey != (dy-1)&&ez != 0 && ez != (dz-1)){
 
 		float4 velocity;
 		float3 ploc;
@@ -105,13 +178,14 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 		velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
 
-	//	v[ez*NX*NY + ey*NX + ex] = velocity;
-		
-		/*float4 *f = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
-		(*f).x = velocity.x;
-		(*f).y = velocity.y;
-		(*f).z = velocity.z;*/
-		
+	//	v[ez*pitch + ey*NX + ex] = velocity;
+
+		float4 *Velocity_field = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
+		(*Velocity_field) = velocity;	
+	}
+
+	else{
+		boundary_condition_k(v, dx, dy, dz, ex, ey, ez, -1, pitch);
 	}
 	
 }
@@ -123,7 +197,6 @@ int dx, int dy, int dz, size_t pitch)
 	//dx = 64
 	//dy = 64
 	//dz = 16
-	//lb = 16
 
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
@@ -152,68 +225,28 @@ int dx, int dy, int dz, size_t pitch)
 		ez = dz - 2;
 	}
 
-//	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
-		
+	
+	int offset = pitch / sizeof(float4);
 
-				////value b
-				//float3 *p0 = (float3 *)
-				//	((char *)b + ez * pitch) + ey * dy + ex;
-				////left x
-				//float3 *p1 = (float3 *)
-				//	((char *)temp + ez * pitch) + ey * dy + (ex - 1);
-				////right x
-				//float3 *p2 = (float3 *)
-				//	((char *)temp + ez * pitch) + ey * dy + (ex + 1);
-				////top x
-				//float3 *p3 = (float3 *)
-				//	((char *)temp + ez * pitch) + (ey - 1) * dy + ex;
-				////bottom x
-				//float3 *p4 = (float3 *)
-				//	((char *)temp + ez * pitch) + (ey + 1) * dy + ex;
-				////front x
-				//float3 *p5 = (float3 *)
-				//	((char *)temp + (ez - 1) * pitch) + ey * dy + ex;
-				////behind x
-				//float3 *p6 = (float3 *)
-				//	((char *)temp + (ez + 1) * pitch) + ey * dy + ex;
+	
+	float4 p0 = b[ez*offset + ey*NX + ex];//value b
+	
+	
+	float4 p1 = temp[ez*offset + ey*NX + ex - 1];//left x
+	
+	float4 p2 = temp[ez*offset + ey*NX + ex + 1];//right x
+					
+	float4 p3 = temp[ez*offset + (ey - 1)*NX + ex];//top x
+					
+	float4 p4 = temp[ez*offset + (ey + 1)*NX + ex];//bottom x
+					
+	float4 p5 = temp[(ez - 1)*offset + ey*NX + ex];//front x
+					
+	float4 p6 = temp[(ez + 1)*offset + ey*NX + ex];//behind x
 
-				//float3 *New = (float3 *)
-				//	((char *)v + ez * pitch) + ey * dy + ex;
-		//		for (int count = 0; count < amount; count++){
-
-					//value b
-					float4 p0 = b[ez*NX*NY+ey*NX+ex];
-	//	float4 p0 = tex3D(texref, (float)ex-1, (float)ey, (float)ez);
-					/*float4 p1 = tex3D(texref, (float)ex - 1, (float)ey, (float)ez);
-					float4 p2 = tex3D(texref, (float)ex + 1, (float)ey, (float)ez);
-					float4 p3 = tex3D(texref, (float)ex, (float)ey - 1, (float)ez);
-					float4 p4 = tex3D(texref, (float)ex, (float)ey + 1, (float)ez);
-					float4 p5 = tex3D(texref, (float)ex, (float)ey, (float)ez - 1);
-					float4 p6 = tex3D(texref, (float)ex, (float)ey, (float)ez + 1);*/
-					//left x
-					float4 p1 = temp[ez*NX*NY + ey*NX + ex - 1];
-					//right x
-					float4 p2 = temp[ez*NX*NY + ey*NX + ex + 1];
-					//top x
-					float4 p3 = temp[ez*NX*NY + (ey-1)*NX + ex];
-					//bottom x
-					float4 p4 = temp[ez*NX*NY + (ey + 1)*NX + ex];
-					//front x
-					float4 p5 = temp[(ez-1)*NX*NY + ey*NX + ex];
-					//behind x
-					float4 p6 = temp[(ez + 1)*NX*NY + ey*NX + ex];
-
-					/*float3 *New = (float3 *)
-						((char *)v + ez * pitch) + ey * dy + ex;*/
-			v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
-			//		*New = rBeta * ((*p1) + (*p2) + (*p3) + (*p4) + (*p5) + (*p6) + alpha * (*p0));
-
-				/*	float4 *t = v;
-					v = temp;
-					temp = t;*/
-			//	}
-
-//	}
+					
+	v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+			
 }
 
 __global__ void
@@ -223,7 +256,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	//dx = 64
 	//dy = 64
 	//dz = 16
-	//lb = 16
+
 
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
@@ -231,73 +264,33 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
-	if (ex < 1){
-		ex = 1;
-	}
-	if (ex > dx - 2){
-		ex = dx - 2;
-	}
-	if (ey < 1){
-		ey = 1;
-	}
-	if (ey > dy - 2){
-		ey = dy - 2;
-	}
-	if (ez < 1){
-		ez = 1;
-	}
-	if (ez > dz - 2){
-		ez = dz - 2;
-	}
-//	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
+	
+	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
 
-		////left x
-		//float4 *p1 = (float4 *)
-		//	((char *)v + ez * pitch) + ey * dy + (ex - 1);
-		////right x
-		//float4 *p2 = (float4 *)
-		//	((char *)v + ez * pitch) + ey * dy + (ex + 1);
-		////top x
-		//float4 *p3 = (float4 *)
-		//	((char *)v + ez * pitch) + (ey - 1) * dy + ex;
-		////bottom x
-		//float4 *p4 = (float4 *)
-		//	((char *)v + ez * pitch) + (ey + 1) * dy + ex;
-		////front x
-		//float4 *p5 = (float4 *)
-		//	((char *)v + (ez - 1) * pitch) + ey * dy + ex;
-		////behind x
-		//float4 *p6 = (float4 *)
-		//	((char *)v + (ez + 1) * pitch) + ey * dy + ex;
+		int offset = pitch / sizeof(float4);
 
-		float4 p1 = v[ez*NX*NY + ey*NX + ex - 1];
-		//right x
-		float4 p2 = v[ez*NX*NY + ey*NX + ex + 1];
-		//top x
-		float4 p3 = v[ez*NX*NY + (ey - 1)*NX + ex];
-		//bottom x
-		float4 p4 = v[ez*NX*NY + (ey + 1)*NX + ex];
-		//front x
-		float4 p5 = v[(ez - 1)*NX*NY + ey*NX + ex];
-		//behind x
-		float4 p6 = v[(ez + 1)*NX*NY + ey*NX + ex];
-
-//		float4 *New = (float4 *)((char *)d + ez * pitch) + ey * dy + ex;
+		float4 p1 = v[ez*offset + ey*NX + ex - 1];//left x
+	
+		float4 p2 = v[ez*offset + ey*NX + ex + 1];//right x
+	
+		float4 p3 = v[ez*offset + (ey - 1)*NX + ex];//top x
+	
+		float4 p4 = v[ez*offset + (ey + 1)*NX + ex];//bottom x
+	
+		float4 p5 = v[(ez - 1)*offset + ey*NX + ex];//front x
+	
+		float4 p6 = v[(ez + 1)*offset + ey*NX + ex];//behind x
 
 		float div = 0.5*((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));
-		d[ez*NX*NY + ey*NX + ex].x = div;
-		d[ez*NX*NY + ey*NX + ex].y = div;
-		d[ez*NX*NY + ey*NX + ex].z = div;
-		d[ez*NX*NY + ey*NX + ex].w = div;
+		d[ez*offset + ey*NX + ex].x = div;
+		d[ez*offset + ey*NX + ex].y = div;
+		d[ez*offset + ey*NX + ex].z = div;
+		d[ez*offset + ey*NX + ex].w = div;
+	}
+	else{
+		boundary_condition_k(d, dx, dy, dz, ex, ey, ez, 1, pitch);
+	}
 				
-		/*(*New).x = 0.5 * (p1.x - p2.x + (p3.y - p4.y) + (p5.z - p6.z));
-		(*New).y = 0.5 * (p1.x - p2.x + (p3.y - p4.y) + (p5.z - p6.z));
-		(*New).z = 0.5 * (p1.x - p2.x + (p3.y - p4.y) + (p5.z - p6.z));*/
-		//(*New).y = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
-		//(*New).z = 0.5 * (((*p1).x - (*p2).x) + ((*p3).y - (*p4).y) + ((*p5).z - (*p6).z));
-//	}
-		
-	
 }
 
 
@@ -309,8 +302,6 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	//dx = 64
 	//dy = 64
 	//dz = 16
-	//lb = 16
-
 
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
@@ -338,54 +329,33 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	if (ez > dz-2){
 		ez = dz-2;
 	}
-//	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
-		////left x
-		//float4 *p1 = (float4 *)
-		//	((char *)p + ez * pitch) + ey * dy + (ex - 1);
-		////right x
-		//float4 *p2 = (float4 *)
-		//	((char *)p + ez * pitch) + ey * dy + (ex + 1);
-		////top x
-		//float4 *p3 = (float4 *)
-		//	((char *)p + ez * pitch) + (ey - 1) * dy + ex;
-		////bottom x
-		//float4 *p4 = (float4 *)
-		//	((char *)p + ez * pitch) + (ey + 1) * dy + ex;
-		////front x
-		//float4 *p5 = (float4 *)
-		//	((char *)p + (ez - 1) * pitch) + ey * dy + ex;
-		////behind x
-		//float4 *p6 = (float4 *)
-		//	((char *)p + (ez + 1) * pitch) + ey * dy + ex;
+	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
 
-		float4 p1 = p[ez*NX*NY + ey*NX + ex - 1];
-		//right x
-		float4 p2 = p[ez*NX*NY + ey*NX + ex + 1];
-		//top x
-		float4 p3 = p[ez*NX*NY + (ey - 1)*NX + ex];
-		//bottom x
-		float4 p4 = p[ez*NX*NY + (ey + 1)*NX + ex];
-		//front x
-		float4 p5 = p[(ez - 1)*NX*NY + ey*NX + ex];
-		//behind x
-		float4 p6 = p[(ez + 1)*NX*NY + ey*NX + ex];
+		int offset = pitch / sizeof(float4);
+		float4 p1 = p[ez*offset + ey*NX + ex - 1];
+			//right x
+		float4 p2 = p[ez*offset + ey*NX + ex + 1];
+			//top x
+		float4 p3 = p[ez*offset + (ey - 1)*NX + ex];
+			//bottom x
+		float4 p4 = p[ez*offset + (ey + 1)*NX + ex];
+			//front x
+		float4 p5 = p[(ez - 1)*offset + ey*NX + ex];
+			//behind x
+		float4 p6 = p[(ez + 1)*offset + ey*NX + ex];
 
 
-		//float4 *New = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
-		float4 vel = v[ez*NX*NY + ey*NX + ex];
+		float4 vel = v[ez*offset + ey*NX + ex];
 		float4 grad;
 		grad.x = 0.5*(p2.x - p1.x);
 		grad.y = 0.5*(p4.x - p3.x);
 		grad.z = 0.5*(p6.x - p5.x);
 
-		v[ez*NX*NY + ey*NX + ex] = vel - grad;
-		/*v[ez*NX*NY + ey*NX + ex].x = vel.x - 0.5 * ((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));
-		v[ez*NX*NY + ey*NX + ex].y = vel.y - 0.5 * ((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));
-		v[ez*NX*NY + ey*NX + ex].z = vel.z - 0.5 * ((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));*/
-	//	float4 t = (*New) - 0.5 * (((*p2) - (*p1)) + ((*p4) - (*p3)) + ((*p6) - (*p5)));
-	//	*New = t;
+		v[ez*offset + ey*NX + ex] = vel - grad;
+	}
+
 			
-//	}
+
 	
 	
 }
@@ -406,29 +376,29 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (ex != 0 && ex != dx&&ey != 0 && ey != dy&&ez != 0 && ez != dz){
-		int index = ez*dx*dy + ey*dx + ex;
+	
+	int index = ez*dx*dy + ey*dx + ex;
 
 
-		float3 position = particle[index];
+	float3 position = particle[index];
 
-		/*float4 *vloc = (float4 *)
-			((char *)v + ez * pitch) + ey * dy + ex;*/
-		float3 newPosition;
+	/*float4 *vloc = (float4 *)
+		((char *)v + ez * pitch) + ey * dy + ex;*/
+	float3 newPosition;
 
-		float4 vloc = tex3D(texref, position.x * dx, position.y* dy, position.z* dz);
+	float4 vloc = tex3D(texref, position.x * dx, position.y* dy, position.z* dz);
 
-		newPosition.x = position.x + dt * vloc.x;
-		newPosition.y = position.y + dt * vloc.y;
-		newPosition.z = position.z + dt * vloc.z;
+	newPosition.x = position.x + dt * vloc.x;
+	newPosition.y = position.y + dt * vloc.y;
+	newPosition.z = position.z + dt * vloc.z;
 
 
 
-		/*newPosition.x = (float)ex / dx;
-		newPosition.y = (float)ey / dy;
-		newPosition.z = (float)ez / dz;*/
-		particle[index] = newPosition;
-	}
+	/*newPosition.x = (float)ex / dx;
+	newPosition.y = (float)ey / dy;
+	newPosition.z = (float)ez / dz;*/
+	particle[index] = newPosition;
+	
 	
 }
 
@@ -457,11 +427,10 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	float rBeta = 1 / (6 + rdx / VISC / dt);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
 	for(int i=0;i<20;i++){
-	//	updateTexture(temp, NX, NY, tPitch_v);
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
 		jacobi_k << <block_size, threads_size >> >(v, temp, temp, alpha, rBeta, dx, dy, dz, tPitch_v);
 		SWAP(v, temp);
-	//	updateTexture(temp, NX, NY, tPitch_v);
+	
 	}
 	
 

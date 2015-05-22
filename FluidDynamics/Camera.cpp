@@ -38,7 +38,7 @@ void Core::Camera::keyboardEvents(char key){
 }
 void Core::Camera::mouseMoveEvents(int delta_x, int delta_y){
 	pitch -= delta_y * 0.07;
-	yaw -= delta_x * 0.07;
+	yaw -= delta_x * 0.3;
 	
 	//Bounds check the pitch, to be between straight up and straight down ;)
 	pitch = min(pitch,90.0f);
