@@ -1,9 +1,9 @@
 #include "fluidKernel.cuh"
 
 texture<float4, 3> texref;
-texture<float4, 3> texref1;
+
 static cudaArray * array = NULL;
-static cudaArray * array1 = NULL;
+
 cudaChannelFormatDesc ca_descriptor;
 cudaExtent volumeSize;
 
@@ -23,12 +23,10 @@ void setupTexture(int x, int y, int z)
 //	cudaChannelFormatDesc desc = cudaCreateChannelDesc<float3>();
 	volumeSize = make_cudaExtent(NX, NY, NZ);
 	ca_descriptor = cudaCreateChannelDesc<float4>();
-	/*ca_descriptor.x = NX;
+	ca_descriptor.x = NX;
 	ca_descriptor.y = NY;
-	ca_descriptor.z = NZ;*/
+	ca_descriptor.z = NZ;
 	checkCudaErrors(cudaMalloc3DArray(&array, &ca_descriptor, volumeSize));
-	getLastCudaError("cudaMalloc failed");
-	checkCudaErrors(cudaMalloc3DArray(&array1, &ca_descriptor, volumeSize));
 	getLastCudaError("cudaMalloc failed");
 }
 
@@ -37,14 +35,13 @@ void bindTexture(void)
 	cudaBindTextureToArray(texref, array);
 	getLastCudaError("cudaBindTexture failed");
 
-	cudaBindTextureToArray(texref1, array1);
-	getLastCudaError("cudaBindTexture failed");
+
 }
 
 void unbindTexture(void)
 {
 	cudaUnbindTexture(texref);
-	cudaUnbindTexture(texref1);
+
 }
 
 void updateTexture(float4 *data, int dimx, int dimy, size_t pitch)
@@ -77,23 +74,27 @@ __device__ float4 operator*(const float &a, const float4 &b) {
 }
 
 __device__ void
-boundary_k(float4 *v, int dx, int dy, int dz,int ex,int ey, int ez, float3 offset, int scale, size_t pitch){
+boundary_k(float4 *v, int dx, int dy, int dz,int ex,int ey, int ez, float3 offset, float scale, size_t pitch){
 	int pitch0 = pitch / sizeof(float4);
-	int ex0 = ex + offset.x;
+	int ex0 = ex - offset.x;
 	int ey0 = ey + offset.y;
 	int ez0 = ez + offset.z;
 	float4 vel = v[ez0*pitch0 + ey0*dx + ex0];
 	v[ez*pitch0 + ey*dx + ex] = scale * vel;
+
+	/*float4 *Velocity = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
+	float4 *Velocity0 = (float4 *)((char *)v + ez0 * pitch) + ey0 * dy + ex0;
+	*Velocity = scale * (*Velocity0);*/
 }
 
 __device__ void
 boundary_condition_k(float4 *v, int dx, int dy, int dz, int ex, int ey, int ez, int scale, size_t pitch){
 	if (ex == 0){
-		float3 offset = { 1, 0, 0 };
+		float3 offset = make_float3(1, 0, 0);
 		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
 	}
 	if (ex == (dx - 1)){
-		float3 offset = { -1, 0, 0 };
+		float3 offset = make_float3(-1, 0, 0);
 		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
 	}
 	if (ey == 0){
@@ -164,7 +165,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z*8;
 
-	if (ex != 0 && ex != (dx-1)&&ey != 0 && ey != (dy-1)&&ez != 0 && ez != (dz-1)){
+	if ((ex != 0) && (ex != (dx-1)) && (ey != 0) && (ey != (dy-1)) && (ez != 0) && (ez != (dz-1))){
 
 		float4 velocity;
 		float3 ploc;
@@ -176,6 +177,10 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 		ploc.y = (ey + 0.5f) - dt * velocity.y / dy;
 		ploc.z = (ez + 0.5f) - dt * velocity.z / dz;
 
+
+
+
+
 		velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
 
 	//	v[ez*pitch + ey*NX + ex] = velocity;
@@ -185,7 +190,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	}
 
 	else{
-		boundary_condition_k(v, dx, dy, dz, ex, ey, ez, -1, pitch);
+	//	boundary_condition_k(v, dx, dy, dz, ex, ey, ez, -1, pitch);
 	}
 	
 }
@@ -206,47 +211,50 @@ int dx, int dy, int dz, size_t pitch)
 	int ez = threadIdx.z + blockIdx.z * 8;
 
 
-	if (ex < 1){
-		ex = 1;
-	}
-	if (ex > dx - 2){
-		ex = dx - 2;
-	}
-	if (ey < 1){
-		ey = 1;
-	}
-	if (ey > dy - 2){
-		ey = dy - 2;
-	}
-	if (ez < 1){
-		ez = 1;
-	}
-	if (ez > dz - 2){
-		ez = dz - 2;
-	}
+	//if (ex < 1){
+	//	ex = 1;
+	//}
+	//if (ex > dx - 2){
+	//	ex = dx - 2;
+	//}
+	//if (ey < 1){
+	//	ey = 1;
+	//}
+	//if (ey > dy - 2){
+	//	ey = dy - 2;
+	//}
+	//if (ez < 1){
+	//	ez = 1;
+	//}
+	//if (ez > dz - 2){
+	//	ez = dz - 2;
+	//}
+
+
+	if ((ex != 0) && (ex != (dx - 1)) && (ey != 0) && (ey != (dy - 1)) && (ez != 0) && (ez != (dz - 1))){
+	
+		int offset = pitch / sizeof(float4);
 
 	
-	int offset = pitch / sizeof(float4);
-
-	
-	float4 p0 = b[ez*offset + ey*NX + ex];//value b
+		float4 p0 = b[ez*offset + ey*NX + ex];//value b
 	
 	
-	float4 p1 = temp[ez*offset + ey*NX + ex - 1];//left x
+		float4 p1 = temp[ez*offset + ey*NX + ex - 1];//left x
 	
-	float4 p2 = temp[ez*offset + ey*NX + ex + 1];//right x
+		float4 p2 = temp[ez*offset + ey*NX + ex + 1];//right x
 					
-	float4 p3 = temp[ez*offset + (ey - 1)*NX + ex];//top x
+		float4 p3 = temp[ez*offset + (ey - 1)*NX + ex];//top x
 					
-	float4 p4 = temp[ez*offset + (ey + 1)*NX + ex];//bottom x
+		float4 p4 = temp[ez*offset + (ey + 1)*NX + ex];//bottom x
 					
-	float4 p5 = temp[(ez - 1)*offset + ey*NX + ex];//front x
+		float4 p5 = temp[(ez - 1)*offset + ey*NX + ex];//front x
 					
-	float4 p6 = temp[(ez + 1)*offset + ey*NX + ex];//behind x
+		float4 p6 = temp[(ez + 1)*offset + ey*NX + ex];//behind x
 
 					
-	v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
-			
+		v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+	}
+
 }
 
 __global__ void
@@ -288,7 +296,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 		d[ez*offset + ey*NX + ex].w = div;
 	}
 	else{
-		boundary_condition_k(d, dx, dy, dz, ex, ey, ez, 1, pitch);
+	//	boundary_condition_k(d, dx, dy, dz, ex, ey, ez, 1, pitch);
 	}
 				
 }
@@ -311,7 +319,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	int ez = threadIdx.z + blockIdx.z * 8;
 
 
-	if (ex < 1){
+	/*if (ex < 1){
 		ex=1;
 	}
 	if (ex > dx-2){
@@ -328,7 +336,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	}
 	if (ez > dz-2){
 		ez = dz-2;
-	}
+	}*/
 	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
 
 		int offset = pitch / sizeof(float4);
@@ -350,10 +358,12 @@ int dx, int dy, int dz, int lb, size_t pitch)
 		grad.x = 0.5*(p2.x - p1.x);
 		grad.y = 0.5*(p4.x - p3.x);
 		grad.z = 0.5*(p6.x - p5.x);
-
+		
 		v[ez*offset + ey*NX + ex] = vel - grad;
 	}
-
+	else{
+	//	boundary_condition_k(p, dx, dy, dz, ex, ey, ez, 1, pitch);
+	}
 			
 
 	
@@ -386,7 +396,7 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 		((char *)v + ez * pitch) + ey * dy + ex;*/
 	float3 newPosition;
 
-	float4 vloc = tex3D(texref, position.x * dx, position.y* dy, position.z* dz);
+	float4 vloc = tex3D(texref, position.x * dx, position.y * dy, position.z * dz);
 
 	newPosition.x = position.x + dt * vloc.x;
 	newPosition.y = position.y + dt * vloc.y;
@@ -402,6 +412,45 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	
 }
 
+__global__ void
+bc_k(float4 *b, int dx, int dy, int dz, size_t pitch,float scale){
+	// ex is the domain location in x for this thread
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
+	// ez is the domain location in z for this thread
+	int ez = threadIdx.z + blockIdx.z * 8;
+	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
+		return;
+	}
+	else{
+		boundary_condition_k(b, dx, dy, dz, ex, ey, ez, scale, pitch);
+	}
+
+}
+
+__global__ void
+force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch){
+	// ex is the domain location in x for this thread
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
+	// ez is the domain location in z for this thread
+	int ez = threadIdx.z + blockIdx.z * 8;
+	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
+		if (ey > 20){
+
+			int offset = pitch / sizeof(float4);
+			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
+		}
+	}
+	else{
+		
+	}
+
+}
+
+
 extern "C"
 void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 {
@@ -411,7 +460,7 @@ void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 
 	updateTexture(v, NX, NY, tPitch_v);
 	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
-
+	bc_k << <block_size, threads_size >> >(v, dx, dy, dz, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
 	
 }
@@ -433,6 +482,7 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	
 	}
 	
+	force_k << <block_size, threads_size >> >(v, dx, dy, dz, dt, tPitch_v);
 
 	getLastCudaError("diffuse_k failed.");
 }
@@ -453,6 +503,9 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1.f / 6, dx, dy, dz, tPitch_v);
 		SWAP(pressure, temp);
 	}
+
+	bc_k << <block_size, threads_size >> >(pressure, dx, dy, dz, tPitch_p, 1.f);
+
 	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 
 	getLastCudaError("diffuse_k failed.");

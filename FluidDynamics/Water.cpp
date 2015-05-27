@@ -101,7 +101,7 @@ void Water::Create()
 
 	// Create particle array
 	particles = (float3 *)malloc(sizeof(float3) * DS);
-	memset(particles, 0, sizeof(float3) * DS);
+	memset(particles, 0.5, sizeof(float3) * DS);
 
 	initParticles(particles, NX, NY, NZ);
 
@@ -203,10 +203,10 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j>30 && j<40 && i>30 && i<40 &&4 == k){
-					h[k*NX*NY + i*NX + j].x = 0.5;
-					h[k*NX*NY + i*NX + j].y = 1;
-					h[k*NX*NY + i*NX + j].z = 0;
+				if (j>3 && j<30 && i>15 && i<20 && k>15 && k<20){
+					h[k*NX*NY + i*NX + j].x = 0.8;
+					h[k*NX*NY + i*NX + j].y = 0.9;
+					h[k*NX*NY + i*NX + j].z = 0.5;
 				}
 				else{
 					h[k*NX*NY + i*NX + j].x = 0;
@@ -223,15 +223,15 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
 	int i, j, k;
-	for (k = 0; k < dz; k++){
+	for (k = 1; k < (dz-1); k++){
 
-		for (i = 0; i < dy; i++)
+		for (i = 1; i < (dy-1); i++)
 		{
-			for (j = 0; j < dx; j++)
+			for (j = 1; j < (dx-1); j++)
 			{
-				p[k*dx*dy + i*dx + j].x = (float)(0.8*j + MYRAND) / dx;
-				p[k*dx*dy + i*dx + j].y = (float)(0.8*i + MYRAND) / dy;
-				p[k*dx*dy + i*dx + j].z = (float)(0.8*k + MYRAND) / dz;
+				p[k*dx*dy + i*dx + j].x = (float)(j + MYRAND) / dx;
+				p[k*dx*dy + i*dx + j].y = (float)(i + MYRAND) / dy;
+				p[k*dx*dy + i*dx + j].z = (float)(k + MYRAND) / dz;
 			}
 		}
 	}

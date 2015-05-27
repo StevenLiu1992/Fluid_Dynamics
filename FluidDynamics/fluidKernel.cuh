@@ -46,4 +46,12 @@ __global__ void
 advectParticles_k(float3 *particle, float4 *v,
 int dx, int dy, int dz, int lb, size_t pitch);
 
+
+__global__ void
+bc_k(float4 *b, int dx, int dy, int dz, size_t pitch, float scale);
+
+
+__global__ void
+force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch);
+
 #endif
