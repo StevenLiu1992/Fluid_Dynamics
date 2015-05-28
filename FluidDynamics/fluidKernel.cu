@@ -25,9 +25,9 @@ void setupTexture(int x, int y, int z)
 //	cudaChannelFormatDesc desc = cudaCreateChannelDesc<float3>();
 	volumeSize = make_cudaExtent(NX, NY, NZ);
 	ca_descriptor = cudaCreateChannelDesc<float4>();
-	ca_descriptor.x = NX;
+	/*ca_descriptor.x = NX;
 	ca_descriptor.y = NY;
-	ca_descriptor.z = NZ;
+	ca_descriptor.z = NZ;*/
 	checkCudaErrors(cudaMalloc3DArray(&array, &ca_descriptor, volumeSize));
 	getLastCudaError("cudaMalloc failed");
 }

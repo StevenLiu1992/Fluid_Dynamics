@@ -222,7 +222,7 @@ void Water::Draw()
 
 	
 	//*Matrix4::Scale(Vector3(10, 10, 10))
-	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0));
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(-1, 0, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
@@ -250,14 +250,14 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j>3 && j<30 && i>15 && i<20 && k>15 && k<20){
-					h[k*NX*NY + i*NX + j].x = 1;
-					h[k*NX*NY + i*NX + j].y = 1;
+				if (j>3 && j<5 && i>2 && i<7 && k>2 && k<7){
+					h[k*NX*NY + i*NX + j].x = 0.1;
+					h[k*NX*NY + i*NX + j].y = 0.2;
 					h[k*NX*NY + i*NX + j].z = 0;
 				}
 				else{
-					h[k*NX*NY + i*NX + j].x = 1;
-					h[k*NX*NY + i*NX + j].y = 1;
+					h[k*NX*NY + i*NX + j].x = 0;
+					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
 				}
 			}
@@ -304,8 +304,8 @@ void Water::simulateFluids(void)
 {
 	// simulate fluid
 	advect(dvfield, dtemp, NX, NY, NZ, DT);
-//	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
-//	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
+	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
+	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
 }
 

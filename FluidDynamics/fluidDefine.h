@@ -4,9 +4,9 @@
 #ifndef FLUIDDATA_H
 #define FLUIDDATA_H
 
-#define NX 32
-#define NY 32
-#define NZ 32
+#define NX 16
+#define NY 16
+#define NZ 16
 #define DT 0.09f
 #define DS (NX*NY*NZ)
 
