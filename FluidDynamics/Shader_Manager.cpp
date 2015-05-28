@@ -73,16 +73,24 @@ GLuint Shader_Manager::CreateShader(GLenum shaderType,
 
 void Shader_Manager::CreateProgram(const std::string& shaderName,
 	const std::string& vertexShaderFilename,
-	const std::string& fragmentShaderFilename)
+	const std::string& fragmentShaderFilename,
+	const std::string& geometryShaderFilename)
 {
 
 	//read the shader files and save the code
 	std::string vertex_shader_code = ReadShader(vertexShaderFilename);
 	std::string fragment_shader_code = ReadShader(fragmentShaderFilename);
-
+	std::string geometry_shader_code = "";
+	if (!geometryShaderFilename.empty()){
+		geometry_shader_code = ReadShader(geometryShaderFilename);
+	}
+	
 	GLuint vertex_shader = CreateShader(GL_VERTEX_SHADER, vertex_shader_code, "vertex shader");
+	
 	GLuint fragment_shader = CreateShader(GL_FRAGMENT_SHADER, fragment_shader_code, "fragment shader");
-
+	GLuint geometry_shader;
+	if (!geometry_shader_code.empty())
+		geometry_shader = CreateShader(GL_GEOMETRY_SHADER, geometry_shader_code, "geometry shader");
 	int link_result = 0;
 	//create the program handle, attatch the shaders and link it
 	GLuint program = glCreateProgram();
@@ -91,7 +99,8 @@ void Shader_Manager::CreateProgram(const std::string& shaderName,
 		fprintf(stderr, "Error creating shader program\n");
 		return;
 	}
-
+	if (!geometry_shader_code.empty())
+		glAttachShader(program, geometry_shader);
 	glAttachShader(program, vertex_shader);
 	glAttachShader(program, fragment_shader);
 

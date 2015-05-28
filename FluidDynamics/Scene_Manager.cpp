@@ -15,6 +15,12 @@ Scene_Manager::Scene_Manager()
 	shader_manager->CreateProgram("particleShader",
 		"../Shaders/P_Vertex_Shader.glsl",
 		"../Shaders/P_Fragment_Shader.glsl");
+	
+
+		shader_manager->CreateProgram("velocityFieldShader",
+		"../Shaders/VF_Vertex_Shader.glsl",
+		"../Shaders/VF_Fragment_Shader.glsl",
+		"../Shaders/VF_Geometry_Shader.glsl");
 	models_manager = new Models_Manager();
 	camera = new Core::Camera(0, 0, Vector3(5,10,25));
 }

@@ -14,7 +14,9 @@ extern size_t tPitch_p;
 extern size_t tPitch_d;
 // Particle data
 extern GLuint vbo;                 // OpenGL vertex buffer object
+extern GLuint vbo2;                 // OpenGL vertex buffer object
 extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
+extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 
 void setupTexture(int x, int y, int z)
 {
@@ -73,47 +75,44 @@ __device__ float4 operator*(const float &a, const float4 &b) {
 
 }
 
+//__device__ void
+//boundary_k(float4 *v, int ex,int ey, int ez, float3 offset, float scale, size_t pitch, int type){
+//	int pitch0 = pitch / sizeof(float4);
+//	int ex0 = ex + offset.x;
+//	int ey0 = ey + offset.y;
+//	int ez0 = ez + offset.z;
+//	//-1 * v[ez0*pitch0 + ey0*dx + ex0]
+//	if (scale==-1&&ex==(NX-1)&&ey!=(dy-1))
+//		v[ez0*pitch0 + ey0*dx + ex0] = make_float4(0, 0.01, 0, 0);
+//
+//	/*float4 *Velocity = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
+//	float4 *Velocity0 = (float4 *)((char *)v + ez0 * pitch) + ey0 * dy + ex0;
+//	*Velocity = scale * (*Velocity0);*/
+//}
+
 __device__ void
-boundary_k(float4 *v, int dx, int dy, int dz,int ex,int ey, int ez, float3 offset, float scale, size_t pitch){
+boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch){
 	int pitch0 = pitch / sizeof(float4);
-	int ex0 = ex - offset.x;
-	int ey0 = ey + offset.y;
-	int ez0 = ez + offset.z;
-	float4 vel = v[ez0*pitch0 + ey0*dx + ex0];
-	v[ez*pitch0 + ey*dx + ex] = scale * vel;
-
-	/*float4 *Velocity = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
-	float4 *Velocity0 = (float4 *)((char *)v + ez0 * pitch) + ey0 * dy + ex0;
-	*Velocity = scale * (*Velocity0);*/
-}
-
-__device__ void
-boundary_condition_k(float4 *v, int dx, int dy, int dz, int ex, int ey, int ez, int scale, size_t pitch){
 	if (ex == 0){
-		float3 offset = make_float3(1, 0, 0);
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	//	float3 offset = make_float3(1, 0, 0);
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex + 1].x;
 	}
-	if (ex == (dx - 1)){
-		float3 offset = make_float3(-1, 0, 0);
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	if (ex == (NX - 1)){
+		v[ez*pitch0 + ey*NX + ex].x = -1 * v[ez*pitch0 + ey*NX + ex - 1].x;
 	}
 	if (ey == 0){
-		float3 offset = { 0, 1, 0 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex].y;
 	}
-	if (ey == (dy - 1)){
-		float3 offset = { 0, -1, 0 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	if (ey == (NY - 1)){
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex].y;
 	}
 	if (ez == 0){
-		float3 offset = { 0, 0, 1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex].z;
 	}
-	if (ez == (dz - 1)){
-		float3 offset = { 0, 0, -1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	if (ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex].z;
 	}
-	if (ex == 0 && ey == 0 && ez == 0){
+	/*if (ex == 0 && ey == 0 && ez == 0){
 		float3 offset = { 1, 1, 1 };
 		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
 	}
@@ -145,7 +144,7 @@ boundary_condition_k(float4 *v, int dx, int dy, int dz, int ex, int ey, int ez, 
 	if (ex == (dx - 1) && ey == (dy - 1) && ez == (dz - 1)){
 		float3 offset = { -1, -1, -1 };
 		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
-	}
+	}*/
 
 }
 
@@ -192,7 +191,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	else{
 	//	boundary_condition_k(v, dx, dy, dz, ex, ey, ez, -1, pitch);
 	}
-	
+	__syncthreads();
 }
 
 __global__ void
@@ -254,7 +253,7 @@ int dx, int dy, int dz, size_t pitch)
 					
 		v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
 	}
-
+	__syncthreads();
 }
 
 __global__ void
@@ -298,7 +297,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	else{
 	//	boundary_condition_k(d, dx, dy, dz, ex, ey, ez, 1, pitch);
 	}
-				
+	__syncthreads();
 }
 
 
@@ -364,7 +363,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	else{
 	//	boundary_condition_k(p, dx, dy, dz, ex, ey, ez, 1, pitch);
 	}
-			
+	__syncthreads();
 
 	
 	
@@ -408,25 +407,25 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 	newPosition.y = (float)ey / dy;
 	newPosition.z = (float)ez / dz;*/
 	particle[index] = newPosition;
-	
+	__syncthreads();
 	
 }
 
 __global__ void
-bc_k(float4 *b, int dx, int dy, int dz, size_t pitch,float scale){
+bc_k(float4 *b, size_t pitch,float scale){
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
 	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
-	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		return;
 	}
 	else{
-		boundary_condition_k(b, dx, dy, dz, ex, ey, ez, scale, pitch);
+		boundary_condition_k(b, ex, ey, ez, scale, pitch);
 	}
-
+	__syncthreads();
 }
 
 __global__ void
@@ -460,7 +459,7 @@ void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 
 	updateTexture(v, NX, NY, tPitch_v);
 	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
-	bc_k << <block_size, threads_size >> >(v, dx, dy, dz, tPitch_v, -1.f);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
 	
 }
@@ -482,7 +481,7 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	
 	}
 	
-	force_k << <block_size, threads_size >> >(v, dx, dy, dz, dt, tPitch_v);
+//	force_k << <block_size, threads_size >> >(v, dt, tPitch_v);
 
 	getLastCudaError("diffuse_k failed.");
 }
@@ -496,7 +495,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 	
 	
 	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-
+	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
 	
 	for(int i = 0; i < 40; i++){
@@ -504,7 +503,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 		SWAP(pressure, temp);
 	}
 
-	bc_k << <block_size, threads_size >> >(pressure, dx, dy, dz, tPitch_p, 1.f);
+	bc_k << <block_size, threads_size >> >(pressure, tPitch_p, 1.f);
 
 	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch_v);
 
@@ -533,4 +532,20 @@ void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
+
+
+	float4 *p1;
+	cudaGraphicsMapResources(1, &cuda_vbo_resource1, 0);
+	getLastCudaError("cudaGraphicsMapResources failed");
+
+	size_t num_bytes1;
+	cudaGraphicsResourceGetMappedPointer((void **)&p1, &num_bytes1, cuda_vbo_resource1);
+	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
+
+//	cudaMemset(p1, 60, num_bytes1);
+	cudaMemcpy(p1, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
+
+	cudaGraphicsUnmapResources(1, &cuda_vbo_resource1, 0);
+	getLastCudaError("cudaGraphicsUnmapResources failed");
+
 }

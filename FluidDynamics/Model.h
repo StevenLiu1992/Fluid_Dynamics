@@ -23,6 +23,7 @@ namespace Rendering
 	//		void setViewMatrix(Matrix4 viewMatrix){ this->viewMatrix = viewMatrix; }
 		protected:
 			GLuint vao;
+			GLuint vao1;
 			GLuint program;
 			GLuint texture;
 			std::vector<GLuint> vbos;

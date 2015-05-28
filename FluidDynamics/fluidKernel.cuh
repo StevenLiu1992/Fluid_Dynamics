@@ -48,7 +48,7 @@ int dx, int dy, int dz, int lb, size_t pitch);
 
 
 __global__ void
-bc_k(float4 *b, int dx, int dy, int dz, size_t pitch, float scale);
+bc_k(float4 *b, size_t pitch, float scale);
 
 
 __global__ void

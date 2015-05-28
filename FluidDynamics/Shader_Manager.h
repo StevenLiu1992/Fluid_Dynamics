@@ -19,7 +19,8 @@ namespace Managers{
 		//modify char* to std::string
 		void CreateProgram(const std::string& shaderName,
 			const std::string& VertexShaderFilename,
-			const std::string& FragmentShaderFilename);
+			const std::string& FragmentShaderFilename,
+			const std::string& GeometryShaderFilename = "");
 
 		static const GLuint GetShader(const std::string&);
 

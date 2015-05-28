@@ -19,6 +19,7 @@ Models_Manager::Models_Manager()
 
 	Models::Water* water = new Models::Water();
 	water->SetProgram(Shader_Manager::GetShader("particleShader"));
+	water->SetProgram1(Shader_Manager::GetShader("velocityFieldShader"));
 	water->Create();
 	gameModelList["water"] = water;
 }

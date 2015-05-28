@@ -36,6 +36,8 @@ namespace Rendering
 			void initParticles_velocity(float4 *v, float4 *d);
 			void simulateFluids(void);
 			void addSomeForce(int spx, int spy, float fx, float fy) const;
+			void initVelocityPosition(float3 *vp, int dx, int dy, int dz);
+			void SetProgram1(GLuint p1){ this->program1 = p1; }
 		private:
 			
 			
@@ -43,7 +45,8 @@ namespace Rendering
 			
 			GLuint vao;
 			float3 *particles;
-		
+			float3 * v_position;
+			GLuint program1;
 		};
 		
 	}
