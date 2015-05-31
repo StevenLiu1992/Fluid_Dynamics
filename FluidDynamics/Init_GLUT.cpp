@@ -31,6 +31,7 @@ int Init_GLUT::wHeight = 0;
 float Init_GLUT::current_time = 0;
 float Init_GLUT::previous_time = 0;
 
+extern bool start_run;
 
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
@@ -150,28 +151,32 @@ void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)
 		glutLeaveMainLoop();
 		break;
 	}
-	case 'w':{	//ESC
+	case 'w':{	
 		wPressed = true;
 		break;
 	}
-	case 's':{	//ESC
+	case 's':{	
 		sPressed = true;
 		break;
 	}
-	case 'a':{	//ESC
+	case 'a':{	
 		aPressed = true;
 		break;
 	}
-	case 'd':{	//ESC
+	case 'd':{	
 		dPressed = true;
 		break;
 	}
-	case 'q':{	//ESC
+	case 'q':{	
 		qPressed = true;
 		break;
 	}
-	case 'e':{	//ESC
+	case 'e':{	
 		ePressed = true;
+		break;
+	}
+	case 'r':{	
+		start_run = true;
 		break;
 	}
 	}
@@ -204,6 +209,10 @@ void Init_GLUT::keyboardUpCallback(unsigned char key, int x, int y)
 	}
 	case 'e':{	//ESC
 		ePressed = false;
+		break;
+	}
+	case 'r':{
+		start_run = false;
 		break;
 	}
 	}

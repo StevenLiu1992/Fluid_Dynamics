@@ -22,9 +22,9 @@ void main()
 	
 	for(int i = 0; i < gl_in.length(); ++i){
 		vec3 dir = IN[i].velocity.xyz;
-		float amount = length(dir);
+		float amount = length(dir)*5;
 		vec4 pos = gl_in[i].gl_Position;
-	//	if(pos.z>0.75&&pos.z<0.8){
+	//	if(pos.y>0.75&&pos.y<0.8){
 		mat4 mvp = projMatrix * viewMatrix * modelMatrix;
 		
 		color = vec4(1,0,0,1);
@@ -33,9 +33,9 @@ void main()
 		EmitVertex();
 	
 	
-		color = vec4(1,1,0,1);
+		color = vec4(amount,amount,amount,1);
 		//(0.05* vec4(normalize(dir),1)+pos)
-		gl_Position = mvp * (0.05* vec4(normalize(dir),1)+pos);
+		gl_Position = mvp * ( vec4(0.05 * normalize(dir),0)+pos);
 		EmitVertex();
 		
 		EndPrimitive();

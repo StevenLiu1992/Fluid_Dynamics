@@ -9,29 +9,29 @@ last frame (default value is for simplicities sake...)
 void Core::Camera::keyboardEvents(char key){
 	switch (key) {
 	case 'w':{
-		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.05 ;
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.1 ;
 		break;
 	}
 	
 	case 's':{
-		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.05;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1)*0.1;
 		break;
 	}
 
 	case 'a':{
-		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.05;
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.1;
 		break;
 	}
 	case 'd':{
-		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.05;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) *0.1;
 		break;
 	}
 	case 'q':{
-		position.y += 0.05;
+		position.y += 0.1;
 		break;
 	}
 	case 'e':{
-		position.y -= 0.05;
+		position.y -= 0.1;
 		break;
 	}
 	}

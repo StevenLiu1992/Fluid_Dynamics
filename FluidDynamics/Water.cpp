@@ -3,7 +3,7 @@ using namespace Rendering;
 using namespace Models;
 
 
-
+extern bool start_run = false;
 
 float4 *hvfield = NULL;
 extern float4 *dvfield = NULL;
@@ -190,21 +190,24 @@ void Water::Create()
 
 void Water::Update(Matrix4 viewMatrix)
 {
-	
-	simulateFluids();
+	if (start_run)
+		simulateFluids();
 	
 	Model::Update(viewMatrix);
 }
 
 void Water::Draw()
 {
+
+	Matrix4 modelMatrix;
+
 	//draw particle field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	glUseProgram(program);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//*Matrix4::Scale(Vector3(10, 10, 10))
-	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
@@ -221,8 +224,8 @@ void Water::Draw()
 	glUseProgram(program1);
 
 	
-	//*Matrix4::Scale(Vector3(10, 10, 10))
-	modelMatrix = worldTransform*Matrix4::Translation(Vector3(-1, 0, 0));
+	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
@@ -250,10 +253,11 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j>3 && j<5 && i>2 && i<7 && k>2 && k<7){
-					h[k*NX*NY + i*NX + j].x = 0.1;
-					h[k*NX*NY + i*NX + j].y = 0.2;
-					h[k*NX*NY + i*NX + j].z = 0;
+				if (j>4 && j<10 && i>8 && i<14 && k>3 && k<9){
+			//	if (j==5&&i==10){
+					h[k*NX*NY + i*NX + j].x = -0.4;
+					h[k*NX*NY + i*NX + j].y = 0.3;
+					h[k*NX*NY + i*NX + j].z = 0.2;
 				}
 				else{
 					h[k*NX*NY + i*NX + j].x = 0;
@@ -270,26 +274,26 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
 	int i, j, k;
-	for (k = 1; k < (dz-1); k++){
+	for (k = 0; k <= (dz-1); k++){
 
-		for (i = 1; i < (dy-1); i++)
+		for (i = 0; i <= (dy-1); i++)
 		{
-			for (j = 1; j < (dx-1); j++)
+			for (j = 0; j <= (dx-1); j++)
 			{
-				p[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx;
-				p[k*dx*dy + i*dx + j].y = (float)(i + 0.5) / dy;
-				p[k*dx*dy + i*dx + j].z = (float)(k + 0.5) / dz;
+				p[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx / 8 + 1/2.0;
+				p[k*dx*dy + i*dx + j].y = (float)(i + 0.5) / dy / 8 + 1/2.0;
+				p[k*dx*dy + i*dx + j].z = (float)(k + 0.5) / dz / 8 + 1/2.0;
 			}
 		}
 	}
 }
 void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	int i, j, k;
-	for (k = 1; k < (dz - 1); k++){
+	for (k = 0; k <= (dz - 1); k++){
 
-		for (i = 1; i < (dy - 1); i++)
+		for (i = 0; i <= (dy - 1); i++)
 		{
-			for (j = 1; j < (dx - 1); j++)
+			for (j = 0; j <= (dx - 1); j++)
 			{
 				vp[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx;
 				vp[k*dx*dy + i*dx + j].y = (float)(i + 0.5) / dy;
@@ -299,6 +303,36 @@ void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	}
 }
 
+void Water::cout_max_length_vector(float4* h){
+	int i, j, k;
+	int a, b, c, d, e, f;
+	float max = 0, min = 10;
+	for (k = 1; k < (NZ - 1); k++){
+
+		for (i = 1; i < (NY - 1); i++)
+		{
+			for (j = 1; j < (NX - 1); j++)
+			{
+				float sq = h[k*NZ*NY + i*NX + j].x*h[k*NZ*NY + i*NX + j].x +
+					h[k*NZ*NY + i*NX + j].y*h[k*NZ*NY + i*NX + j].y +
+					h[k*NZ*NY + i*NX + j].z*h[k*NZ*NY + i*NX + j].z;
+				
+				if (max < sq){
+					a = j;
+					b = i;
+					c = k;
+				}
+				if (min > sq){
+					d = j;
+					e = i;
+					f = k;
+				}
+			}
+		}
+	}
+	std::cout << "max <" << h[c*NZ*NY + b*NX + a].x << "," << h[c*NZ*NY + b*NX + a].y << "," << h[c*NZ*NY + b*NX + a].z << ">" << std::endl;
+//	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
+}
 
 void Water::simulateFluids(void)
 {
@@ -307,6 +341,8 @@ void Water::simulateFluids(void)
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
+	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+	cout_max_length_vector(hvfield);
 }
 
 

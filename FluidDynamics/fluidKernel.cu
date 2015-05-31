@@ -93,59 +93,102 @@ __device__ float4 operator*(const float &a, const float4 &b) {
 __device__ void
 boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch){
 	int pitch0 = pitch / sizeof(float4);
+	
+	//surface>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	if (ex == 0){
 	//	float3 offset = make_float3(1, 0, 0);
-		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
 	}
-	if (ex == (NX - 1)){
-		v[ez*pitch0 + ey*NX + ex].x = -1 * v[ez*pitch0 + ey*NX + ex - 1].x;
+	if (ex == (NX - 1)&&scale<0){
+		v[ez*pitch0 + ey*NX + ex] = -1 * v[ez*pitch0 + ey*NX + ex - 1];
+	}
+	if (ex == (NX - 1) && scale>0){
+		v[ez*pitch0 + ey*NX + ex] = -1 * v[ez*pitch0 + ey*NX + ex - 1];
 	}
 	if (ey == 0){
-		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
 	}
 	if (ey == (NY - 1)){
-		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
 	}
 	if (ez == 0){
-		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
 	}
 	if (ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex].z;
-	}
-	/*if (ex == 0 && ey == 0 && ez == 0){
-		float3 offset = { 1, 1, 1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
-	}
-	if (ex == (dx - 1) && ey == 0 && ez == 0){
-		float3 offset = { -1, 1, 1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
-	}
-	if (ex == 0 && ey == (dy - 1) && ez == 0){
-		float3 offset = { 1, -1, 1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
-	}
-	if (ex == 0 && ey == 0 && ez == (dz - 1)){
-		float3 offset = { 1, 1, -1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
 	}
 
-	if (ex == (dx - 1) && ey == (dy - 1) && ez == 0){
-		float3 offset = { -1, -1, 1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	//edge>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	//<<<<<<<<<<<<<<<<<<bottom four>>>>>>>>>>>>>>>>>>>>>>>>>>
+	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == (dx - 1) && ey == 0 && ez == (dz - 1)){
-		float3 offset = { -1, 1, -1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1];
 	}
-	if (ex == 0 && ey == (dy - 1) && ez == (dz - 1)){
-		float3 offset = { 1, -1, -1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
+	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ-1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == (dx - 1) && ey == (dy - 1) && ez == (dz - 1)){
-		float3 offset = { -1, -1, -1 };
-		boundary_k(v, dx, dy, dz, ex, ey, ez, offset, scale, pitch);
-	}*/
+	if (ex == 0 && ey == 0 && ez != 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1];
+	}
 
+	//<<<<<<<<<<<<<<<<<<middle four>>>>>>>>>>>>>>>>>>>>>>>>>>
+	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1];
+	}
+	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1];
+	}
+	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1];
+	}
+	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1];
+	}
+
+	//<<<<<<<<<<<<<<<<<<top four>>>>>>>>>>>>>>>>>>>>>>>>>>
+	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
+	}
+	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
+	}
+	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
+	}
+	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
+	}
+
+
+	//corner>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	if (ex == 0 && ey == 0 && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex + 1];
+	}
+	if (ex == (NX - 1) && ey == 0 && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex - 1];
+	}
+	if (ex == 0 && ey == (NY - 1) && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex + 1];
+	}
+	if (ex == 0 && ey == 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex + 1];
+	}
+
+	if (ex == (NX - 1) && ey == (NY - 1) && ez == 0){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex - 1];
+	}
+	if (ex == (NX - 1) && ey == 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex - 1];
+	}
+	if (ex == 0 && ey == (NY - 1) && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex + 1];
+	}
+	if (ex == (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex - 1];
+	}
+	__syncthreads();
 }
 
 
@@ -359,6 +402,7 @@ int dx, int dy, int dz, int lb, size_t pitch)
 		grad.z = 0.5*(p6.x - p5.x);
 		
 		v[ez*offset + ey*NX + ex] = vel - grad;
+		v[ez*offset + ey*NX + ex].w = 0;
 	}
 	else{
 	//	boundary_condition_k(p, dx, dy, dz, ex, ey, ez, 1, pitch);
@@ -397,9 +441,9 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 	float4 vloc = tex3D(texref, position.x * dx, position.y * dy, position.z * dz);
 
-	newPosition.x = position.x + dt * vloc.x;
-	newPosition.y = position.y + dt * vloc.y;
-	newPosition.z = position.z + dt * vloc.z;
+	newPosition.x = position.x + dt * vloc.x / dx;
+	newPosition.y = position.y + dt * vloc.y / dy;
+	newPosition.z = position.z + dt * vloc.z / dz;
 
 
 
@@ -419,13 +463,14 @@ bc_k(float4 *b, size_t pitch,float scale){
 	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
-	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		return;
-	}
-	else{
+
+	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
 		boundary_condition_k(b, ex, ey, ez, scale, pitch);
 	}
-	__syncthreads();
+	else{
+	//	boundary_condition_k(b, ex, ey, ez, scale, pitch);
+	}
+	
 }
 
 __global__ void
@@ -474,7 +519,7 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	float alpha = rdx / VISC / dt;
 	float rBeta = 1 / (6 + rdx / VISC / dt);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
-	for(int i=0;i<20;i++){
+	for(int i=0;i<30;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
 		jacobi_k << <block_size, threads_size >> >(v, temp, temp, alpha, rBeta, dx, dy, dz, tPitch_v);
 		SWAP(v, temp);
@@ -498,7 +543,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
 	
-	for(int i = 0; i < 40; i++){
+	for(int i = 0; i < 60; i++){
 		jacobi_k<<<block_size, threads_size >>>(temp, pressure, divergence, -1, 1.f / 6, dx, dy, dz, tPitch_v);
 		SWAP(pressure, temp);
 	}
@@ -544,7 +589,7 @@ void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 
 //	cudaMemset(p1, 60, num_bytes1);
 	cudaMemcpy(p1, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
-
+	
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource1, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 
