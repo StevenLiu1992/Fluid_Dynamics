@@ -22,8 +22,10 @@ extern size_t tPitch_den;
 // Particle data
 extern GLuint vbo;                 // OpenGL vertex buffer object
 extern GLuint vbo2;                 // OpenGL vertex buffer object
+extern GLuint vbo3;                 // OpenGL vertex buffer object
 extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
+extern struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 
 void setupTexture(int x, int y, int z)
 {
@@ -239,9 +241,9 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch)
 		
 		//	float3 texcoord = { ex, ey, ez };
 		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
-		ploc.x = (ex + 0.5f) - dt * velocity.x / dx;
-		ploc.y = (ey + 0.5f) - dt * velocity.y / dy;
-		ploc.z = (ez + 0.5f) - dt * velocity.z / dz;
+		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
+		ploc.y = (ey + 0.5f) - dt * velocity.y * dy;
+		ploc.z = (ez + 0.5f) - dt * velocity.z * dz;
 
 
 
@@ -282,9 +284,9 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
 		
 		//tracing back
-		ploc.x = (ex + 0.5f) - dt * velocity.x / dx;
-		ploc.y = (ey + 0.5f) - dt * velocity.y / dy;
-		ploc.z = (ez + 0.5f) - dt * velocity.z / dz;
+		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
+		ploc.y = (ey + 0.5f) - dt * velocity.y * dy;
+		ploc.z = (ez + 0.5f) - dt * velocity.z * dz;
 
 		//get the density of tracing back position
 		den = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
@@ -622,12 +624,12 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 
 
 extern "C"
-void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
+void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, float dt)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-
+	//change location of particles>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	float3 *p;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");
@@ -643,7 +645,7 @@ void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 
-
+	//change velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	float4 *p1;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource1, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");
@@ -652,10 +654,25 @@ void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 	cudaGraphicsResourceGetMappedPointer((void **)&p1, &num_bytes1, cuda_vbo_resource1);
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
-//	cudaMemset(p1, 60, num_bytes1);
+
 	cudaMemcpy(p1, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
 	
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource1, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 
+
+	//change density field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	float *p2;
+	cudaGraphicsMapResources(1, &cuda_vbo_resource2, 0);
+	getLastCudaError("cudaGraphicsMapResources failed");
+
+	size_t num_bytes2;
+	cudaGraphicsResourceGetMappedPointer((void **)&p2, &num_bytes2, cuda_vbo_resource2);
+	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
+
+
+	cudaMemcpy(p2, d, sizeof(float)* DS, cudaMemcpyDeviceToDevice);	
+
+	cudaGraphicsUnmapResources(1, &cuda_vbo_resource2, 0);
+	getLastCudaError("cudaGraphicsUnmapResources failed");
 }

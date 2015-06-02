@@ -47,7 +47,7 @@ gradient_k(float4 *v, float4 *p,
 int dx, int dy, int dz, int lb, size_t pitch);
 
 __global__ void
-advectParticles_k(float3 *particle, float4 *v,
+advectParticles_k(float3 *particle, float4 *v, float* d,
 int dx, int dy, int dz, int lb, size_t pitch);
 
 

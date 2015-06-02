@@ -1,17 +1,16 @@
-﻿Build started 02/06/2015 15:29:32.
-     1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
+﻿Build started 02/06/2015 22:57:12.
+     1>Project "C:\Users\siyu\Documents\GitHub\FluidDynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Water.cpp
          Water.cpp
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(121): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(267): warning C4305: '=' : truncation from 'double' to 'float'
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(268): warning C4305: '=' : truncation from 'double' to 'float'
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(292): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(293): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(294): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(325): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(123): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(283): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(284): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(308): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(309): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\water.cpp(310): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\fluidKernel.cu.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\fluidKernel.cu.obj
          Debug\Camera.obj
          Debug\Init_GLEW.obj
          Debug\Init_GLUT.obj
@@ -25,17 +24,17 @@
          Debug\Shader_Manager.obj
          Debug\Triangle.obj
          Debug\Water.obj
-         FluidDynamics.vcxproj -> D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe
+         FluidDynamics.vcxproj -> C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\FluidDynamics.exe
        PostBuildEvent:
-         echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "D:\GitHub\Fluid_Dynamics\Debug\"
-         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "D:\GitHub\Fluid_Dynamics\Debug\"
+         echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\"
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\"
          :VCEnd
-         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "D:\GitHub\Fluid_Dynamics\Debug\"
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\siyu\Documents\GitHub\FluidDynamics\Debug\"
          C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart32_65.dll
          C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart64_65.dll
                  2 file(s) copied.
-     1>Done Building Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" (Build target(s)).
+     1>Done Building Project "C:\Users\siyu\Documents\GitHub\FluidDynamics\FluidDynamics\FluidDynamics.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.90
+Time Elapsed 00:00:02.05

@@ -40,7 +40,7 @@ namespace Rendering
 			void SetProgram1(GLuint p1){ this->program1 = p1; }
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float *d);
-
+			void cout_density(float* d);
 		private:
 			
 			

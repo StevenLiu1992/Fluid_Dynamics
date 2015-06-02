@@ -13,11 +13,13 @@ float4 *ddivergence = NULL;
 float *ddensity = NULL;
 float *hdensity = NULL;
 
+GLuint vbo3 = 0;                 // OpenGL vertex buffer object
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
 GLuint vbo1 = 0;                 // OpenGL vertex buffer object
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
+struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 
 // Texture pitch
 size_t tPitch_v = 0; // Now this is compatible with gcc in 64-bit
@@ -42,7 +44,7 @@ extern "C"
 void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt);
 
 extern "C"
-void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt);
+void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, float dt);
 
 Water::Water()
 {
@@ -169,15 +171,24 @@ void Water::Create()
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
 	if (bsize != (sizeof(float4) * DS))
 		return;
-
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
+	this->vbos.push_back(vbo2);
 
-	
+	//density value
+	glGenBuffers(1, &vbo3);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo3);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* DS, hdensity, GL_DYNAMIC_DRAW);
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
+	if (bsize != (sizeof(float)* DS))
+		return;
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+	this->vbos.push_back(vbo3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-	this->vbos.push_back(vbo2);
+	
 
 	this->vao1 = vao1;
 	
@@ -191,6 +202,10 @@ void Water::Create()
 	//bind velocity value vbo
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource1, vbo2, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	//bind density value vbo
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource2, vbo3, cudaGraphicsMapFlagsNone));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+
 	int CUDAVersion ;
 	cudaRuntimeGetVersion(&CUDAVersion);
 	std::cout << "CUDA version: "<< CUDAVersion << std::endl;
@@ -243,7 +258,8 @@ void Water::Draw()
 	glPointSize(1);
 	glBindVertexArray(vao1);
 
-
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glDrawArrays(GL_POINTS, 0, DS);
 	glUseProgram(0);
@@ -322,7 +338,7 @@ void Water::init_density(float *h, float *d){
 			{
 				if (j>12 && j<22 && i>18 && i<24 && k>13 && k<19){
 					//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j] = 0.6;
+					h[k*NX*NY + i*NX + j] = 1;
 					
 				}
 				else{
@@ -367,16 +383,35 @@ void Water::cout_max_length_vector(float4* h){
 //	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
 }
 
+
+void Water::cout_density(float* d){
+	int i, j, k = 18;
+
+
+	for (i = 0; i < NY; i++)
+	{
+		for (j = 0; j < NX; j++)
+		{
+		//	std::cout << d[k*NZ*NY + i*NX + j] << " ";	
+			printf("%.1f ", d[k*NZ*NY + i*NX + j]);
+		}
+		std::cout << std::endl << std::endl << std::endl;
+		
+	}
+	
+}
 void Water::simulateFluids(void)
 {
 	// simulate fluid
 	advect(dvfield, ddensity, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
-	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
+	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
 
-	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-	cout_max_length_vector(hvfield);
+//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+//	cout_max_length_vector(hvfield);
+	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+	cout_density(hdensity);
 }
 
 
