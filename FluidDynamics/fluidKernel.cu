@@ -1,17 +1,24 @@
 #include "fluidKernel.cuh"
 
-texture<float4, 3> texref;
+texture<float4, 3> texref_vel;
+texture<float, 3> texref_den;
 
-static cudaArray * array = NULL;
+static cudaArray *array_vel = NULL;
 
-cudaChannelFormatDesc ca_descriptor;
-cudaExtent volumeSize;
+static cudaArray *array_den = NULL;
+
+cudaChannelFormatDesc ca_descriptor_vel;
+cudaChannelFormatDesc ca_descriptor_den;
+cudaExtent volumeSize_vel;
+cudaExtent volumeSize_den;
 
 // Texture pitch
 extern size_t tPitch_v;
 extern size_t tPitch_t;
 extern size_t tPitch_p;
 extern size_t tPitch_d;
+extern size_t tPitch_den;
+
 // Particle data
 extern GLuint vbo;                 // OpenGL vertex buffer object
 extern GLuint vbo2;                 // OpenGL vertex buffer object
@@ -20,21 +27,28 @@ extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA e
 
 void setupTexture(int x, int y, int z)
 {
-	// Wrap mode appears to be the new default
-	texref.filterMode = cudaFilterModeLinear;
-//	cudaChannelFormatDesc desc = cudaCreateChannelDesc<float3>();
-	volumeSize = make_cudaExtent(NX, NY, NZ);
-	ca_descriptor = cudaCreateChannelDesc<float4>();
-	/*ca_descriptor.x = NX;
-	ca_descriptor.y = NY;
-	ca_descriptor.z = NZ;*/
-	checkCudaErrors(cudaMalloc3DArray(&array, &ca_descriptor, volumeSize));
+	//density texture
+	texref_den.filterMode = cudaFilterModeLinear;
+	volumeSize_den = make_cudaExtent(NX, NY, NZ);
+	ca_descriptor_den = cudaCreateChannelDesc<float>();
 	getLastCudaError("cudaMalloc failed");
+
+	checkCudaErrors(cudaMalloc3DArray(&array_den, &ca_descriptor_den, volumeSize_den));
+
+	//velocity texture
+	texref_vel.filterMode = cudaFilterModeLinear;
+	volumeSize_vel = make_cudaExtent(NX, NY, NZ);
+	ca_descriptor_vel = cudaCreateChannelDesc<float4>();
+	checkCudaErrors(cudaMalloc3DArray(&array_vel, &ca_descriptor_vel, volumeSize_vel));
+	getLastCudaError("cudaMalloc failed");
+	
+
 }
 
 void bindTexture(void)
 {
-	cudaBindTextureToArray(texref, array);
+	cudaBindTextureToArray(texref_vel, array_vel);
+	cudaBindTextureToArray(texref_den, array_den);
 	getLastCudaError("cudaBindTexture failed");
 
 
@@ -42,17 +56,27 @@ void bindTexture(void)
 
 void unbindTexture(void)
 {
-	cudaUnbindTexture(texref);
+	cudaUnbindTexture(texref_vel);
+	cudaUnbindTexture(texref_den);
+}
+
+void update_vel_texture(float4 *data,int dimx, int dimy, size_t pitch){
+	cudaMemcpy3DParms cpy_params = { 0 };
+	cpy_params.extent = volumeSize_vel;
+	cpy_params.kind = cudaMemcpyDeviceToDevice;
+	cpy_params.dstArray = array_vel;
+	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float4), dimx, dimy);
+	checkCudaErrors(cudaMemcpy3D(&cpy_params));
+	getLastCudaError("cudaMemcpy failed");
 
 }
 
-void updateTexture(float4 *data, int dimx, int dimy, size_t pitch)
-{
+void update_den_texture(float *data, int dimx, int dimy, size_t pitch){
 	cudaMemcpy3DParms cpy_params = { 0 };
-	cpy_params.extent = volumeSize;
+	cpy_params.extent = volumeSize_den;
 	cpy_params.kind = cudaMemcpyDeviceToDevice;
-	cpy_params.dstArray = array;
-	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float4), dimx, dimy);
+	cpy_params.dstArray = array_den;
+	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float), dimx, dimy);
 	checkCudaErrors(cudaMemcpy3D(&cpy_params));
 	getLastCudaError("cudaMemcpy failed");
 }
@@ -193,7 +217,7 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 
 
 __global__ void
-advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
+advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch)
 {
 	//dx = 64
 	//dy = 64
@@ -214,7 +238,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 		
 		//	float3 texcoord = { ex, ey, ez };
-		velocity = tex3D(texref, (float)ex, (float)ey, (float)ez);
+		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
 		ploc.x = (ex + 0.5f) - dt * velocity.x / dx;
 		ploc.y = (ey + 0.5f) - dt * velocity.y / dy;
 		ploc.z = (ez + 0.5f) - dt * velocity.z / dz;
@@ -223,19 +247,57 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 
 
-		velocity = tex3D(texref, ploc.x, ploc.y, ploc.z);
-
-	//	v[ez*pitch + ey*NX + ex] = velocity;
+		velocity = tex3D(texref_vel, ploc.x, ploc.y, ploc.z);
 
 		float4 *Velocity_field = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
 		(*Velocity_field) = velocity;	
 	}
 
-	else{
-	//	boundary_condition_k(v, dx, dy, dz, ex, ey, ez, -1, pitch);
-	}
 	__syncthreads();
 }
+
+
+__global__ void
+advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
+{
+	//dx = 64
+	//dy = 64
+	//dz = 16
+	//lb = 16
+
+	// ex is the domain location in x for this thread
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
+	// ez is the domain location in z for this thread
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	if ((ex != 0) && (ex != (dx - 1)) && (ey != 0) && (ey != (dy - 1)) && (ez != 0) && (ez != (dz - 1))){
+
+		float4 velocity;
+		float3 ploc;
+		float den;
+
+		//	find the velocity of this position
+		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
+		
+		//tracing back
+		ploc.x = (ex + 0.5f) - dt * velocity.x / dx;
+		ploc.y = (ey + 0.5f) - dt * velocity.y / dy;
+		ploc.z = (ez + 0.5f) - dt * velocity.z / dz;
+
+		//get the density of tracing back position
+		den = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
+
+		float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
+		(*density) = den;
+	}
+
+	__syncthreads();
+}
+
+
+
 
 __global__ void
 jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta,
@@ -439,11 +501,11 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 		((char *)v + ez * pitch) + ey * dy + ex;*/
 	float3 newPosition;
 
-	float4 vloc = tex3D(texref, position.x * dx, position.y * dy, position.z * dz);
+	float4 vloc = tex3D(texref_vel, position.x * dx, position.y * dy, position.z * dz);
 
-	newPosition.x = position.x + dt * vloc.x / dx;
-	newPosition.y = position.y + dt * vloc.y / dy;
-	newPosition.z = position.z + dt * vloc.z / dz;
+	newPosition.x = position.x + dt * vloc.x;
+	newPosition.y = position.y + dt * vloc.y;
+	newPosition.z = position.z + dt * vloc.z;
 
 
 
@@ -474,19 +536,19 @@ bc_k(float4 *b, size_t pitch,float scale){
 }
 
 __global__ void
-force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch){
+force_k(float4 *v,float dt, size_t pitch){
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
 	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
-	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
-		if (ey > 20){
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+	//	if (ey > 20){
 
 			int offset = pitch / sizeof(float4);
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
-		}
+	//	}
 	}
 	else{
 		
@@ -496,16 +558,17 @@ force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch){
 
 
 extern "C"
-void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
+void advect(float4 *v, float *d, int dx, int dy, int dz, float dt)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
-	updateTexture(v, NX, NY, tPitch_v);
-	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
+	update_vel_texture(v, NX, NY, tPitch_v);
+	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, tPitch_v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
+//	force_k << <block_size, threads_size >> >(v, dt, tPitch_v);
 	
 }
 
@@ -526,7 +589,7 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	
 	}
 	
-//	force_k << <block_size, threads_size >> >(v, dt, tPitch_v);
+	
 
 	getLastCudaError("diffuse_k failed.");
 }
@@ -538,9 +601,9 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	
-	
+	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
 	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
+//	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
 	
 	for(int i = 0; i < 60; i++){
@@ -571,7 +634,7 @@ void advectParticles(GLuint vbo, float4 *v, int dx, int dy, int dz, float dt)
 	cudaGraphicsResourceGetMappedPointer((void **)&p, &num_bytes, cuda_vbo_resource);
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
-	updateTexture(v, NX, NY, tPitch_v);
+	update_vel_texture(v, NX, NY, tPitch_v);
 	advectParticles_k<<<block_size, threads_size >>>(p, v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
 	getLastCudaError("advectParticles_k failed.");
 
