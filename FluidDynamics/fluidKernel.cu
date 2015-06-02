@@ -568,6 +568,8 @@ void advect(float4 *v, float *d, int dx, int dy, int dz, float dt)
 	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, tPitch_v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
+	update_den_texture(d, NX, NY, tPitch_den);
+	advect_density_k << <block_size, threads_size >> >(d, dx, dy, dz, dt, tPitch_den);
 //	force_k << <block_size, threads_size >> >(v, dt, tPitch_v);
 	
 }

@@ -10,6 +10,9 @@ extern float4 *dvfield = NULL;
 float4 *dtemp = NULL;
 float4 *dpressure = NULL;
 float4 *ddivergence = NULL;
+float *ddensity = NULL;
+float *hdensity = NULL;
+
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
 GLuint vbo1 = 0;                 // OpenGL vertex buffer object
 GLuint vbo = 0;                 // OpenGL vertex buffer object
@@ -26,8 +29,11 @@ size_t tPitch_d = 0; // Now this is compatible with gcc in 64-bit
 // Texture pitch
 size_t tPitch_p = 0; // Now this is compatible with gcc in 64-bit
 
+size_t tPitch_den = 0; // Now this is compatible with gcc in 64-bit
+
+
 extern "C"
-void advect(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
+void advect(float4 *v, float *d, int dx, int dy, int dz, float dt);
 
 extern "C"
 void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
@@ -71,7 +77,7 @@ void Water::Create()
 	tPitch_t = 0;
 	tPitch_p = 0;
 	tPitch_d = 0;
-
+	tPitch_den = 0;
 	int devID;
 	cudaDeviceProp deviceProps;
 	int fakeargc = 1;
@@ -81,22 +87,25 @@ void Water::Create()
 
 	// get number of SMs on this GPU
 	checkCudaErrors(cudaGetDeviceProperties(&deviceProps, devID));
+	getLastCudaError("!!!GetDevice error");
 	printf("CUDA device [%s] has %d Multi-Processors\n",
 		deviceProps.name, deviceProps.multiProcessorCount);
 
 	hvfield = (float4 *)malloc(sizeof(float4) * DS);
-
+	hdensity = (float *)malloc(sizeof(float) * DS);;
 
 	// Allocate and initialize device data
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dtemp, &tPitch_t, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
+	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
+	
 //	memset(hvfield, 0, sizeof(float4) * DS);
 //	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
 //	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 	
-
+	init_density(hdensity, ddensity);
 	initParticles_velocity(hvfield, dvfield);
 	setupTexture(NX,NY,NZ);
 	bindTexture();
@@ -253,11 +262,11 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j>4 && j<10 && i>8 && i<14 && k>3 && k<9){
+				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
 			//	if (j==5&&i==10){
 					h[k*NX*NY + i*NX + j].x = -0.4;
 					h[k*NX*NY + i*NX + j].y = 0.3;
-					h[k*NX*NY + i*NX + j].z = 0.2;
+					h[k*NX*NY + i*NX + j].z = 0;
 				}
 				else{
 					h[k*NX*NY + i*NX + j].x = 0;
@@ -303,6 +312,30 @@ void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	}
 }
 
+void Water::init_density(float *h, float *d){
+	int i, j, k;
+	for (k = 0; k < NZ; k++){
+
+		for (i = 0; i < NY; i++)
+		{
+			for (j = 0; j < NX; j++)
+			{
+				if (j>12 && j<22 && i>18 && i<24 && k>13 && k<19){
+					//	if (j==5&&i==10){
+					h[k*NX*NY + i*NX + j] = 0.6;
+					
+				}
+				else{
+					h[k*NX*NY + i*NX + j] = 0;
+					
+				}
+			}
+		}
+	}
+
+	cudaMemcpy(d, h, sizeof(float)* DS, cudaMemcpyHostToDevice);
+}
+
 void Water::cout_max_length_vector(float4* h){
 	int i, j, k;
 	int a, b, c, d, e, f;
@@ -337,10 +370,11 @@ void Water::cout_max_length_vector(float4* h){
 void Water::simulateFluids(void)
 {
 	// simulate fluid
-	advect(dvfield, dtemp, NX, NY, NZ, DT);
+	advect(dvfield, ddensity, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, NX, NY, NZ, DT);
+
 	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 	cout_max_length_vector(hvfield);
 }
