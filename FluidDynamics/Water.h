@@ -50,6 +50,7 @@ namespace Rendering
 			float3 *particles;
 			float3 * v_position;
 			GLuint program1;
+			int ttt;
 		};
 		
 	}

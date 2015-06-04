@@ -48,6 +48,7 @@ void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, fl
 
 Water::Water()
 {
+	ttt = 0;
 	position = Vector3(0, 0, 0);
 //	orientation = Quaternion::AxisAngleToQuaterion(Vector3(1,0,0),180);
 }
@@ -280,7 +281,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 			{
 				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
 			//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j].x = -0.4;
+					h[k*NX*NY + i*NX + j].x = 0.4;
 					h[k*NX*NY + i*NX + j].y = 0.3;
 					h[k*NX*NY + i*NX + j].z = 0;
 				}
@@ -356,11 +357,11 @@ void Water::cout_max_length_vector(float4* h){
 	int i, j, k;
 	int a, b, c, d, e, f;
 	float max = 0, min = 10;
-	for (k = 1; k < (NZ - 1); k++){
+	/*for (k = 0; k <= (NZ - 1); k++){
 
-		for (i = 1; i < (NY - 1); i++)
+		for (i = 0; i <= (NY - 1); i++)
 		{
-			for (j = 1; j < (NX - 1); j++)
+			for (j = 0; j <= (NX - 1); j++)
 			{
 				float sq = h[k*NZ*NY + i*NX + j].x*h[k*NZ*NY + i*NX + j].x +
 					h[k*NZ*NY + i*NX + j].y*h[k*NZ*NY + i*NX + j].y +
@@ -370,17 +371,31 @@ void Water::cout_max_length_vector(float4* h){
 					a = j;
 					b = i;
 					c = k;
+					max = sq;
 				}
 				if (min > sq){
 					d = j;
 					e = i;
 					f = k;
+					min = sq;
 				}
 			}
 		}
 	}
+	std::cout << "time: "<<ttt << std::endl;
 	std::cout << "max <" << h[c*NZ*NY + b*NX + a].x << "," << h[c*NZ*NY + b*NX + a].y << "," << h[c*NZ*NY + b*NX + a].z << ">" << std::endl;
+	std::cout << "cor <" << a << "," << b << "," << c << ">" << std::endl;
+	float qq = h[16 * NZ*NY + 22 * NX + 30].x*h[16 * NZ*NY + 22 * NX + 30].x + h[16 * NZ*NY + 22 * NX + 30].y*h[16 * NZ*NY + 22 * NX + 30].y + h[16 * NZ*NY + 22 * NX + 30].z*h[16 * NZ*NY + 22 * NX + 30].z;
+	std::cout << qq << std::endl << std::endl;*/
+//	std::cout << "cor <" << 30 << "," << 22 << "," << 16 << ">" << std::endl << std::endl;
+//	std::cout << "cor <" << d << "," << e << "," << f << ">" << std::endl;
 //	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
+	k = 0;
+	j = 20;
+	for (i = 0; i < NX; i++){
+		std::cout << h[k*NZ*NY + j*NX + i].x << "," << h[k*NZ*NY + j*NX + i].y << "," << h[k*NZ*NY + j*NX + i].z << std::endl;
+	}
+	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 }
 
 
@@ -394,6 +409,7 @@ void Water::cout_density(float* d){
 		{
 		//	std::cout << d[k*NZ*NY + i*NX + j] << " ";	
 			printf("%.1f ", d[k*NZ*NY + i*NX + j]);
+			
 		}
 		std::cout << std::endl << std::endl << std::endl;
 		
@@ -403,6 +419,7 @@ void Water::cout_density(float* d){
 void Water::simulateFluids(void)
 {
 	// simulate fluid
+	ttt++;
 	advect(dvfield, ddensity, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
@@ -410,8 +427,9 @@ void Water::simulateFluids(void)
 
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
-	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
-	cout_density(hdensity);
+	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+	cout_max_length_vector(hvfield);
+//	cout_density(hvfield);
 }
 
 
