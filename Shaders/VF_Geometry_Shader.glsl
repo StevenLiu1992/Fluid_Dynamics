@@ -27,14 +27,14 @@ void main()
 		vec4 pos = gl_in[i].gl_Position;
 	//	if(pos.y>0.75&&pos.y<0.8){
 		mat4 mvp = projMatrix * viewMatrix * modelMatrix;
-	//	color =  vec4(1,1,0,IN[i].density*10);
+		color =  vec4(1,1,0,IN[i].density*10);
 		
-		color = vec4(1,0,0,1);
+	//	color = vec4(1,0,0,1);
 		gl_Position = mvp *pos;
 		EmitVertex();
 	
-	
-		color = vec4(amount,amount,amount,IN[i].density);
+	//	color =  vec4(1,1,0,IN[i].density*10);
+		color = vec4(amount,amount,amount,IN[i].density*10);
 		//(0.05* vec4(normalize(dir),1)+pos)
 		gl_Position = mvp * ( vec4(0.05 * normalize(dir),0)+pos);
 		EmitVertex();

@@ -20,6 +20,7 @@ void bindTexture(void);
 void unbindTexture(void);
 void update_vel_texture(float4 *data, int w, int h, size_t pitch);
 void update_den_texture(float *data, int w, int h, size_t pitch);
+void update_temp_texture(float4 *data, int dimx, int dimy, size_t pitch);
 void deleteTexture(void);
 
 #define SWAP(x0, x) {float4 *tmp = x0; x0 = x; x = tmp;}
@@ -54,6 +55,8 @@ int dx, int dy, int dz, int lb, size_t pitch);
 __global__ void
 bc_k(float4 *b, size_t pitch, float scale);
 
+__global__ void
+bc_density_k(float *b, size_t pitch, float scale);
 
 __global__ void
 force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch);

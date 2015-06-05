@@ -35,7 +35,7 @@ size_t tPitch_den = 0; // Now this is compatible with gcc in 64-bit
 
 
 extern "C"
-void advect(float4 *v, float *d, int dx, int dy, int dz, float dt);
+void advect(float4 *v, int dx, int dy, int dz, float dt);
 
 extern "C"
 void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
@@ -45,7 +45,10 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, i
 
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, float dt);
-
+extern "C"
+void advectDensity(float4 *v, float *d, int dx, int dy, int dz, float dt);
+extern "C"
+void addForce(float4 *v, float *d, int dx, int dy, int dz, float dt);
 Water::Water()
 {
 	ttt = 0;
@@ -107,9 +110,8 @@ void Water::Create()
 //	memset(hvfield, 0, sizeof(float4) * DS);
 //	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
 //	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
-	
-	init_density(hdensity, ddensity);
 	initParticles_velocity(hvfield, dvfield);
+	
 	setupTexture(NX,NY,NZ);
 	bindTexture();
 
@@ -123,7 +125,8 @@ void Water::Create()
 	particles = (float3 *)malloc(sizeof(float3) * DS);
 	memset(particles, 0.5, sizeof(float3) * DS);
 	initParticles(particles, NX, NY, NZ);
-
+	memset(hdensity, 0, sizeof(float) * DS);
+	init_density(hdensity, particles, ddensity);
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -271,31 +274,7 @@ void Water::Draw()
 
 #define MYRAND (rand() / (float)RAND_MAX)
 
-void Water::initParticles_velocity(float4 *h, float4 *d){
-	int i, j, k;
-	for (k = 0; k < NZ; k++){
 
-		for (i = 0; i < NY; i++)
-		{
-			for (j = 0; j < NX; j++)
-			{
-				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
-			//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j].x = 0.4;
-					h[k*NX*NY + i*NX + j].y = 0.3;
-					h[k*NX*NY + i*NX + j].z = 0;
-				}
-				else{
-					h[k*NX*NY + i*NX + j].x = 0;
-					h[k*NX*NY + i*NX + j].y = 0;
-					h[k*NX*NY + i*NX + j].z = 0;
-				}
-			}
-		}
-	}
-	
-	cudaMemcpy(d, h, sizeof(float4)* DS, cudaMemcpyHostToDevice);
-}
 
 
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
@@ -329,7 +308,7 @@ void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	}
 }
 
-void Water::init_density(float *h, float *d){
+void Water::initParticles_velocity(float4 *h, float4 *d){
 	int i, j, k;
 	for (k = 0; k < NZ; k++){
 
@@ -337,15 +316,42 @@ void Water::init_density(float *h, float *d){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j>12 && j<22 && i>18 && i<24 && k>13 && k<19){
+				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
+
 					//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j] = 1;
-					
+					h[k*NX*NY + i*NX + j].x =0;
+					h[k*NX*NY + i*NX + j].y = 0.3;
+					h[k*NX*NY + i*NX + j].z = 0;
 				}
 				else{
-					h[k*NX*NY + i*NX + j] = 0;
-					
+					h[k*NX*NY + i*NX + j].x = 0;
+					h[k*NX*NY + i*NX + j].y = 0;
+					h[k*NX*NY + i*NX + j].z = 0;
 				}
+			}
+		}
+	}
+
+	cudaMemcpy(d, h, sizeof(float4)* DS, cudaMemcpyHostToDevice);
+}
+
+void Water::init_density(float *h, float3* p, float *d){
+	int i, j, k;
+	for (k = 0; k < NZ; k++){
+
+		for (i = 0; i < NY; i++)
+		{
+			for (j = 0; j < NX; j++)
+			{
+				int a = p[k*NX*NY + i*NX + j].x*NX;
+				int b = p[k*NX*NY + i*NX + j].y*NY;
+				int c = p[k*NX*NY + i*NX + j].z*NZ;
+			//	if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
+					//	if (j==5&&i==10){
+				h[c*NX*NY + b*NX + a] += 0.1;
+					
+			//	}
+			
 			}
 		}
 	}
@@ -400,36 +406,41 @@ void Water::cout_max_length_vector(float4* h){
 
 
 void Water::cout_density(float* d){
-	int i, j, k = 18;
+	int i, j, k;
+	float total = 0;
+	for (k = 0; k < NZ; k++){
 
-
-	for (i = 0; i < NY; i++)
-	{
-		for (j = 0; j < NX; j++)
+		for (i = 0; i < NY; i++)
 		{
-		//	std::cout << d[k*NZ*NY + i*NX + j] << " ";	
-			printf("%.1f ", d[k*NZ*NY + i*NX + j]);
+			for (j = 0; j < NX; j++)
+			{
+			//	std::cout << d[k*NZ*NY + i*NX + j] << " ";	
+				total += d[k*NZ*NY + i*NX + j];
 			
-		}
-		std::cout << std::endl << std::endl << std::endl;
+			}
 		
+		}
 	}
+	std::cout<<"total density: " << total << std::endl;
 	
 }
 void Water::simulateFluids(void)
 {
 	// simulate fluid
 	ttt++;
-	advect(dvfield, ddensity, NX, NY, NZ, DT);
+	advect(dvfield, NX, NY, NZ, DT);
+	addForce(dvfield, ddensity, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
-
+	
+	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
-	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-	cout_max_length_vector(hvfield);
-//	cout_density(hvfield);
+//	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+//	cout_max_length_vector(hvfield);
+	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+	cout_density(hdensity);
 }
 
 
