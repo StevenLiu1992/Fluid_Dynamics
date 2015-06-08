@@ -175,13 +175,13 @@ boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t
 	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == 0){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez == (NZ - 1)){
+	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1];
 	}
 	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == 0 && ey == 0 && ez != 0 && ez == (NZ - 1)){
+	if (ex == 0 && ey == 0 && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1];
 	}
 
@@ -203,13 +203,13 @@ boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == 0){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
 	}
-	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
 	}
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
 	}
-	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
 	}
 
@@ -274,13 +274,13 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == 0){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez == (NZ - 1)){
+	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1];
 	}
 	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ-1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex];
 	}
-	if (ex == 0 && ey == 0 && ez != 0 && ez == (NZ - 1)){
+	if (ex == 0 && ey == 0 && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1];
 	}
 
@@ -302,13 +302,13 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == 0){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
 	}
-	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
 	}
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
 	}
-	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez == (NZ - 1)){
+	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
 	}
 
@@ -416,8 +416,9 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 		//get the density of tracing back position
 		den = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
 
-		float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
-		(*density) = den;
+	//	float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
+		d[ez*NX*NY + ey*NX + ex] = den;
+	//	(*density) = den;
 	}
 
 	__syncthreads();
@@ -721,7 +722,7 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 	//	if (ey > 20){
 		
 		int offset = pitch / sizeof(float4);
-		if (d[ez*offset + ey*NX + ex]>0.001)
+		if (d[ez*NX*NY + ey*NX + ex]>0.001)
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
 	//	}
 	}
@@ -768,7 +769,7 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 
 	float rdx = 1.f;
 	float alpha = rdx / VISC / dt;
-	float rBeta = 1 / (6 + alpha);
+	float rBeta = 1.f / (6 + alpha);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
 	for(int i=0;i<20;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;

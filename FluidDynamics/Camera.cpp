@@ -27,11 +27,11 @@ void Core::Camera::keyboardEvents(char key){
 		break;
 	}
 	case 'q':{
-		position.y += 0.1;
+		position.y += 0.05;
 		break;
 	}
 	case 'e':{
-		position.y -= 0.1;
+		position.y -= 0.05;
 		break;
 	}
 	}
