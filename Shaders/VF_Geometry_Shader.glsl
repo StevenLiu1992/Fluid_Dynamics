@@ -25,11 +25,11 @@ void main()
 		vec3 dir = IN[i].velocity.xyz;
 		float amount = length(dir)*5;
 		vec4 pos = gl_in[i].gl_Position;
-	//	if(pos.y>0.75&&pos.y<0.8){
+		if(pos.y>0&&pos.y<0.08){
 		mat4 mvp = projMatrix * viewMatrix * modelMatrix;
 		color =  vec4(1,1,0,IN[i].density*10);
 		
-	//	color = vec4(1,0,0,1);
+		color = vec4(IN[i].density*10,1,0,1);
 		gl_Position = mvp *pos;
 		EmitVertex();
 	
@@ -40,7 +40,7 @@ void main()
 		EmitVertex();
 		
 		EndPrimitive();
-	//	}
+		}
 		
 		
 		

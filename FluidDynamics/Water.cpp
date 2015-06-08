@@ -319,8 +319,8 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
 
 					//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j].x =0;
-					h[k*NX*NY + i*NX + j].y = 0.3;
+					h[k*NX*NY + i*NX + j].x =0.5;
+					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
 				}
 				else{
@@ -396,9 +396,9 @@ void Water::cout_max_length_vector(float4* h){
 //	std::cout << "cor <" << 30 << "," << 22 << "," << 16 << ">" << std::endl << std::endl;
 //	std::cout << "cor <" << d << "," << e << "," << f << ">" << std::endl;
 //	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
-	k = 0;
-	j = 20;
-	for (i = 0; i < NX; i++){
+	k = 16;
+	i = 16;
+	for (j = 0; j < NX; j++){
 		std::cout << h[k*NZ*NY + j*NX + i].x << "," << h[k*NZ*NY + j*NX + i].y << "," << h[k*NZ*NY + j*NX + i].z << std::endl;
 	}
 	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -435,8 +435,8 @@ void Water::simulateFluids(void)
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
 	
 	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
-//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-//	cout_max_length_vector(hvfield);
+	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
