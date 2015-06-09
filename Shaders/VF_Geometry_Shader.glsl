@@ -4,6 +4,7 @@
 layout(points) in;
 layout(line_strip, max_vertices = 2) out;
 
+
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
@@ -25,7 +26,7 @@ void main()
 		vec3 dir = IN[i].velocity.xyz;
 		float amount = length(dir)*5;
 		vec4 pos = gl_in[i].gl_Position;
-		if(pos.y>0&&pos.y<0.08){
+	//	if(pos.y>0&&pos.y<0.08){
 		mat4 mvp = projMatrix * viewMatrix * modelMatrix;
 		color =  vec4(1,1,0,IN[i].density*10);
 		
@@ -40,7 +41,7 @@ void main()
 		EmitVertex();
 		
 		EndPrimitive();
-		}
+	//	}
 		
 		
 		

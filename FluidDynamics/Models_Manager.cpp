@@ -3,8 +3,9 @@
 using namespace Managers;
 using namespace Rendering;
 
-Models_Manager::Models_Manager()
+Models_Manager::Models_Manager(Core::Camera* c)
 {
+	camera = c;
 	//triangle game object
 	Models::Triangle* triangle = new Models::Triangle();
 	triangle->SetProgram(Shader_Manager::GetShader("colorShader"));
@@ -20,7 +21,8 @@ Models_Manager::Models_Manager()
 	Models::Water* water = new Models::Water();
 	water->SetProgram(Shader_Manager::GetShader("particleShader"));
 	water->SetProgram1(Shader_Manager::GetShader("velocityFieldShader"));
-	water->Create();
+	water->Create(camera);
+	
 	gameModelList["water"] = water;
 }
 
@@ -52,7 +54,6 @@ void Models_Manager::Update(Matrix4 viewMatrix)
 	for (auto model : gameModelList)
 	{
 		model.second->Update(viewMatrix);
-	
 	}
 }
 

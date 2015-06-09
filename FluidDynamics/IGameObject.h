@@ -21,9 +21,9 @@ namespace Rendering
 		virtual void Update(Matrix4 viewMatrix) = 0;
 		virtual void SetProgram(GLuint shaderName) = 0;
 		virtual void Destroy() = 0;
-
 		virtual GLuint GetVao() const = 0;
 		virtual const std::vector<GLuint>& GetVbos() const = 0;
+		
 	};
 
 	inline IGameObject::~IGameObject()

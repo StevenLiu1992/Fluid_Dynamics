@@ -3,6 +3,7 @@ using namespace Rendering;
 using namespace Models;
 
 
+
 extern bool start_run = false;
 
 float4 *hvfield = NULL;
@@ -75,9 +76,9 @@ Water::~Water()
 
 }
 
-void Water::Create()
+void Water::Create(Core::Camera* c)
 {
-
+	camera = c;
 	GLint bsize;
 	tPitch_v = 0;
 	tPitch_t = 0;
@@ -258,8 +259,10 @@ void Water::Draw()
 	glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "viewMatrix"), 1, false, (float*)&viewMatrix);
-
-	glPointSize(1);
+	Vector3 cameraPos = camera->GetPosition();
+	glUniform3f(glGetUniformLocation(program1, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+//	std::cout << cameraPos << std::endl;
+//	glPointSize(1);
 	glBindVertexArray(vao1);
 
 	glEnable(GL_BLEND);
@@ -422,6 +425,7 @@ void Water::cout_density(float* d){
 		}
 	}
 	std::cout<<"total density: " << total << std::endl;
+//	std::cout << d[16 * NZ*NY + 1 * NX + 16] << std::endl;
 	
 }
 void Water::simulateFluids(void)
@@ -435,8 +439,8 @@ void Water::simulateFluids(void)
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
 	
 	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
-	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-	cout_max_length_vector(hvfield);
+//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+//	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);

@@ -27,7 +27,7 @@ namespace Managers
 	private:
 		Managers::Shader_Manager* shader_manager;
 		Managers::Models_Manager* models_manager;
-		Core::Camera* camera;
 		
+		Core::Camera* camera;
 	};
 }

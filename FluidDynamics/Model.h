@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "IGameObject.h"
-
+#include "Camera.h"
 namespace Rendering
 {
 	namespace Models{
@@ -19,7 +19,7 @@ namespace Rendering
 
 			virtual GLuint GetVao() const override;
 			virtual const std::vector<GLuint>& GetVbos() const override;
-
+			
 	//		void setViewMatrix(Matrix4 viewMatrix){ this->viewMatrix = viewMatrix; }
 		protected:
 			GLuint vao;
@@ -32,6 +32,7 @@ namespace Rendering
 			Quaternion orientation;
 			Matrix4 viewMatrix;
 			Matrix4 projMatrix;
+			
 		};
 	}
 }

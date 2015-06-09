@@ -29,7 +29,7 @@ namespace Rendering
 			Water();
 			~Water();
 
-			void Create();
+			void Create(Core::Camera* c = NULL);
 			virtual void Update(Matrix4 viewMatrix) override final;
 			virtual void Draw() override final;
 			void initParticles(float3 *p, int dx, int dy, int dz);
@@ -41,10 +41,11 @@ namespace Rendering
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float3* p, float *d);
 			void cout_density(float* d);
+			
 		private:
 			
 			
-
+			Core::Camera* camera;
 			
 			GLuint vao;
 			float3 *particles;

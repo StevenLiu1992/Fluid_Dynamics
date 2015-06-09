@@ -351,7 +351,7 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch)
 
 		
 		//	float3 texcoord = { ex, ey, ez };
-		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
+		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
 		ploc.y = (ey + 0.5f) - dt * velocity.y * dy;
 		ploc.z = (ez + 0.5f) - dt * velocity.z * dz;
@@ -392,7 +392,7 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 		float den;
 
 		//	find the velocity of this position
-		velocity = tex3D(texref_vel, (float)ex, (float)ey, (float)ez);
+		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 		
 		//tracing back
 		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
@@ -404,6 +404,8 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 
 	//	float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
 		d[ez*NX*NY + ey*NX + ex] = den;
+		/*if (ey == 1)
+			d[ez*NX*NY + ey*NX + ex] = velocity.y;*/
 	//	(*density) = den;
 	}
 
@@ -645,7 +647,7 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 		((char *)v + ez * pitch) + ey * dy + ex;*/
 	float3 newPosition;
 
-	float4 vloc = tex3D(texref_vel, position.x * dx, position.y * dy, position.z * dz);
+	float4 vloc = tex3D(texref_vel, position.x * dx+0.5, position.y * dy+0.5, position.z * dz+0.5);
 
 	newPosition.x = position.x + dt * vloc.x;
 	newPosition.y = position.y + dt * vloc.y;
@@ -701,7 +703,7 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (d[ez*NX*NY + ey*NX + ex]>0.001)
+		if (d[ez*NX*NY + ey*NX + ex]>0.0001)
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
 	}
 }
