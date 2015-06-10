@@ -259,8 +259,8 @@ void Water::Draw()
 	glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program1, "viewMatrix"), 1, false, (float*)&viewMatrix);
-	Vector3 cameraPos = camera->GetPosition();
-	glUniform3f(glGetUniformLocation(program1, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+	
+	
 //	std::cout << cameraPos << std::endl;
 //	glPointSize(1);
 	glBindVertexArray(vao1);
@@ -268,6 +268,30 @@ void Water::Draw()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glDrawArrays(GL_POINTS, 0, DS);
+	glUseProgram(0);
+
+
+	//draw density field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	glUseProgram(program2);
+
+
+	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(1, 0, 0));
+
+	glUniformMatrix4fv(glGetUniformLocation(program2, "projMatrix"), 1, false, (float*)&projMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(program2, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(program2, "viewMatrix"), 1, false, (float*)&viewMatrix);
+	Vector3 cameraPos = camera->GetPosition();
+	glUniform3f(glGetUniformLocation(program2, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+	//	std::cout << cameraPos << std::endl;
+	//	glPointSize(1);
+	glBindVertexArray(vao1);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 	glDrawArrays(GL_POINTS, 0, DS);
 	glUseProgram(0);
 
@@ -314,23 +338,25 @@ void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 void Water::initParticles_velocity(float4 *h, float4 *d){
 	int i, j, k;
 	for (k = 0; k < NZ; k++){
+		for (i = 0; i < NY; i++){
+			for (j = 0; j < NX; j++){
 
-		for (i = 0; i < NY; i++)
-		{
-			for (j = 0; j < NX; j++)
-			{
-				if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
+				h[k*NX*NY + i*NX + j].x = 0;
+				h[k*NX*NY + i*NX + j].y = 0;
+				h[k*NX*NY + i*NX + j].z = 0;
 
-					//	if (j==5&&i==10){
-					h[k*NX*NY + i*NX + j].x =0.5;
-					h[k*NX*NY + i*NX + j].y = 0;
-					h[k*NX*NY + i*NX + j].z = 0;
-				}
-				else{
+				if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
 					h[k*NX*NY + i*NX + j].x = 0;
+					h[k*NX*NY + i*NX + j].y = 0.8;
+					h[k*NX*NY + i*NX + j].z = 0;
+				}
+				if (j>0 && j<10 && i>20 && i<26 && k>8 && k<28){
+					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
 				}
+				
+				
 			}
 		}
 	}
@@ -340,25 +366,23 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 
 void Water::init_density(float *h, float3* p, float *d){
 	int i, j, k;
-	for (k = 0; k < NZ; k++){
+	float total = 0;
+	for (k = 1; k < NZ-1; k++){
 
-		for (i = 0; i < NY; i++)
+		for (i = 1; i < NY-1; i++)
 		{
-			for (j = 0; j < NX; j++)
+			for (j = 1; j < NX-1; j++)
 			{
 				int a = p[k*NX*NY + i*NX + j].x*NX;
 				int b = p[k*NX*NY + i*NX + j].y*NY;
 				int c = p[k*NX*NY + i*NX + j].z*NZ;
-			//	if (j>12 && j<28 && i>18 && i<24 && k>16 && k<18){
-					//	if (j==5&&i==10){
-				h[c*NX*NY + b*NX + a] += 0.1;
-					
-			//	}
 			
+				h[c*NX*NY + b*NX + a] += 0.1f;
+				total += 1;
 			}
 		}
 	}
-
+	std::cout <<"total density: "<< total << std::endl;
 	cudaMemcpy(d, h, sizeof(float)* DS, cudaMemcpyHostToDevice);
 }
 
@@ -399,12 +423,14 @@ void Water::cout_max_length_vector(float4* h){
 //	std::cout << "cor <" << 30 << "," << 22 << "," << 16 << ">" << std::endl << std::endl;
 //	std::cout << "cor <" << d << "," << e << "," << f << ">" << std::endl;
 //	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
-	k = 16;
+	/*k = 16;
 	i = 16;
 	for (j = 0; j < NX; j++){
 		std::cout << h[k*NZ*NY + j*NX + i].x << "," << h[k*NZ*NY + j*NX + i].y << "," << h[k*NZ*NY + j*NX + i].z << std::endl;
-	}
-	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+	}*/
+	std::cout << h[1*NZ*NY + 1*NX + 1].y;
+	std::cout << h[1 * NZ*NY + 1 * NX + 1].y;
+	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 }
 
 
@@ -425,15 +451,18 @@ void Water::cout_density(float* d){
 		}
 	}
 	std::cout<<"total density: " << total << std::endl;
-//	std::cout << d[16 * NZ*NY + 1 * NX + 16] << std::endl;
+	std::cout << d[1 * NZ*NY + 1 * NX + 1] << std::endl;
+	std::cout << d[(NZ-2) * NZ*NY + 1 * NX + 1] << std::endl;
+	std::cout << d[(NZ - 2) * NZ*NY + 1 * NX + NX-2] << std::endl;
+	std::cout << d[1 * NZ*NY + 1 * NX + NX - 2] << std::endl;
 	
 }
 void Water::simulateFluids(void)
 {
 	// simulate fluid
 	ttt++;
-	advect(dvfield, NX, NY, NZ, DT);
 	addForce(dvfield, ddensity, NX, NY, NZ, DT);
+	advect(dvfield, NX, NY, NZ, DT);
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
@@ -443,8 +472,8 @@ void Water::simulateFluids(void)
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
-//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
-//	cout_density(hdensity);
+	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+	cout_density(hdensity);
 }
 
 

@@ -26,16 +26,20 @@ void main()
 	
 	for(int i = 0; i < gl_in.length(); ++i){
 		vec3 pos = gl_in[i].gl_Position.xyz;
-		vec3 worldpos = (modelMatrix*IN[i].velocity).xyz;
-		mat4 mvp = projMatrix * viewMatrix * modelMatrix;
-		color =  vec4(0,0,1,IN[i].density);
-		gl_Position = mvp*vec4(pos+vec3(0,-0.03,0), 1.0);
+		vec3 worldpos = (modelMatrix*gl_in[i].gl_Position).xyz;
+		vec3 toCamera = normalize(gCameraPos - worldpos);
+		vec3 up = vec3(0.0, 1.0, 0.0);
+		vec3 right = cross(toCamera, up);
+		
+		mat4 vp = projMatrix * viewMatrix;
+		color =  vec4(0,0,1,IN[i].density/5);
+		gl_Position = vp*vec4(worldpos+vec3(0,-0.3,0), 1.0);
 		EmitVertex();
-		gl_Position = mvp*vec4(pos+vec3(0.03,-0.03,0), 1.0);
+		gl_Position = vp*vec4(worldpos+vec3(0,-0.3,0)+right*0.3, 1.0);
 		EmitVertex();
-		gl_Position = mvp*vec4(pos+vec3(0,0,0), 1.0);
+		gl_Position = vp*vec4(worldpos+vec3(0,0,0), 1.0);
 		EmitVertex();
-		gl_Position = mvp *vec4(pos+vec3(0.03,0,0), 1.0);
+		gl_Position = vp *vec4(worldpos+right*0.3, 1.0);
 		EmitVertex();
 		EndPrimitive();
 		/*

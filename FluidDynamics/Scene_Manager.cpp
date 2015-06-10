@@ -21,7 +21,11 @@ Scene_Manager::Scene_Manager()
 	shader_manager->CreateProgram("velocityFieldShader",
 	"../Shaders/VF_Vertex_Shader.glsl",
 	"../Shaders/VF_Fragment_Shader.glsl",
-	"../Shaders/Billboard_Geometry_Shader.glsl");
+	"../Shaders/VF_Geometry_Shader.glsl");
+	shader_manager->CreateProgram("DensityShader",
+		"../Shaders/VF_Vertex_Shader.glsl",
+		"../Shaders/VF_Fragment_Shader.glsl",
+		"../Shaders/Billboard_Geometry_Shader.glsl");
 	camera = new Core::Camera(0, 0, Vector3(5,10,25));
 	models_manager = new Models_Manager(camera);
 //	models_manager->setCamera(camera);

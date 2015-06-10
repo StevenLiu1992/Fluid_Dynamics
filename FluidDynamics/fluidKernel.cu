@@ -1,8 +1,8 @@
 #include "fluidKernel.cuh"
 
-texture<float4, 3> texref_vel;
-texture<float, 3> texref_den;
-texture<float4, 3> texref_temp;
+texture<float4, 3, cudaReadModeElementType> texref_vel;
+texture<float, 3, cudaReadModeElementType> texref_den;
+texture<float4, 3, cudaReadModeElementType> texref_temp;
 
 static cudaArray *array_vel = NULL;
 static cudaArray *array_temp = NULL;
@@ -38,6 +38,7 @@ void setupTexture(int x, int y, int z)
 	texref_den.addressMode[0] = cudaAddressModeClamp;
 	texref_den.addressMode[1] = cudaAddressModeClamp;
 	texref_den.addressMode[2] = cudaAddressModeClamp;
+	texref_den.normalized = false;
 	volumeSize_den = make_cudaExtent(NX, NY, NZ);
 	ca_descriptor_den = cudaCreateChannelDesc<float>();
 	getLastCudaError("cudaMalloc failed");
@@ -48,6 +49,7 @@ void setupTexture(int x, int y, int z)
 	texref_vel.addressMode[0] = cudaAddressModeClamp;
 	texref_vel.addressMode[1] = cudaAddressModeClamp;
 	texref_vel.addressMode[2] = cudaAddressModeClamp;
+	texref_vel.normalized = false;
 	volumeSize_vel = make_cudaExtent(NX, NY, NZ);
 	ca_descriptor_vel = cudaCreateChannelDesc<float4>();
 	checkCudaErrors(cudaMalloc3DArray(&array_vel, &ca_descriptor_vel, volumeSize_vel));
@@ -143,7 +145,6 @@ boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t
 	if (ex == (NX - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
 	}
-
 	if (ey == 0){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
 	}
@@ -466,8 +467,8 @@ int dx, int dy, int dz, size_t pitch){
 		float4 p2 = temp[right];//right x
 		float4 p3 = temp[bottom];//bottom x
 		float4 p4 = temp[top];//top x
-		float4 p5 = temp[behind];//front x
 		float4 p6 = temp[front];//behind x
+		float4 p5 = temp[behind];//front x
 
 		float4 p0 = b[ez*offset + ey*NX + ex];//value b
 
@@ -703,7 +704,7 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (d[ez*NX*NY + ey*NX + ex]>0.0001)
+		if (d[ez*NX*NY + ey*NX + ex]>0.2)
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
 	}
 }
@@ -753,9 +754,9 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 	for(int i=0;i<20;i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
 	//	update_vel_texture(temp, NX, NY, tPitch_v);
-		jacobi_k << <block_size, threads_size >> >(v, v, temp, alpha, rBeta, dx, dy, dz, tPitch_v);
+		jacobi_k << <block_size, threads_size >> >(v, temp, temp, alpha, rBeta, dx, dy, dz, tPitch_v);
 		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-	//	SWAP(v, temp);
+		SWAP(v, temp);
 	}
 	
 //	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);

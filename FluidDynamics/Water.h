@@ -38,6 +38,7 @@ namespace Rendering
 			void addSomeForce(int spx, int spy, float fx, float fy) const;
 			void initVelocityPosition(float3 *vp, int dx, int dy, int dz);
 			void SetProgram1(GLuint p1){ this->program1 = p1; }
+			void SetProgram2(GLuint p2){ this->program2 = p2; }
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float3* p, float *d);
 			void cout_density(float* d);
@@ -51,6 +52,7 @@ namespace Rendering
 			float3 *particles;
 			float3 * v_position;
 			GLuint program1;
+			GLuint program2;
 			int ttt;
 		};
 		

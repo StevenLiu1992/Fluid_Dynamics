@@ -21,6 +21,7 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	Models::Water* water = new Models::Water();
 	water->SetProgram(Shader_Manager::GetShader("particleShader"));
 	water->SetProgram1(Shader_Manager::GetShader("velocityFieldShader"));
+	water->SetProgram2(Shader_Manager::GetShader("DensityShader"));
 	water->Create(camera);
 	
 	gameModelList["water"] = water;
