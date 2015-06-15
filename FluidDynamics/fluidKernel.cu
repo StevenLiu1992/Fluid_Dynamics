@@ -704,7 +704,7 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (d[ez*NX*NY + ey*NX + ex]>0.2)
+		if (d[ez*NX*NY + ey*NX + ex]>0.15)
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
 	}
 }

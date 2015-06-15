@@ -53,6 +53,7 @@ namespace Rendering
 			float3 * v_position;
 			GLuint program1;
 			GLuint program2;
+			int particle_count;
 			int ttt;
 		};
 		

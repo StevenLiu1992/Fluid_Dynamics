@@ -1,10 +1,10 @@
-﻿Build started 10/06/2015 16:16:01.
+﻿Build started 15/06/2015 18:01:06.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
      1>AddCudaCompileDeps:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_DEBUG /D_CONSOLE /D_MBCS /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I. /FIcuda_runtime.h /c D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu 
        CudaBuild:
          Compiling CUDA source file fluidKernel.cu...
-         cmd.exe /C "C:\Users\b4008001\AppData\Local\Temp\tmpf441bed5b53e4fe58b6f110efcc545e3.cmd"
+         cmd.exe /C "C:\Users\b4008001\AppData\Local\Temp\tmpba411d1b3aa348a2a30e357a4c6d639a.cmd"
          "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"  -G   --keep-dir Debug -maxrregcount=0  --machine 32 --compile -cudart static  -g   -DWIN32 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MDd  " -o Debug\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu"
          
          D:\GitHub\Fluid_Dynamics\FluidDynamics>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"  -G   --keep-dir Debug -maxrregcount=0  --machine 32 --compile -cudart static  -g   -DWIN32 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MDd  " -o Debug\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu" 
@@ -37,4 +37,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:05.80
+Time Elapsed 00:00:05.79

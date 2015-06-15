@@ -78,6 +78,7 @@ Water::~Water()
 
 void Water::Create(Core::Camera* c)
 {
+	particle_count = 0;
 	camera = c;
 	GLint bsize;
 	tPitch_v = 0;
@@ -117,17 +118,17 @@ void Water::Create(Core::Camera* c)
 	bindTexture();
 
 	
+	// Create particle array
+	particles = (float3 *)malloc(sizeof(float3) * DS);
 
+	initParticles(particles, NX, NY, NZ);
+
+	init_density(hdensity, particles, ddensity);
 	
 
 	//for paritcles system>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	
-	// Create particle array
-	particles = (float3 *)malloc(sizeof(float3) * DS);
-	memset(particles, 0.5, sizeof(float3) * DS);
-	initParticles(particles, NX, NY, NZ);
-	memset(hdensity, 0, sizeof(float) * DS);
-	init_density(hdensity, particles, ddensity);
+	
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -306,18 +307,46 @@ void Water::Draw()
 
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
 	int i, j, k;
+	int count = 0;
+	memset(p, 0, sizeof(float3) * DS);
 	for (k = 0; k <= (dz-1); k++){
 
 		for (i = 0; i <= (dy-1); i++)
 		{
 			for (j = 0; j <= (dx-1); j++)
 			{
-				p[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx / 8 + 1/2.0;
+				if (j > 12 && j < 20 && i > 12 && i < 20 && (k == 12 || k == 20)){
+					for (int m = 0; m < 4; m++){
+						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
+						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
+						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+						count++;
+					}
+				}
+				if (j > 12 && j < 20 && k > 12 && k < 20 && (i == 12 || i == 20)){
+					for (int m = 0; m < 4; m++){
+						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
+						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
+						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+						count++;
+					}
+				}
+				if (i > 12 && i < 20 && k > 12 && k < 20 && (j == 12 || j == 20)){
+					for (int m = 0; m < 4; m++){
+						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
+						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
+						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+						count++;
+					}
+				}
+				
+				/*p[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx / 8 + 1/2.0;
 				p[k*dx*dy + i*dx + j].y = (float)(i + 0.5) / dy / 8 + 1/2.0;
-				p[k*dx*dy + i*dx + j].z = (float)(k + 0.5) / dz / 8 + 1/2.0;
+				p[k*dx*dy + i*dx + j].z = (float)(k + 0.5) / dz / 8 + 1/2.0;*/
 			}
 		}
 	}
+	particle_count = count;
 }
 void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	int i, j, k;
@@ -367,18 +396,20 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 void Water::init_density(float *h, float3* p, float *d){
 	int i, j, k;
 	float total = 0;
+	memset(h, 0, sizeof(float) * DS);
 	for (k = 1; k < NZ-1; k++){
 
 		for (i = 1; i < NY-1; i++)
 		{
 			for (j = 1; j < NX-1; j++)
 			{
-				int a = p[k*NX*NY + i*NX + j].x*NX;
+				/*int a = p[k*NX*NY + i*NX + j].x*NX;
 				int b = p[k*NX*NY + i*NX + j].y*NY;
-				int c = p[k*NX*NY + i*NX + j].z*NZ;
-			
-				h[c*NX*NY + b*NX + a] += 0.1f;
-				total += 1;
+				int c = p[k*NX*NY + i*NX + j].z*NZ;*/
+				if (i > 12 && i < 20 && k > 12 && k < 20 && j > 12 && j < 20){
+					h[k*NX*NY + i*NX + j] = 4.4f;
+					total += 4.4f;
+				}
 			}
 		}
 	}
