@@ -353,15 +353,15 @@ advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch)
 		
 		//	float3 texcoord = { ex, ey, ez };
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
-		ploc.y = (ey + 0.5f) - dt * velocity.y * dy;
-		ploc.z = (ez + 0.5f) - dt * velocity.z * dz;
+		ploc.x = (ex ) - dt * velocity.x * dx;
+		ploc.y = (ey ) - dt * velocity.y * dy;
+		ploc.z = (ez ) - dt * velocity.z * dz;
 
 
 
 
 
-		velocity = tex3D(texref_vel, ploc.x, ploc.y, ploc.z);
+		velocity = tex3D(texref_vel, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
 
 		float4 *Velocity_field = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
 		(*Velocity_field) = velocity;	
@@ -396,12 +396,12 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 		
 		//tracing back
-		ploc.x = (ex + 0.5f) - dt * velocity.x * dx;
-		ploc.y = (ey + 0.5f) - dt * velocity.y * dy;
-		ploc.z = (ez + 0.5f) - dt * velocity.z * dz;
+		ploc.x = (ex) - dt * velocity.x * dx;
+		ploc.y = (ey) - dt * velocity.y * dy;
+		ploc.z = (ez) - dt * velocity.z * dz;
 
 		//get the density of tracing back position
-		den = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
+		den = tex3D(texref_den, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
 
 	//	float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
 		d[ez*NX*NY + ey*NX + ex] = den;
@@ -501,37 +501,13 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
 		int left, right, top, bottom, front, behind;
 		int offset = pitch / sizeof(float4);
-		/*if (ex == 0)
-			left = ez*offset + ey*NX + ex;
-		else
-			left = ez*offset + ey*NX + ex - 1;
-		if (ex == NX - 1)
-			right = ez*offset + ey*NX + ex;
-		else
-			right = ez*offset + ey*NX + ex + 1;
-		if (ey == 0)
-			bottom = ez*offset + ey*NX + ex;
-		else
-			bottom = ez*offset + (ey - 1)*NX + ex;
-		if (ey == NY - 1)
-			top = ez*offset + ey*NX + ex;
-		else
-			top = ez*offset + (ey + 1)*NX + ex;
-		if (ez == 0)
-			behind = ez*offset + ey*NX + ex;
-		else
-			behind = (ez - 1)*offset + ey*NX + ex;
-		if (ex == NZ - 1)
-			front = ez*offset + ey*NX + ex;
-		else
-			front = (ez + 1)*offset + ey*NX + ex;*/
 			
-		left = ez*offset + ey*NX + ex - 1;
-		right = ez*offset + ey*NX + ex + 1;
-		bottom = ez*offset + (ey - 1)*NX + ex;
-		top = ez*offset + (ey + 1)*NX + ex;
-		behind = (ez - 1)*offset + ey*NX + ex;
-		front = (ez + 1)*offset + ey*NX + ex;
+		left	= ez*offset + ey*NX + ex - 1;
+		right	= ez*offset + ey*NX + ex + 1;
+		bottom	= ez*offset + (ey - 1)*NX + ex;
+		top		= ez*offset + (ey + 1)*NX + ex;
+		behind	= (ez - 1)*offset + ey*NX + ex;
+		front	= (ez + 1)*offset + ey*NX + ex;
 		float4 p1 = v[left];//left x
 		float4 p2 = v[right];//right x
 		float4 p3 = v[bottom];//bottom x
@@ -665,6 +641,50 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 }
 
 __global__ void
+advectParticles_Runge_Kutta_k(float3 *particle, float4 *v,
+int dx, int dy, int dz, float dt, int lb, size_t pitch)
+{
+	//dx = 64
+	//dy = 64
+	//dz = 16
+	//lb = 16
+
+	// ex is the domain location in x for this thread
+	int ex = threadIdx.x + blockIdx.x * 8;
+	// ey is the domain location in y for this thread
+	int ey = threadIdx.y + blockIdx.y * 8;
+	// ez is the domain location in z for this thread
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+
+	int index = ez*dx*dy + ey*dx + ex;
+
+
+	float3 position = particle[index];
+
+	/*float4 *vloc = (float4 *)
+	((char *)v + ez * pitch) + ey * dy + ex;*/
+	float3 newPosition;
+	float3 midPosition;
+
+	float4 vloc = tex3D(texref_vel, position.x * dx + 0.5, position.y * dy + 0.5, position.z * dz + 0.5);
+
+	//middle postion
+	midPosition.x = position.x  + 0.5 * dt * vloc.x;
+	midPosition.y = position.y  + 0.5 * dt * vloc.y;
+	midPosition.z = position.z  + 0.5 * dt * vloc.z;
+	float4 midVelocity = tex3D(texref_vel, midPosition.x*dx + 0.5, midPosition.y*dy + 0.5, midPosition.z*dz + 0.5);
+
+	newPosition.x = (position.x + dt * midVelocity.x);
+	newPosition.y = (position.y + dt * midVelocity.y);
+	newPosition.z = (position.z + dt * midVelocity.z);
+
+	particle[index] = newPosition;
+	__syncthreads();
+
+}
+
+__global__ void
 bc_k(float4 *b, size_t pitch,float scale){
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
@@ -704,7 +724,7 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (d[ez*NX*NY + ey*NX + ex]>0.15)
+		if (d[ez*NX*NY + ey*NX + ex]>0.1)
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - dt * make_float4(0, 0.009, 0, 0);
 	}
 }
@@ -807,7 +827,7 @@ void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, fl
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
 	update_vel_texture(v, NX, NY, tPitch_v);
-	advectParticles_k<<<block_size, threads_size >>>(p, v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
+	advectParticles_Runge_Kutta_k << <block_size, threads_size >> >(p, v, dx, dy, dz, dt, NY / THREAD_Y, tPitch_v);
 	getLastCudaError("advectParticles_k failed.");
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);

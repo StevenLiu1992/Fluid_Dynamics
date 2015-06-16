@@ -1,14 +1,28 @@
-﻿Build started 15/06/2015 18:01:06.
+﻿Build started 16/06/2015 15:08:44.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
-     1>AddCudaCompileDeps:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_DEBUG /D_CONSOLE /D_MBCS /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I. /FIcuda_runtime.h /c D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu 
-       CudaBuild:
-         Compiling CUDA source file fluidKernel.cu...
-         cmd.exe /C "C:\Users\b4008001\AppData\Local\Temp\tmpba411d1b3aa348a2a30e357a4c6d639a.cmd"
-         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"  -G   --keep-dir Debug -maxrregcount=0  --machine 32 --compile -cudart static  -g   -DWIN32 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MDd  " -o Debug\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu"
-         
-         D:\GitHub\Fluid_Dynamics\FluidDynamics>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"  -G   --keep-dir Debug -maxrregcount=0  --machine 32 --compile -cudart static  -g   -DWIN32 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MDd  " -o Debug\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu" 
-         fluidKernel.cu
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Water.cpp
+         Water.cpp
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(321): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(322): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(323): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(329): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(330): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(331): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(337): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(338): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(339): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(381): warning C4305: '=' : truncation from 'double' to 'float'
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(385): warning C4305: '=' : truncation from 'double' to 'float'
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'a' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(423): warning C4101: 'i' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'f' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'b' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(423): warning C4101: 'k' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'd' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'c' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(424): warning C4101: 'e' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(423): warning C4101: 'j' : unreferenced local variable
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\fluidKernel.cu.obj
          Debug\Camera.obj
@@ -37,4 +51,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:05.79
+Time Elapsed 00:00:01.38

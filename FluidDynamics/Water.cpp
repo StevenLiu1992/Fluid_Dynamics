@@ -244,7 +244,7 @@ void Water::Draw()
 	glUniformMatrix4fv(glGetUniformLocation(program, "viewMatrix"), 1, false, (float*)&viewMatrix);
 
 	glUniform1i(glGetUniformLocation(program, "diffuse_texture"), 0);
-	glPointSize(6);
+	glPointSize(3);
 	glBindVertexArray(vao);
 
 	glDrawArrays(GL_POINTS, 0, DS);
@@ -308,6 +308,7 @@ void Water::Draw()
 void Water::initParticles(float3 *p, int dx, int dy, int dz){
 	int i, j, k;
 	int count = 0;
+	int num = 64;
 	memset(p, 0, sizeof(float3) * DS);
 	for (k = 0; k <= (dz-1); k++){
 
@@ -315,27 +316,27 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 		{
 			for (j = 0; j <= (dx-1); j++)
 			{
-				if (j > 12 && j < 20 && i > 12 && i < 20 && (k == 12 || k == 20)){
-					for (int m = 0; m < 4; m++){
-						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
-						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
-						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+				if (j >= 12 && j <= 20 && i >= 12 && i <= 20 && (k == 12 || k == 20)){
+					for (int m = 0; m < num; m++){
+						p[count].x = ((j + 0.5) + MYRAND-0.5) / dx;
+						p[count].y = ((i + 0.5) + MYRAND-0.5) / dy;
+						p[count].z = ((k + 0.5) + 0.1 * (MYRAND-0.5)) / dz;
 						count++;
 					}
 				}
-				if (j > 12 && j < 20 && k > 12 && k < 20 && (i == 12 || i == 20)){
-					for (int m = 0; m < 4; m++){
-						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
-						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
-						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+				if (j >= 12 && j <= 20 && k >= 12 && k <= 20 && (i == 12 || i == 20)){
+					for (int m = 0; m < num; m++){
+						p[count].x = ((j + 0.5) + MYRAND-0.5) / dx;
+						p[count].y = ((i + 0.5) + 0.1 * (MYRAND - 0.5)) / dy;
+						p[count].z = ((k + 0.5) + MYRAND-0.5) / dz;
 						count++;
 					}
 				}
-				if (i > 12 && i < 20 && k > 12 && k < 20 && (j == 12 || j == 20)){
-					for (int m = 0; m < 4; m++){
-						p[count].x = ((j + 0.5) + MYRAND*0.5) / dx;
-						p[count].y = ((i + 0.5) + MYRAND*0.5) / dy;
-						p[count].z = ((k + 0.5) + MYRAND*0.5) / dz;
+				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && (j == 12 || j == 20)){
+					for (int m = 0; m < num; m++){
+						p[count].x = ((j + 0.5) + 0.1 * (MYRAND - 0.5)) / dx;
+						p[count].y = ((i + 0.5) + MYRAND-0.5) / dy;
+						p[count].z = ((k + 0.5) + MYRAND-0.5) / dz;
 						count++;
 					}
 				}
@@ -347,6 +348,7 @@ void Water::initParticles(float3 *p, int dx, int dy, int dz){
 		}
 	}
 	particle_count = count;
+	std::cout << "particle amount:" << particle_count << std::endl;
 }
 void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	int i, j, k;
