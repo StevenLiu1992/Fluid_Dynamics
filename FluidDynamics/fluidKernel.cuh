@@ -15,11 +15,11 @@
 #include "Dependencies/glew/glew.h"
 #include "Dependencies/freeglut/freeglut.h"
 
-void setupTexture(int x, int y, int z);
+void setupTexture(void);
 void bindTexture(void);
 void unbindTexture(void);
 void update_vel_texture(float4 *data, int w, int h, size_t pitch);
-void update_den_texture(float *data, int w, int h, size_t pitch);
+void update_1f_texture(cudaArray *array_1d, float *data, int w, int h, size_t pitch);
 void update_temp_texture(float4 *data, int dimx, int dimy, size_t pitch);
 void deleteTexture(void);
 
@@ -61,4 +61,6 @@ bc_density_k(float *b, size_t pitch, float scale);
 __global__ void
 force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch);
 
+__global__ void
+advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch);
 #endif

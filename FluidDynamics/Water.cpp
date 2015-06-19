@@ -5,14 +5,18 @@ using namespace Models;
 
 
 extern bool start_run = false;
+extern float4 *dvfield = NULL;
 
 float4 *hvfield = NULL;
-extern float4 *dvfield = NULL;
 float4 *dtemp = NULL;
 float4 *dpressure = NULL;
 float4 *ddivergence = NULL;
 float *ddensity = NULL;
 float *hdensity = NULL;
+
+//level set function
+float *dlsf = NULL;
+float *hlsf = NULL;
 
 GLuint vbo3 = 0;                 // OpenGL vertex buffer object
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
@@ -23,33 +27,28 @@ struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 
 // Texture pitch
-size_t tPitch_v = 0; // Now this is compatible with gcc in 64-bit
-
-// Texture pitch
-size_t tPitch_t = 0; // Now this is compatible with gcc in 64-bit
-// Texture pitch
-size_t tPitch_d = 0; // Now this is compatible with gcc in 64-bit
-// Texture pitch
-size_t tPitch_p = 0; // Now this is compatible with gcc in 64-bit
-
-size_t tPitch_den = 0; // Now this is compatible with gcc in 64-bit
-
+size_t tPitch_v = 0;
+size_t tPitch_t = 0;
+size_t tPitch_d = 0;
+size_t tPitch_p = 0;
+size_t tPitch_den = 0; 
+size_t tPitch_lsf = 0; 
 
 extern "C"
 void advect(float4 *v, int dx, int dy, int dz, float dt);
-
 extern "C"
 void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
-
 extern "C"
 void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt);
-
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, float dt);
 extern "C"
 void advectDensity(float4 *v, float *d, int dx, int dy, int dz, float dt);
 extern "C"
 void addForce(float4 *v, float *d, int dx, int dy, int dz, float dt);
+extern "C"
+void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt);
+
 Water::Water()
 {
 	ttt = 0;
@@ -86,11 +85,13 @@ void Water::Create(Core::Camera* c)
 	tPitch_p = 0;
 	tPitch_d = 0;
 	tPitch_den = 0;
+	tPitch_lsf = 0;
+	texture = SOIL_load_OGL_texture("../Textures/water_particle.jpg",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 	int devID;
 	cudaDeviceProp deviceProps;
 	int fakeargc = 1;
 	char *fakeargv[] = { "fake", NULL };
-	// use command-line specified CUDA device, otherwise use device with highest Gflops/s
 	devID = findCudaGLDevice(fakeargc, (const char **)fakeargv);
 
 	// get number of SMs on this GPU
@@ -99,36 +100,30 @@ void Water::Create(Core::Camera* c)
 	printf("CUDA device [%s] has %d Multi-Processors\n",
 		deviceProps.name, deviceProps.multiProcessorCount);
 
-	hvfield = (float4 *)malloc(sizeof(float4) * DS);
-	hdensity = (float *)malloc(sizeof(float) * DS);;
+	setupTexture();
+	bindTexture();
+	//Allocate host data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	hvfield		= (float4 *)malloc(sizeof(float4) * DS);
+	hdensity	= (float *)malloc(sizeof(float) * DS);
+	hlsf		= (float *)malloc(sizeof(float) * DS);
+	particles	= (float3 *)malloc(sizeof(float3) * DS);
 
-	// Allocate and initialize device data
+	//Allocate device data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dtemp, &tPitch_t, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dlsf, &tPitch_lsf, sizeof(float)*NX*NY, NZ);
 	
-//	memset(hvfield, 0, sizeof(float4) * DS);
-//	cudaMemcpy(dvfield, hvfield, sizeof(float4) * DS, cudaMemcpyHostToDevice);
-//	cudaMemcpy(dtemp, hvfield, sizeof(float4)* DS, cudaMemcpyHostToDevice);
+	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
-	
-	setupTexture(NX,NY,NZ);
-	bindTexture();
-
-	
-	// Create particle array
-	particles = (float3 *)malloc(sizeof(float3) * DS);
-
-	initParticles(particles, NX, NY, NZ);
-
+	initParticles(particles);
+	initLevelSetFunc(hlsf, dlsf);
 	init_density(hdensity, particles, ddensity);
-	
 
-	//for paritcles system>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	
-	
+
+	//paritcles system vbo>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -136,12 +131,8 @@ void Water::Create(Core::Camera* c)
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * DS, particles, GL_DYNAMIC_DRAW);
-
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-
-	if (bsize != (sizeof(float3) * DS))
-		return;
-
+	if (bsize != (sizeof(float3) * DS)) return;
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
 
@@ -149,7 +140,6 @@ void Water::Create(Core::Camera* c)
 	this->vao = vao;
 	this->vbos.push_back(vbo);
 
-	
 	//for velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	v_position = (float3 *)malloc(sizeof(float3) * DS);
 	initVelocityPosition(v_position, NX, NY, NZ);
@@ -157,14 +147,12 @@ void Water::Create(Core::Camera* c)
 	glGenVertexArrays(1, &vao1);
 	glBindVertexArray(vao1);
 
-
 	//velocity position
 	glGenBuffers(1, &vbo1);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo1);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * DS, v_position, GL_DYNAMIC_DRAW);
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-	if (bsize != (sizeof(float3) * DS))
-		return;
+	if (bsize != (sizeof(float3) * DS)) return;
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
@@ -175,8 +163,7 @@ void Water::Create(Core::Camera* c)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo2);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float4) * DS, hvfield, GL_DYNAMIC_DRAW);
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-	if (bsize != (sizeof(float4) * DS))
-		return;
+	if (bsize != (sizeof(float4) * DS)) return;
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
 	this->vbos.push_back(vbo2);
@@ -186,22 +173,16 @@ void Water::Create(Core::Camera* c)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo3);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* DS, hdensity, GL_DYNAMIC_DRAW);
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-	if (bsize != (sizeof(float)* DS))
-		return;
+	if (bsize != (sizeof(float)* DS)) return;
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
 	this->vbos.push_back(vbo3);
-
+	this->vao1 = vao1;
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	
-
-	this->vao1 = vao1;
 	
-
-	texture = SOIL_load_OGL_texture("../Textures/water_particle.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
-
-
+	
 	//bind particle position vbo
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
@@ -301,49 +282,80 @@ void Water::Draw()
 
 
 #define MYRAND (rand() / (float)RAND_MAX)
+#define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
+#define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
+void Water::initLevelSetFunc(float *h, float *d){
+	int i, j, k;
+	int count = 0;
+	int num = 64;
+	memset(h, -1, sizeof(float) * DS);
+	for (k = 0; k < NZ; k++){
+		for (i = 0; i < NY; i++){
+			for (j = 0; j < NX; j++){
+				if (j >= 12 && j <= 20 && i >= 12 && i <= 20 && (k == 12 || k == 20)){
+					h[k*NX*NY + i*NX + j] = 0;
+				}
+				if (j >= 12 && j <= 20 && k >= 12 && k <= 20 && (i == 12 || i == 20)){
+					h[k*NX*NY + i*NX + j] = 0;
+				}
+				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && (j == 12 || j == 20)){
+					h[k*NX*NY + i*NX + j] = 0;
+				}
+				if (k < 12 || k > 20 || i < 12 || i > 20 || j < 12 || j > 20){
+					int a = std::abs(j - 16) - 4;
+					int b = std::abs(i - 16) - 4;
+					int c = std::abs(k - 16) - 4;
+					h[k*NX*NY + i*NX + j] = MAX(a, b, c);
+				}
+				if (k > 12 && k < 20 && i > 12 && i < 20 && j > 12 && j < 20){
+					int a = 4 - std::abs(j - 16);
+					int b = 4 - std::abs(i - 16);
+					int c = 4 - std::abs(k - 16);
+					h[k*NX*NY + i*NX + j] = - MIN(a, b, c);
+				}
+			}
+		}
+	}
 
+	cudaMemcpy(d, h, sizeof(float)* DS, cudaMemcpyHostToDevice);
+}
 
-
-void Water::initParticles(float3 *p, int dx, int dy, int dz){
+void Water::initParticles(float3 *p){
 	int i, j, k;
 	int count = 0;
 	int num = 64;
 	memset(p, 0, sizeof(float3) * DS);
-	for (k = 0; k <= (dz-1); k++){
+	for (k = 0; k < NZ; k++){
 
-		for (i = 0; i <= (dy-1); i++)
+		for (i = 0; i < NY; i++)
 		{
-			for (j = 0; j <= (dx-1); j++)
+			for (j = 0; j < NX; j++)
 			{
 				if (j >= 12 && j <= 20 && i >= 12 && i <= 20 && (k == 12 || k == 20)){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + MYRAND-0.5) / dx;
-						p[count].y = ((i + 0.5) + MYRAND-0.5) / dy;
-						p[count].z = ((k + 0.5) + 0.1 * (MYRAND-0.5)) / dz;
+						p[count].x = ((j + 0.5) + MYRAND - 0.5) / NX;
+						p[count].y = ((i + 0.5) + MYRAND - 0.5) / NY;
+						p[count].z = ((k + 0.5) + 0.1 * (MYRAND-0.5)) / NZ;
 						count++;
 					}
 				}
 				if (j >= 12 && j <= 20 && k >= 12 && k <= 20 && (i == 12 || i == 20)){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + MYRAND-0.5) / dx;
-						p[count].y = ((i + 0.5) + 0.1 * (MYRAND - 0.5)) / dy;
-						p[count].z = ((k + 0.5) + MYRAND-0.5) / dz;
+						p[count].x = ((j + 0.5) + MYRAND - 0.5) / NX;
+						p[count].y = ((i + 0.5) + 0.1 * (MYRAND - 0.5)) / NY;
+						p[count].z = ((k + 0.5) + MYRAND - 0.5) / NZ;
 						count++;
 					}
 				}
 				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && (j == 12 || j == 20)){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + 0.1 * (MYRAND - 0.5)) / dx;
-						p[count].y = ((i + 0.5) + MYRAND-0.5) / dy;
-						p[count].z = ((k + 0.5) + MYRAND-0.5) / dz;
+						p[count].x = ((j + 0.5) + 0.1 * (MYRAND - 0.5)) / NX;
+						p[count].y = ((i + 0.5) + MYRAND-0.5) / NY;
+						p[count].z = ((k + 0.5) + MYRAND - 0.5) / NZ;
 						count++;
 					}
 				}
-				
-				/*p[k*dx*dy + i*dx + j].x = (float)(j + 0.5) / dx / 8 + 1/2.0;
-				p[k*dx*dy + i*dx + j].y = (float)(i + 0.5) / dy / 8 + 1/2.0;
-				p[k*dx*dy + i*dx + j].z = (float)(k + 0.5) / dz / 8 + 1/2.0;*/
 			}
 		}
 	}
@@ -385,13 +397,10 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}
-				
-				
+				}			
 			}
 		}
 	}
-
 	cudaMemcpy(d, h, sizeof(float4)* DS, cudaMemcpyHostToDevice);
 }
 
@@ -400,14 +409,8 @@ void Water::init_density(float *h, float3* p, float *d){
 	float total = 0;
 	memset(h, 0, sizeof(float) * DS);
 	for (k = 1; k < NZ-1; k++){
-
-		for (i = 1; i < NY-1; i++)
-		{
-			for (j = 1; j < NX-1; j++)
-			{
-				/*int a = p[k*NX*NY + i*NX + j].x*NX;
-				int b = p[k*NX*NY + i*NX + j].y*NY;
-				int c = p[k*NX*NY + i*NX + j].z*NZ;*/
+		for (i = 1; i < NY-1; i++){
+			for (j = 1; j < NX-1; j++){
 				if (i > 12 && i < 20 && k > 12 && k < 20 && j > 12 && j < 20){
 					h[k*NX*NY + i*NX + j] = 4.4f;
 					total += 4.4f;
@@ -465,8 +468,6 @@ void Water::cout_max_length_vector(float4* h){
 	std::cout << h[1 * NZ*NY + 1 * NX + 1].y;
 	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 }
-
-
 void Water::cout_density(float* d){
 	int i, j, k;
 	float total = 0;
@@ -490,6 +491,23 @@ void Water::cout_density(float* d){
 	std::cout << d[1 * NZ*NY + 1 * NX + NX - 2] << std::endl;
 	
 }
+void Water::cout_levelset(float* ls){
+	int i, j, k;
+	float total = 0;
+	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+	for (k = 0; k < NZ; k++){
+		for (i = 0; i < NY; i++){
+			for (j = 0; j < NX; j++){
+				if (j == 16)
+					printf("%1.1f ", ls[k*NX*NY + i*NX + j]);
+					//std::cout << ls[k*NX*NY + i*NX + j] << " ";
+			}
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+
+}
 void Water::simulateFluids(void)
 {
 	// simulate fluid
@@ -499,14 +517,18 @@ void Water::simulateFluids(void)
 	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
 	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
-	
 	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
+
+	advectLevelSet(dvfield, dlsf, NX, NY, NZ, DT);
+
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
-	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
-	cout_density(hdensity);
+//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+//	cout_density(hdensity);
+//	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+//	cout_levelset(hlsf);
 }
 
 

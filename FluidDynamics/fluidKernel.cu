@@ -2,18 +2,19 @@
 
 texture<float4, 3, cudaReadModeElementType> texref_vel;
 texture<float, 3, cudaReadModeElementType> texref_den;
+texture<float, 3, cudaReadModeElementType> texref_levelset;
 texture<float4, 3, cudaReadModeElementType> texref_temp;
 
 static cudaArray *array_vel = NULL;
 static cudaArray *array_temp = NULL;
 static cudaArray *array_den = NULL;
+static cudaArray *array_levelset = NULL;
 
-cudaChannelFormatDesc ca_descriptor_vel;
-cudaChannelFormatDesc ca_descriptor_temp;
-cudaChannelFormatDesc ca_descriptor_den;
-cudaExtent volumeSize_vel;
-cudaExtent volumeSize_temp;
-cudaExtent volumeSize_den;
+cudaChannelFormatDesc ca_descriptor_1f;
+cudaChannelFormatDesc ca_descriptor_4f;
+
+cudaExtent volumeSize;
+
 
 
 // Texture pitch
@@ -22,6 +23,7 @@ extern size_t tPitch_t;
 extern size_t tPitch_p;
 extern size_t tPitch_d;
 extern size_t tPitch_den;
+extern size_t tPitch_lsf;
 
 // Particle data
 extern GLuint vbo;                 // OpenGL vertex buffer object
@@ -31,18 +33,31 @@ extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA ex
 extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 
-void setupTexture(int x, int y, int z)
-{
+void setupTexture(){
+	
+	volumeSize = make_cudaExtent(NX, NY, NZ);
+	ca_descriptor_4f = cudaCreateChannelDesc<float4>();
+	ca_descriptor_1f = cudaCreateChannelDesc<float>();
+
+	//levelset texture
+	texref_levelset.filterMode = cudaFilterModeLinear;
+	texref_levelset.addressMode[0] = cudaAddressModeClamp;
+	texref_levelset.addressMode[1] = cudaAddressModeClamp;
+	texref_levelset.addressMode[2] = cudaAddressModeClamp;
+	texref_levelset.normalized = false;
+
+	getLastCudaError("cudaMalloc failed");
+	checkCudaErrors(cudaMalloc3DArray(&array_levelset, &ca_descriptor_1f, volumeSize));
+
 	//density texture
 	texref_den.filterMode = cudaFilterModeLinear;
 	texref_den.addressMode[0] = cudaAddressModeClamp;
 	texref_den.addressMode[1] = cudaAddressModeClamp;
 	texref_den.addressMode[2] = cudaAddressModeClamp;
 	texref_den.normalized = false;
-	volumeSize_den = make_cudaExtent(NX, NY, NZ);
-	ca_descriptor_den = cudaCreateChannelDesc<float>();
+
 	getLastCudaError("cudaMalloc failed");
-	checkCudaErrors(cudaMalloc3DArray(&array_den, &ca_descriptor_den, volumeSize_den));
+	checkCudaErrors(cudaMalloc3DArray(&array_den, &ca_descriptor_1f, volumeSize));
 
 	//velocity texture
 	texref_vel.filterMode = cudaFilterModeLinear;
@@ -50,9 +65,8 @@ void setupTexture(int x, int y, int z)
 	texref_vel.addressMode[1] = cudaAddressModeClamp;
 	texref_vel.addressMode[2] = cudaAddressModeClamp;
 	texref_vel.normalized = false;
-	volumeSize_vel = make_cudaExtent(NX, NY, NZ);
-	ca_descriptor_vel = cudaCreateChannelDesc<float4>();
-	checkCudaErrors(cudaMalloc3DArray(&array_vel, &ca_descriptor_vel, volumeSize_vel));
+
+	checkCudaErrors(cudaMalloc3DArray(&array_vel, &ca_descriptor_4f, volumeSize));
 	getLastCudaError("cudaMalloc failed");
 	
 	//temp texture
@@ -60,31 +74,27 @@ void setupTexture(int x, int y, int z)
 	texref_temp.addressMode[0] = cudaAddressModeClamp;
 	texref_temp.addressMode[1] = cudaAddressModeClamp;
 	texref_temp.addressMode[2] = cudaAddressModeClamp;
-	volumeSize_temp = make_cudaExtent(NX, NY, NZ);
-	ca_descriptor_temp = cudaCreateChannelDesc<float4>();
-	checkCudaErrors(cudaMalloc3DArray(&array_temp, &ca_descriptor_temp, volumeSize_temp));
+
+	checkCudaErrors(cudaMalloc3DArray(&array_temp, &ca_descriptor_4f, volumeSize));
 	getLastCudaError("cudaMalloc failed");
 
 }
 
-void bindTexture(void)
-{
+void bindTexture(void){
 	cudaBindTextureToArray(texref_vel, array_vel);
+	cudaBindTextureToArray(texref_levelset, array_levelset);
 	cudaBindTextureToArray(texref_den, array_den);
 	getLastCudaError("cudaBindTexture failed");
-
-
 }
 
-void unbindTexture(void)
-{
+void unbindTexture(void){
 	cudaUnbindTexture(texref_vel);
 	cudaUnbindTexture(texref_den);
 }
 
 void update_temp_texture(float4 *data,int dimx, int dimy, size_t pitch){
 	cudaMemcpy3DParms cpy_params = { 0 };
-	cpy_params.extent = volumeSize_temp;
+	cpy_params.extent = volumeSize;
 	cpy_params.kind = cudaMemcpyDeviceToDevice;
 	cpy_params.dstArray = array_temp;
 	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float4), dimx, dimy);
@@ -95,7 +105,7 @@ void update_temp_texture(float4 *data,int dimx, int dimy, size_t pitch){
 
 void update_vel_texture(float4 *data, int dimx, int dimy, size_t pitch){
 	cudaMemcpy3DParms cpy_params = { 0 };
-	cpy_params.extent = volumeSize_vel;
+	cpy_params.extent = volumeSize;
 	cpy_params.kind = cudaMemcpyDeviceToDevice;
 	cpy_params.dstArray = array_vel;
 	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float4), dimx, dimy);
@@ -104,32 +114,26 @@ void update_vel_texture(float4 *data, int dimx, int dimy, size_t pitch){
 
 }
 
-void update_den_texture(float *data, int dimx, int dimy, size_t pitch){
+void update_1f_texture(cudaArray *array_1d, float *data, int dimx, int dimy, size_t pitch){
 	cudaMemcpy3DParms cpy_params = { 0 };
-	cpy_params.extent = volumeSize_den;
+	cpy_params.extent = volumeSize;
 	cpy_params.kind = cudaMemcpyDeviceToDevice;
-	cpy_params.dstArray = array_den;
+	cpy_params.dstArray = array_1d;
 	cpy_params.srcPtr = make_cudaPitchedPtr((void*)data, dimx*sizeof(float), dimx, dimy);
 	checkCudaErrors(cudaMemcpy3D(&cpy_params));
 	getLastCudaError("cudaMemcpy failed");
 }
 
 __device__ float4 operator+(const float4 &a, const float4 &b) {
-
 	return make_float4(a.x + b.x, a.y + b.y, a.z + b.z,a.w+b.w);
-
 }
 
 __device__ float4 operator-(const float4 &a, const float4 &b) {
-
 	return make_float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
-
 }
 
 __device__ float4 operator*(const float &a, const float4 &b) {
-
 	return make_float4(a * b.x, a * b.y, a * b.z, a * b.w);
-
 }
 
 __device__ void
@@ -409,6 +413,31 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 			d[ez*NX*NY + ey*NX + ex] = velocity.y;*/
 	//	(*density) = den;
 	}
+
+	__syncthreads();
+}
+
+__global__ void
+advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch){
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	float4 velocity;
+	float3 ploc;
+	float new_levelset;
+
+	//	find the velocity of this position
+	velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
+
+	//tracing back
+	ploc.x = (ex)-dt * velocity.x * dx;
+	ploc.y = (ey)-dt * velocity.y * dy;
+	ploc.z = (ez)-dt * velocity.z * dz;
+
+	//get the density of tracing back position
+	new_levelset = tex3D(texref_levelset, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
+	ls[ez*NX*NY + ey*NX + ex] = new_levelset;
 
 	__syncthreads();
 }
@@ -755,10 +784,20 @@ void advectDensity(float4 *v, float *d, int dx, int dy, int dz, float dt){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	update_vel_texture(v, NX, NY, tPitch_v);
-	update_den_texture(d, NX, NY, tPitch_den);
+	update_1f_texture(array_den, d, NX, NY, tPitch_den);
 	advect_density_k << <block_size, threads_size >> >(d, dx, dy, dz, dt, tPitch_den);
 	bc_density_k << <block_size, threads_size >> >(d, tPitch_den, 1.f);
 	getLastCudaError("advectDensity_k failed.");
+}
+
+extern "C"
+void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt){
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+	update_vel_texture(v, NX, NY, tPitch_v);
+	update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
+	advect_levelset_k << <block_size, threads_size >> >(ls, dx, dy, dz, dt, tPitch_den);
+	getLastCudaError("advectLevelSet_k failed.");
 }
 
 extern "C"
@@ -778,9 +817,6 @@ void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
 		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 		SWAP(v, temp);
 	}
-	
-//	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-//	bc_k << <block_size, threads_size >> >(temp, tPitch_v, -1.f);
 	getLastCudaError("diffuse_k failed.");
 }
 
