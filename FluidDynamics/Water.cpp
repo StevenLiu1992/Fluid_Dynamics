@@ -17,6 +17,7 @@ float *hdensity = NULL;
 //level set function
 float *dlsf = NULL;
 float *hlsf = NULL;
+float2 *dcontribution = NULL;
 
 GLuint vbo3 = 0;                 // OpenGL vertex buffer object
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
@@ -33,6 +34,7 @@ size_t tPitch_d = 0;
 size_t tPitch_p = 0;
 size_t tPitch_den = 0; 
 size_t tPitch_lsf = 0; 
+size_t tPitch_ctb = 0;
 
 extern "C"
 void advect(float4 *v, int dx, int dy, int dz, float dt);
@@ -86,6 +88,8 @@ void Water::Create(Core::Camera* c)
 	tPitch_d = 0;
 	tPitch_den = 0;
 	tPitch_lsf = 0;
+	tPitch_ctb = 0;
+
 	texture = SOIL_load_OGL_texture("../Textures/water_particle.jpg",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 	int devID;
@@ -115,13 +119,14 @@ void Water::Create(Core::Camera* c)
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dlsf, &tPitch_lsf, sizeof(float)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dcontribution, &tPitch_ctb, sizeof(float2)*NX*NY, NZ);
 	
 	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
 	initParticles(particles);
 	initLevelSetFunc(hlsf, dlsf);
 	init_density(hdensity, particles, ddensity);
-
+	cudaMemset(dcontribution, 0, sizeof(float2)*NX*NY*NZ);
 
 	//paritcles system vbo>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	GLuint vao;
