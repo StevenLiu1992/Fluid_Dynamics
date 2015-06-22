@@ -63,4 +63,10 @@ force_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch);
 
 __global__ void
 advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch);
+
+__global__ void
+correctLevelset_first_k(float3 *p, float2 *con);
+
+__global__ void
+correctLevelset_second_k(float *ls, float2 *con);
 #endif

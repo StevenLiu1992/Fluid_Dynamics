@@ -50,6 +50,8 @@ extern "C"
 void addForce(float4 *v, float *d, int dx, int dy, int dz, float dt);
 extern "C"
 void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt);
+extern "C"
+void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt);
 
 Water::Water()
 {
@@ -500,16 +502,16 @@ void Water::cout_levelset(float* ls){
 	int i, j, k;
 	float total = 0;
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
-	for (k = 0; k < NZ; k++){
-		for (i = 0; i < NY; i++){
-			for (j = 0; j < NX; j++){
-				if (j == 16)
-					printf("%1.1f ", ls[k*NX*NY + i*NX + j]);
+//	for (k = 8; k < NZ-8; k++){
+		for (i = 8; i < NY-8; i++){
+			for (j = 8; j < NX-8; j++){
+			//	if (k == 16)
+					printf("%1.1f ", ls[16*NX*NY + i*NX + j]);
 					//std::cout << ls[k*NX*NY + i*NX + j] << " ";
 			}
+			std::cout << std::endl;
 		}
-		std::cout << std::endl;
-	}
+//	}
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 
 }
@@ -525,15 +527,15 @@ void Water::simulateFluids(void)
 	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
 
 	advectLevelSet(dvfield, dlsf, NX, NY, NZ, DT);
-
+	correctLevelSet(dlsf, dcontribution, NX, NY, NZ, DT);
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
 //	cout_density(hdensity);
-//	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
-//	cout_levelset(hlsf);
+	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+	cout_levelset(hlsf);
 }
 
 
