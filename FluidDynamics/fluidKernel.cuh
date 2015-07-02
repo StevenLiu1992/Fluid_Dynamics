@@ -22,6 +22,7 @@ void update_vel_texture(float4 *data, int w, int h, size_t pitch);
 void update_1f_texture(cudaArray *array_1d, float *data, int w, int h, size_t pitch);
 void update_temp_texture(float4 *data, int dimx, int dimy, size_t pitch);
 void deleteTexture(void);
+void bindTexturetoCudaArray(void);
 
 #define SWAP(x0, x) {float4 *tmp = x0; x0 = x; x = tmp;}
 

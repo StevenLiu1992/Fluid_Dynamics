@@ -3,7 +3,8 @@ using namespace Rendering;
 using namespace Models;
 
 
-
+extern int window_width;
+extern int window_height;
 extern bool start_run = false;
 extern float4 *dvfield = NULL;
 
@@ -26,6 +27,8 @@ GLuint vbo = 0;                 // OpenGL vertex buffer object
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
+
+struct cudaGraphicsResource *textureCudaResource;
 
 // Texture pitch
 size_t tPitch_v = 0;
@@ -81,6 +84,7 @@ Water::~Water()
 
 void Water::Create(Core::Camera* c)
 {
+	
 	particle_count = 0;
 	camera = c;
 	GLint bsize;
@@ -151,8 +155,8 @@ void Water::Create(Core::Camera* c)
 	v_position = (float3 *)malloc(sizeof(float3) * DS);
 	initVelocityPosition(v_position, NX, NY, NZ);
 
-	glGenVertexArrays(1, &vao1);
-	glBindVertexArray(vao1);
+	glGenVertexArrays(1, &grid_vao);
+	glBindVertexArray(grid_vao);
 
 	//velocity position
 	glGenBuffers(1, &vbo1);
@@ -184,12 +188,12 @@ void Water::Create(Core::Camera* c)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
 	this->vbos.push_back(vbo3);
-	this->vao1 = vao1;
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	
-	
-	
+	generateCube();
+	generateFBO();
 	//bind particle position vbo
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
@@ -203,6 +207,9 @@ void Water::Create(Core::Camera* c)
 	int CUDAVersion ;
 	cudaRuntimeGetVersion(&CUDAVersion);
 	std::cout << "CUDA version: "<< CUDAVersion << std::endl;
+
+	
+	
 }
 
 
@@ -216,7 +223,7 @@ void Water::Update(Matrix4 viewMatrix)
 
 void Water::Draw()
 {
-
+	drawCube();
 	Matrix4 modelMatrix;
 
 	//draw particle field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -225,7 +232,7 @@ void Water::Draw()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//*Matrix4::Scale(Vector3(10, 10, 10))
-	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(0, 1, 0));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
@@ -252,7 +259,7 @@ void Water::Draw()
 	
 //	std::cout << cameraPos << std::endl;
 //	glPointSize(1);
-	glBindVertexArray(vao1);
+	glBindVertexArray(grid_vao);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -275,7 +282,7 @@ void Water::Draw()
 	glUniform3f(glGetUniformLocation(program2, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
 	//	std::cout << cameraPos << std::endl;
 	//	glPointSize(1);
-	glBindVertexArray(vao1);
+	glBindVertexArray(grid_vao);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -538,4 +545,143 @@ void Water::simulateFluids(void)
 	cout_levelset(hlsf);
 }
 
+void Water::generateCube(){
+	//cube data{position, colour, texturecord, index}
+	std::vector<VertexFormat> vertices;
+	vertices.push_back(VertexFormat(glm::vec3(0, 0, 1),
+		glm::vec4(0, 0, 1, 1), glm::vec2(1, 0)));   
+	vertices.push_back(VertexFormat(glm::vec3(1, 0, 1),
+		glm::vec4(0, 0, 1, 1), glm::vec2(1, 1)));   
+	vertices.push_back(VertexFormat(glm::vec3(1, 1, 1),  
+		glm::vec4(1, 0, 0, 1), glm::vec2(0, 0)));   
+	vertices.push_back(VertexFormat(glm::vec3(0, 1, 1),
+		glm::vec4(1, 0, 0, 1), glm::vec2(0, 1)));   
+	vertices.push_back(VertexFormat(glm::vec3(0, 0, 0),
+		glm::vec4(0, 0, 1, 1), glm::vec2(1, 0)));   
+	vertices.push_back(VertexFormat(glm::vec3(1, 0, 0),
+		glm::vec4(0, 0, 1, 1), glm::vec2(0, 0)));   
+	vertices.push_back(VertexFormat(glm::vec3(1, 1, 0),
+		glm::vec4(1, 0, 0, 1), glm::vec2(0, 1)));   
+	vertices.push_back(VertexFormat(glm::vec3(0, 1, 0),
+		glm::vec4(1, 0, 0, 1), glm::vec2(1, 1)));
 
+	GLuint indicesVboData[] = {
+			0, 1, 2, 2, 3, 0,
+			3, 2, 6, 6, 7, 3,
+			7, 6, 5, 5, 4, 7,
+			4, 0, 3, 3, 7, 4,
+			0, 5, 1, 4, 5, 0,
+			1, 5, 6, 6, 2, 1
+	};
+
+	glGenVertexArrays(1, &cube_vao);
+	glBindVertexArray(cube_vao);
+	
+	glGenBuffers(1, &cube_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(VertexFormat) * 8, &vertices[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(VertexFormat), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE,
+		sizeof(VertexFormat),
+		(void*)(offsetof(VertexFormat, VertexFormat::color)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
+		sizeof(VertexFormat),
+		(void*)(offsetof(VertexFormat, VertexFormat::textureCoords)));
+	
+	//add index data
+	glGenBuffers(1, &cube_vbo_index);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_vbo_index);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(GLuint), indicesVboData, GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+
+//	this->vbos.push_back(cube_vbo);
+}
+
+void Water::drawCube(){
+	glBindFramebuffer(GL_FRAMEBUFFER, cubeBufferFBO);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	Matrix4 modelMatrix;
+
+	//draw particle field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	glUseProgram(colorProgram);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+
+	glUniformMatrix4fv(glGetUniformLocation(colorProgram, "projMatrix"), 1, false, (float*)&projMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(colorProgram, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(colorProgram, "viewMatrix"), 1, false, (float*)&viewMatrix);
+
+	glUniform1i(glGetUniformLocation(colorProgram, "diffuse_texture"), 0);
+	glBindVertexArray(cube_vao);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GenerateScreenTexture(GLuint & into, bool depth) {
+	glGenTextures(1, &into);
+	glBindTexture(GL_TEXTURE_2D, into);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	if (depth){
+		glTexImage2D(GL_TEXTURE_2D, 0,
+			GL_DEPTH_COMPONENT24,
+			window_width, window_height, 0,
+			 GL_DEPTH_COMPONENT,
+			GL_UNSIGNED_BYTE, NULL);
+	}
+	else{
+		glTexImage2D(GL_TEXTURE_2D, 0,
+			GL_RGBA32F,
+			window_width, window_height, 0,
+			GL_RGBA,
+			GL_FLOAT, NULL);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	
+}
+
+void Water::generateFBO(){
+	glGenFramebuffers(1, &cubeBufferFBO);
+	
+	GenerateScreenTexture(cubeDepthTexture, true);
+	GenerateScreenTexture(cubePositionTexture, false);
+
+	checkCudaErrors(cudaGraphicsGLRegisterImage(&textureCudaResource, cubePositionTexture, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone));
+	getLastCudaError("cudaGraphicsGLRegistertexture failed");
+
+	//when we finished generate position texture, bind it to a cuda array (bind to cuda 2d texture)
+	bindTexturetoCudaArray();
+	
+	// And now attach them to our FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, cubeBufferFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D, cubePositionTexture, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+		GL_TEXTURE_2D, cubeDepthTexture, 0);
+	
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		return;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}

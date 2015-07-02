@@ -53,7 +53,8 @@ using namespace Init;
 using namespace Managers;
 
 
-
+extern int window_width = 1080;
+extern int window_height = 1080;
 
 int main(int argc, char **argv){
 //	CUDAstuff();
@@ -62,7 +63,7 @@ int main(int argc, char **argv){
 
 	WindowInfo window(std::string("XXX"),
 		50, 50,//position
-		1080, 1080, //size
+		window_width, window_height, //size
 		true);//reshape
 
 	ContextInfo context(3, 3, true);

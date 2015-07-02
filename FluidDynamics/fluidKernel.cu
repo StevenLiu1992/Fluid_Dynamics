@@ -5,10 +5,16 @@ texture<float, 3, cudaReadModeElementType> texref_den;
 texture<float, 3, cudaReadModeElementType> texref_levelset;
 texture<float4, 3, cudaReadModeElementType> texref_temp;
 
+
+texture<float4, 2, cudaReadModeElementType> texref_ray;
+extern int window_width;
+extern int window_height;
+
 static cudaArray *array_vel = NULL;
 static cudaArray *array_temp = NULL;
 static cudaArray *array_den = NULL;
 static cudaArray *array_levelset = NULL;
+static cudaArray *array_ray = NULL;
 
 cudaChannelFormatDesc ca_descriptor_1f;
 cudaChannelFormatDesc ca_descriptor_4f;
@@ -32,6 +38,8 @@ extern GLuint vbo3;                 // OpenGL vertex buffer object
 extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
+extern struct cudaGraphicsResource *textureCudaResource; // handles OpenGL-CUDA exchange
+
 
 void setupTexture(){
 	
@@ -81,9 +89,9 @@ void setupTexture(){
 }
 
 void bindTexture(void){
-	cudaBindTextureToArray(texref_vel, array_vel);
-	cudaBindTextureToArray(texref_levelset, array_levelset);
-	cudaBindTextureToArray(texref_den, array_den);
+	checkCudaErrors(cudaBindTextureToArray(&texref_vel, array_vel, &ca_descriptor_4f));
+	cudaBindTextureToArray(&texref_levelset, array_levelset, &ca_descriptor_1f);
+	cudaBindTextureToArray(&texref_den, array_den, &ca_descriptor_1f);
 	getLastCudaError("cudaBindTexture failed");
 }
 
@@ -1100,4 +1108,26 @@ void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, fl
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource2, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
+}
+
+
+extern "C"
+void raycasting(float4 *v, float *d, int dx, int dy, int dz, float dt){
+
+}
+
+
+void bindTexturetoCudaArray(){
+	checkCudaErrors(cudaGraphicsMapResources(1, &textureCudaResource, 0));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	
+	checkCudaErrors(cudaGraphicsSubResourceGetMappedArray(&array_ray, textureCudaResource, 0, 0));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	texref_ray.filterMode = cudaFilterModeLinear;
+	texref_ray.addressMode[0] = cudaAddressModeClamp;
+	texref_ray.addressMode[1] = cudaAddressModeClamp;
+	
+	checkCudaErrors(cudaBindTextureToArray(&texref_ray, array_ray, &ca_descriptor_4f));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	cudaGraphicsUnmapResources(1, &textureCudaResource, 0);
 }

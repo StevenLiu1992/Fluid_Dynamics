@@ -40,22 +40,36 @@ namespace Rendering
 			void initVelocityPosition(float3 *vp, int dx, int dy, int dz);
 			void SetProgram1(GLuint p1){ this->program1 = p1; }
 			void SetProgram2(GLuint p2){ this->program2 = p2; }
+			void SetColorProgram(GLuint p) { this->colorProgram = p; }
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float3* p, float *d);
 			void cout_density(float* d);
 			void cout_levelset(float* ls);
+			void generateCube();
+			void drawCube();
+			void generateFBO();
+			GLuint getTexture(){ return this->cubePositionTexture; }
 		private:
 			
 			
 			Core::Camera* camera;
 			
 			GLuint vao;
+			GLuint grid_vao;
 			float3 *particles;
 			float3 * v_position;
 			GLuint program1;
 			GLuint program2;
 			int particle_count;
 			int ttt;
+			
+			GLuint cube_vao;
+			GLuint cube_vbo;
+			GLuint cube_vbo_index;
+			GLuint colorProgram;
+			GLuint cubeBufferFBO;
+			GLuint cubePositionTexture;
+			GLuint cubeDepthTexture;
 		};
 		
 	}
