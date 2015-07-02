@@ -815,8 +815,8 @@ correctLevelset_first_k(float3 *p, float2 *con){
 
 	float e_cons = 2.71828;
 	float constant_c = 1;
-	if (ez*NX*NY + ey*NX + ez > 31104) return;
-	float3 particle_location = p[ez*NX*NY + ey*NX + ez];
+	if (ez*NX*NY + ey*NX + ex > 31104) return;
+	float3 particle_location = p[ez*NX*NY + ey*NX + ex];
 	//convert to gird space
 	particle_location = make_float3(particle_location.x * NX, particle_location.y * NY, particle_location.z * NZ);
 	int3 grid_location0;
@@ -872,7 +872,7 @@ correctLevelset_first_k(float3 *p, float2 *con){
 				float _c = -1 / constant_c;
 				float w = (pow(e_cons, q_c) - pow(e_cons, _c)) / (1 - pow(e_cons, _c));//get w(k)
 				float value_levelset = tex3D(texref_levelset, 
-					particle_location.x, particle_location.y, particle_location.z);//get phi(k)
+					particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
 				con[grid_location[i].z*NX*NY + grid_location[i].y*NX + grid_location[i].x].x += value_levelset * w;
 				con[grid_location[i].z*NX*NY + grid_location[i].y*NX + grid_location[i].x].y += w;
 			}
@@ -894,7 +894,83 @@ correctLevelset_second_k(float *ls, float2 *con){
 			con[ez*NX*NY + ey*NX + ex].x / con[ez*NX*NY + ey*NX + ex].y;
 		ls[ez*NX*NY + ey*NX + ex] = newdata;
 	}
+}
 
+__global__ void
+reinit_Levelset_k(float *ls){
+
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	float grid_value = ls[ez*NX*NY + ey*NX + ex];
+
+	float left_value = ls[ez*NX*NY + ey*NX + ex - 1];
+	float righ_value = ls[ez*NX*NY + ey*NX + ex + 1];
+	float bott_value = ls[ez*NX*NY + (ey-1)*NX + ex];
+	float topp_value = ls[ez*NX*NY + (ey+1)*NX + ex];
+	float back_value = ls[(ez-1)*NX*NY + ey*NX + ex];
+	float fron_value = ls[(ez+1)*NX*NY + ey*NX + ex];
+	if (abs(left_value - grid_value) < 1.1 && abs(righ_value - grid_value) < 1.1 &&
+		abs(topp_value - grid_value) < 1.1 && abs(bott_value - grid_value) < 1.1 &&
+		abs(fron_value - grid_value) < 1.1 && abs(back_value - grid_value) < 1.1){
+		//slope is not sufficiently high
+		return;
+	}
+
+	int3 grid_location0 = make_int3(ex, ey, ez);
+	int3 grid_location[26];
+	//bottom 9
+	grid_location[0] = make_int3(grid_location0.x - 1, grid_location0.y - 1, grid_location0.z - 1);
+	grid_location[1] = make_int3(grid_location0.x, grid_location0.y - 1, grid_location0.z - 1);
+	grid_location[2] = make_int3(grid_location0.x + 1, grid_location0.y - 1, grid_location0.z - 1);
+	grid_location[3] = make_int3(grid_location0.x - 1, grid_location0.y - 1, grid_location0.z);
+	grid_location[4] = make_int3(grid_location0.x, grid_location0.y - 1, grid_location0.z);
+	grid_location[5] = make_int3(grid_location0.x + 1, grid_location0.y - 1, grid_location0.z);
+	grid_location[6] = make_int3(grid_location0.x - 1, grid_location0.y - 1, grid_location0.z + 1);
+	grid_location[7] = make_int3(grid_location0.x, grid_location0.y - 1, grid_location0.z + 1);
+	grid_location[8] = make_int3(grid_location0.x + 1, grid_location0.y - 1, grid_location0.z + 1);
+
+	//middle 8
+	grid_location[9] = make_int3(grid_location0.x - 1, grid_location0.y, grid_location0.z - 1);
+	grid_location[10] = make_int3(grid_location0.x, grid_location0.y, grid_location0.z - 1);
+	grid_location[11] = make_int3(grid_location0.x + 1, grid_location0.y, grid_location0.z - 1);
+	grid_location[12] = make_int3(grid_location0.x - 1, grid_location0.y, grid_location0.z);
+	grid_location[13] = make_int3(grid_location0.x + 1, grid_location0.y, grid_location0.z);
+	grid_location[14] = make_int3(grid_location0.x - 1, grid_location0.y, grid_location0.z + 1);
+	grid_location[15] = make_int3(grid_location0.x, grid_location0.y, grid_location0.z + 1);
+	grid_location[16] = make_int3(grid_location0.x + 1, grid_location0.y, grid_location0.z + 1);
+
+	//top 9
+	grid_location[17] = make_int3(grid_location0.x - 1, grid_location0.y + 1, grid_location0.z - 1);
+	grid_location[18] = make_int3(grid_location0.x, grid_location0.y + 1, grid_location0.z - 1);
+	grid_location[19] = make_int3(grid_location0.x + 1, grid_location0.y + 1, grid_location0.z - 1);
+	grid_location[20] = make_int3(grid_location0.x - 1, grid_location0.y + 1, grid_location0.z);
+	grid_location[21] = make_int3(grid_location0.x, grid_location0.y + 1, grid_location0.z);
+	grid_location[22] = make_int3(grid_location0.x + 1, grid_location0.y + 1, grid_location0.z);
+	grid_location[23] = make_int3(grid_location0.x - 1, grid_location0.y + 1, grid_location0.z + 1);
+	grid_location[24] = make_int3(grid_location0.x, grid_location0.y + 1, grid_location0.z + 1);
+	grid_location[25] = make_int3(grid_location0.x + 1, grid_location0.y + 1, grid_location0.z + 1);
+	for (int i = 0; i < 26; i++){
+		if (grid_location[i].x >= 0 && grid_location[i].x < NX &&
+			grid_location[i].y >= 0 && grid_location[i].y < NY &&
+			grid_location[i].z >= 0 && grid_location[i].z < NZ){
+			float value = ls[grid_location[i].z*NX*NY + grid_location[i].y*NX + grid_location[i].x];
+			if (value*grid_value < 0)
+				//grid point is close to the interface
+				return;
+		}
+	}
+
+	//deal with reinitialize
+	int si = 0;
+	si = grid_value > 0 ? 1 : -1;
+	float3 dis = make_float3(si *0.57735 * DT / 6, si *0.57735 * DT / 6, si *0.57735 * DT / 6);
+	float3 cur_loc = make_float3(ex, ey, ez);
+	float3 pre_loc = cur_loc - dis;
+	float value_levelset = tex3D(texref_levelset,
+		pre_loc.x + 0.5, pre_loc.y + 0.5, pre_loc.z + 0.5);//get phi(pre)
+	ls[ez*NX*NY + ey*NX + ex] = value_levelset + si * DT / 6;
 }
 
 extern "C"
@@ -915,6 +991,10 @@ void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt){
 	update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
 	correctLevelset_first_k << <block_size, threads_size >> >(particle, con);
 	correctLevelset_second_k << <block_size, threads_size >> >(ls, con);
+	for (int i = 0; i < 6; i++){
+		update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
+		reinit_Levelset_k << <block_size, threads_size >> >(ls);
+	}
 	getLastCudaError("advectParticles_k failed.");
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);

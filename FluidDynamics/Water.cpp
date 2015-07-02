@@ -395,7 +395,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 				h[k*NX*NY + i*NX + j].y = 0;
 				h[k*NX*NY + i*NX + j].z = 0;
 
-				if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
+				/*if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
 					h[k*NX*NY + i*NX + j].x = 0;
 					h[k*NX*NY + i*NX + j].y = 0.8;
 					h[k*NX*NY + i*NX + j].z = 0;
@@ -404,7 +404,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}			
+				}*/			
 			}
 		}
 	}
@@ -506,7 +506,7 @@ void Water::cout_levelset(float* ls){
 		for (i = 8; i < NY-8; i++){
 			for (j = 8; j < NX-8; j++){
 			//	if (k == 16)
-					printf("%1.1f ", ls[16*NX*NY + i*NX + j]);
+					printf("(%1.1f)", ls[16*NX*NY + i*NX + j]);
 					//std::cout << ls[k*NX*NY + i*NX + j] << " ";
 			}
 			std::cout << std::endl;
