@@ -70,4 +70,7 @@ correctLevelset_first_k(float3 *p, float2 *con);
 
 __global__ void
 correctLevelset_second_k(float *ls, float2 *con);
+
+__global__ void
+raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera);
 #endif

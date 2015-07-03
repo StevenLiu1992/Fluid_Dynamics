@@ -39,6 +39,7 @@ extern struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA ex
 extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *textureCudaResource; // handles OpenGL-CUDA exchange
+extern struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUDA exchange
 
 
 void setupTexture(){
@@ -148,6 +149,12 @@ __device__ float4 operator-(const float4 &a, const float4 &b) {
 
 __device__ float4 operator*(const float &a, const float4 &b) {
 	return make_float4(a * b.x, a * b.y, a * b.z, a * b.w);
+}
+__device__ float3 operator*(const float &a, const float3 &b) {
+	return make_float3(a * b.x, a * b.y, a * b.z);
+}
+__device__ float3 operator/(const float3 &b, const float &a) {
+	return make_float3(b.x/a, b.y/a, b.z/a);
 }
 
 __device__ void
@@ -1110,10 +1117,78 @@ void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, fl
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 }
 
+__global__ void
+raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera){
+	int ex = threadIdx.x + blockIdx.x * blockDim.x;
+	int ey = threadIdx.y + blockIdx.y * blockDim.y;
+	if (ex > maxx || ey > maxy) return;//cuda out of range
 
+	float4 pos4 = tex2D(texref_ray, ex + 0.5, ey + 0.5);
+	if (pos4.w < 0.5) return;//there is no ray there
+	
+	float3 pos = make_float3(pos4.x, pos4.y, pos4.z);
+	float3 dir = pos - camera;//the direction from camera to ray inter in model space
+	dir = rsqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z) * dir;
+	float advect_value0 = 0;//previous
+	float advect_value;
+	int reverse = 0;
+	int counter = 0;
+	while (1){
+		if (pos.x < 0 || pos.y < 0 || pos.z < 0 ||
+			pos.x > 1 || pos.y > 1 || pos.z > 1){
+			//ray out of volume
+			return;
+		}
+		//get the levelset value at pos
+		advect_value = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+		
+		if (counter == 0 && advect_value < 0){
+			//first pos in water
+			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			return;
+		}
+		if (advect_value < 0.1){
+			//the value is less than threshold
+			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			return;
+		}
+		if (counter != 0 && advect_value*advect_value0 < 0){
+			// from air to water, go over the zero level set
+			float t = advect_value / (advect_value - advect_value0);
+			pos = pos - t * advect_value * dir / NX;
+			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			return;
+		}
+		pos = pos + advect_value * dir / NX;
+		advect_value0 = advect_value;
+		counter++;
+	}
+	__syncthreads();
+}
+extern float4 *hintersection;
 extern "C"
-void raycasting(float4 *v, float *d, int dx, int dy, int dz, float dt){
+void raycasting(int x, int y, float *ls, float3 camera){
+	dim3 block_size(128, 128);
+	dim3 threads_size(8, 8);
 
+	float4 *intersection;
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_intersection, 0));
+	getLastCudaError("cudaGraphicsMapResources failed");
+
+	size_t num_bytes;
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&intersection, &num_bytes, cuda_vbo_intersection));
+	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
+
+	update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
+	checkCudaErrors(cudaMemset(intersection, 0, sizeof(float4) * 1024 * 1024));//reset intersection data
+	getLastCudaError("cudaGraphicsUnmapResources failed");
+	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, camera);
+	cudaMemcpy(hintersection, intersection, sizeof(float4) * 1024 * 1024, cudaMemcpyDeviceToHost);
+	for (int i = 500; i < 620; i++){
+		printf("(%f,%f,%f)\n", hintersection[1024 * 512 + i].x, hintersection[1024 * 512 + i].y, hintersection[1024 * 512 + i].z);
+	}
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_intersection, 0));
+	getLastCudaError("cudaGraphicsUnmapResources failed");
 }
 
 

@@ -1,6 +1,34 @@
-﻿Build started 02/07/2015 18:01:00.
+﻿Build started 03/07/2015 17:53:25.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
-     1>Link:
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Water.cpp
+         Water.cpp
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(348): warning C4005: 'MAX' : macro redefinition
+                 d:\cuda samples\v6.5\common\inc\helper_image.h(30) : see previous definition of 'MAX'
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(349): warning C4005: 'MIN' : macro redefinition
+                 d:\cuda samples\v6.5\common\inc\helper_image.h(27) : see previous definition of 'MIN'
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(372): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(378): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(400): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(401): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(402): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(408): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(409): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(410): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(416): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(417): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(418): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'a' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(489): warning C4101: 'i' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'f' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'b' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(489): warning C4101: 'k' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'd' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'c' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(490): warning C4101: 'e' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(489): warning C4101: 'j' : unreferenced local variable
+     1>d:\github\fluid_dynamics\fluiddynamics\water.cpp(558): warning C4101: 'k' : unreferenced local variable
+       Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe" /INCREMENTAL /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib opengl32.lib freeglut.lib glew32.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.lib" /MACHINE:X86 Debug\fluidKernel.cu.obj
          Debug\Camera.obj
          Debug\Init_GLEW.obj
@@ -15,10 +43,6 @@
          Debug\Shader_Manager.obj
          Debug\Triangle.obj
          Debug\Water.obj
-     1>SOIL.lib(image_DXT.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(image_DXT.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
-     1>SOIL.lib(image_helper.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(image_helper.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
-     1>SOIL.lib(SOIL.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(SOIL.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
-     1>SOIL.lib(stb_image_aug.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'SOIL.lib(stb_image_aug.obj)' or at 'D:\GitHub\Fluid_Dynamics\Debug\vc120.pdb'; linking object as if no debug info
          FluidDynamics.vcxproj -> D:\GitHub\Fluid_Dynamics\Debug\FluidDynamics.exe
        PostBuildEvent:
          echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "D:\GitHub\Fluid_Dynamics\Debug\"
@@ -32,4 +56,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.39
+Time Elapsed 00:00:00.92

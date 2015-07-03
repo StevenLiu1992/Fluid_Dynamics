@@ -23,10 +23,12 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	water->SetProgram1(Shader_Manager::GetShader("velocityFieldShader"));
 	water->SetProgram2(Shader_Manager::GetShader("DensityShader"));
 	water->SetColorProgram(Shader_Manager::GetShader("volumeShader"));
+	water->SetInterProgram(Shader_Manager::GetShader("intersectionShader"));
+	
 	water->Create(camera);
 	
 
-	quad->setTexture(water->getTexture());
+//	quad->setTexture(water->getTexture());
 
 
 	gameModelList["water"] = water;

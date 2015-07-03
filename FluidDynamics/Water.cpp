@@ -14,6 +14,7 @@ float4 *dpressure = NULL;
 float4 *ddivergence = NULL;
 float *ddensity = NULL;
 float *hdensity = NULL;
+extern float4 *hintersection = NULL;
 
 //level set function
 float *dlsf = NULL;
@@ -24,9 +25,11 @@ GLuint vbo3 = 0;                 // OpenGL vertex buffer object
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
 GLuint vbo1 = 0;                 // OpenGL vertex buffer object
 GLuint vbo = 0;                 // OpenGL vertex buffer object
+GLuint vbo_intersection = 0;
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
+struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUDA exchange
 
 struct cudaGraphicsResource *textureCudaResource;
 
@@ -55,6 +58,8 @@ extern "C"
 void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt);
 extern "C"
 void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt);
+extern "C"
+void raycasting(int x, int y, float *ls, float3 camera);
 
 Water::Water()
 {
@@ -191,6 +196,25 @@ void Water::Create(Core::Camera* c)
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	//intersection visiable>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	glGenVertexArrays(1, &intersection_vao);
+	glBindVertexArray(intersection_vao);
+	hintersection = (float4 *)malloc(sizeof(float4) * 1024 * 1024);
+	memset(hintersection, 0, sizeof(float4) * 1024 * 1024);
+	glGenBuffers(1, &vbo_intersection);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_intersection);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float4) * 1024 * 1024, hintersection, GL_DYNAMIC_DRAW);
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
+	this->vbos.push_back(vbo_intersection);
+//	free(hintersection);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	
+	//end of vbo and vao/////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	generateCube();
 	generateFBO();
@@ -202,6 +226,9 @@ void Water::Create(Core::Camera* c)
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 	//bind density value vbo
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource2, vbo3, cudaGraphicsMapFlagsNone));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	//bind intersection value vbo
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_intersection, vbo_intersection, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 
 	int CUDAVersion ;
@@ -289,6 +316,28 @@ void Water::Draw()
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	glDrawArrays(GL_POINTS, 0, DS);
+	glUseProgram(0);
+
+	//draw intersection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	glUseProgram(intersection_program);
+
+
+	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
+	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+
+	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "projMatrix"), 1, false, (float*)&projMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "viewMatrix"), 1, false, (float*)&viewMatrix);
+	glUniform3f(glGetUniformLocation(intersection_program, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+	//	std::cout << cameraPos << std::endl;
+	//	glPointSize(1);
+	glBindVertexArray(intersection_vao);
+	glPointSize(10);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDrawArrays(GL_POINTS, 0, 1024 * 1024);
 	glUseProgram(0);
 
 
@@ -535,14 +584,20 @@ void Water::simulateFluids(void)
 
 	advectLevelSet(dvfield, dlsf, NX, NY, NZ, DT);
 	correctLevelSet(dlsf, dcontribution, NX, NY, NZ, DT);
+	Vector3 cameraPos = Vector3(0,0,0);
+//	cameraPos = Vector3(0, 0.1, 0.1);
+	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
+	Matrix4 reverse_mv = Matrix4::InvertMatrix(viewMatrix*modelMatrix);
+	cameraPos = reverse_mv*cameraPos;
+	raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
 //	cout_density(hdensity);
-	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
-	cout_levelset(hlsf);
+//	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+//	cout_levelset(hlsf);
 }
 
 void Water::generateCube(){
@@ -604,6 +659,7 @@ void Water::generateCube(){
 
 void Water::drawCube(){
 	glBindFramebuffer(GL_FRAMEBUFFER, cubeBufferFBO);
+	glClearColor(0, 0, 0, 0);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	Matrix4 modelMatrix;
 

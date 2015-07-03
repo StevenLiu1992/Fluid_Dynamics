@@ -41,6 +41,7 @@ namespace Rendering
 			void SetProgram1(GLuint p1){ this->program1 = p1; }
 			void SetProgram2(GLuint p2){ this->program2 = p2; }
 			void SetColorProgram(GLuint p) { this->colorProgram = p; }
+			void SetInterProgram(GLuint p) { this->intersection_program = p; }
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float3* p, float *d);
 			void cout_density(float* d);
@@ -56,10 +57,12 @@ namespace Rendering
 			
 			GLuint vao;
 			GLuint grid_vao;
+			GLuint intersection_vao;
 			float3 *particles;
 			float3 * v_position;
 			GLuint program1;
 			GLuint program2;
+			GLuint intersection_program;
 			int particle_count;
 			int ttt;
 			
