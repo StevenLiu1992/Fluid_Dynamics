@@ -1147,7 +1147,7 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera)
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
 			return;
 		}
-		if (advect_value < 0.1){
+		if (advect_value < 0.01){
 			//the value is less than threshold
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
 			return;
@@ -1183,10 +1183,11 @@ void raycasting(int x, int y, float *ls, float3 camera){
 	checkCudaErrors(cudaMemset(intersection, 0, sizeof(float4) * 1024 * 1024));//reset intersection data
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, camera);
-	cudaMemcpy(hintersection, intersection, sizeof(float4) * 1024 * 1024, cudaMemcpyDeviceToHost);
-	for (int i = 500; i < 620; i++){
-		printf("(%f,%f,%f)\n", hintersection[1024 * 512 + i].x, hintersection[1024 * 512 + i].y, hintersection[1024 * 512 + i].z);
+	/*cudaMemcpy(hintersection, intersection, sizeof(float4) * 1024 * 1024, cudaMemcpyDeviceToHost);
+	for (int i = 500; i < 600; i++){
+		printf("(%f,%f,%f,%f)\n", hintersection[1024 * 512 + i].x, hintersection[1024 * 512 + i].y, hintersection[1024 * 512 + i].z, hintersection[1024 * 512 + i].w);
 	}
+	printf("====================================================\n");*/
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_intersection, 0));
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 }

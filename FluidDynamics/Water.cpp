@@ -207,7 +207,7 @@ void Water::Create(Core::Camera* c)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float4) * 1024 * 1024, hintersection, GL_DYNAMIC_DRAW);
 	
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
 	this->vbos.push_back(vbo_intersection);
 //	free(hintersection);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -332,7 +332,7 @@ void Water::Draw()
 	//	std::cout << cameraPos << std::endl;
 	//	glPointSize(1);
 	glBindVertexArray(intersection_vao);
-	glPointSize(10);
+	glPointSize(3);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
@@ -340,7 +340,11 @@ void Water::Draw()
 	glDrawArrays(GL_POINTS, 0, 1024 * 1024);
 	glUseProgram(0);
 
-
+	//cameraPos = Vector3(0, 0, 0);
+	//	cameraPos = Vector3(0, 0.1, 0.1);
+	Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
+	cameraPos = reverse_mv*cameraPos;
+	raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
 }
 
 
@@ -584,12 +588,7 @@ void Water::simulateFluids(void)
 
 	advectLevelSet(dvfield, dlsf, NX, NY, NZ, DT);
 	correctLevelSet(dlsf, dcontribution, NX, NY, NZ, DT);
-	Vector3 cameraPos = Vector3(0,0,0);
-//	cameraPos = Vector3(0, 0.1, 0.1);
-	Matrix4 modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
-	Matrix4 reverse_mv = Matrix4::InvertMatrix(viewMatrix*modelMatrix);
-	cameraPos = reverse_mv*cameraPos;
-	raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
+	
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
