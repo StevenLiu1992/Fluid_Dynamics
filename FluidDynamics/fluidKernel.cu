@@ -40,6 +40,7 @@ extern struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA e
 extern struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *textureCudaResource; // handles OpenGL-CUDA exchange
 extern struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUDA exchange
+extern struct cudaGraphicsResource *cuda_vbo_normal; // handles OpenGL-CUDA exchange
 
 
 void setupTexture(){
@@ -156,7 +157,11 @@ __device__ float3 operator*(const float &a, const float3 &b) {
 __device__ float3 operator/(const float3 &b, const float &a) {
 	return make_float3(b.x/a, b.y/a, b.z/a);
 }
-
+__device__ float3 normalize(const float3 &a) {
+	float3 dir = a;//the direction from camera to ray inter in model space
+	dir = rsqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z) * dir;
+	return dir;
+}
 __device__ void
 boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t pitch){
 	
@@ -979,13 +984,14 @@ reinit_Levelset_k(float *ls){
 
 	//deal with reinitialize
 	int si = 0;
-	si = grid_value > 0 ? 1 : -1;
-	float3 dis = make_float3(si *0.57735 * DT / 6, si *0.57735 * DT / 6, si *0.57735 * DT / 6);
+//	si = grid_value > 0 ? 1 : -1;
+	si = grid_value * rsqrt(grid_value*grid_value + 1);
+	float3 dis = make_float3(si *0.57735, si *0.57735, si *0.57735);
 	float3 cur_loc = make_float3(ex, ey, ez);
 	float3 pre_loc = cur_loc - dis;
 	float value_levelset = tex3D(texref_levelset,
 		pre_loc.x + 0.5, pre_loc.y + 0.5, pre_loc.z + 0.5);//get phi(pre)
-	ls[ez*NX*NY + ey*NX + ex] = value_levelset + si * DT / 6;
+	ls[ez*NX*NY + ey*NX + ex] = value_levelset + si;
 }
 
 extern "C"
@@ -1118,7 +1124,7 @@ void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, fl
 }
 
 __global__ void
-raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera){
+raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 *normal, float3 camera){
 	int ex = threadIdx.x + blockIdx.x * blockDim.x;
 	int ey = threadIdx.y + blockIdx.y * blockDim.y;
 	if (ex > maxx || ey > maxy) return;//cuda out of range
@@ -1128,7 +1134,7 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera)
 	
 	float3 pos = make_float3(pos4.x, pos4.y, pos4.z);
 	float3 dir = pos - camera;//the direction from camera to ray inter in model space
-	dir = rsqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z) * dir;
+	dir = normalize(dir);
 	float advect_value0 = 0;//previous
 	float advect_value;
 	int reverse = 0;
@@ -1141,15 +1147,33 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera)
 		}
 		//get the levelset value at pos
 		advect_value = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5);
-		
+		float d = 0.05;
 		if (counter == 0 && advect_value < 0){
 			//first pos in water
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			float left = tex3D(texref_levelset, pos.x*NX + 0.5-d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float righ = tex3D(texref_levelset, pos.x*NX + 0.5+d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float bott = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5-d, pos.z*NZ + 0.5);
+			float topp = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5+d, pos.z*NZ + 0.5);
+			float back = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5-d);
+			float fron = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5+d);
+			float3 g = make_float3(righ - left, topp - bott, fron - back);
+			g = normalize(g);
+			normal[ey * 1024 + ex] = g;
 			return;
 		}
 		if (advect_value < 0.01){
 			//the value is less than threshold
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			float left = tex3D(texref_levelset, pos.x*NX + 0.5 - d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float righ = tex3D(texref_levelset, pos.x*NX + 0.5 + d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float bott = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5 - d, pos.z*NZ + 0.5);
+			float topp = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5 + d, pos.z*NZ + 0.5);
+			float back = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5 - d);
+			float fron = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5 + d);
+			float3 g = make_float3(righ - left, topp - bott, fron - back);
+			g = normalize(g);
+			normal[ey * 1024 + ex] = g;
 			return;
 		}
 		if (counter != 0 && advect_value*advect_value0 < 0){
@@ -1157,6 +1181,15 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera)
 			float t = advect_value / (advect_value - advect_value0);
 			pos = pos - t * advect_value * dir / NX;
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			float left = tex3D(texref_levelset, pos.x*NX + 0.5 - d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float righ = tex3D(texref_levelset, pos.x*NX + 0.5 + d, pos.y*NY + 0.5, pos.z*NZ + 0.5);
+			float bott = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5 - d, pos.z*NZ + 0.5);
+			float topp = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5 + d, pos.z*NZ + 0.5);
+			float back = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5 - d);
+			float fron = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5 + d);
+			float3 g = make_float3(righ - left, topp - bott, fron - back);
+			g = normalize(g);
+			normal[ey * 1024 + ex] = g;
 			return;
 		}
 		pos = pos + advect_value * dir / NX;
@@ -1166,6 +1199,7 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 camera)
 	__syncthreads();
 }
 extern float4 *hintersection;
+extern float3 *hnormal;
 extern "C"
 void raycasting(int x, int y, float *ls, float3 camera){
 	dim3 block_size(128, 128);
@@ -1179,16 +1213,34 @@ void raycasting(int x, int y, float *ls, float3 camera){
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&intersection, &num_bytes, cuda_vbo_intersection));
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
+	float3 *normal;
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_normal, 0));
+	getLastCudaError("cudaGraphicsMapResources failed");
+
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&normal, &num_bytes, cuda_vbo_normal));
+	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
+
 	update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
 	checkCudaErrors(cudaMemset(intersection, 0, sizeof(float4) * 1024 * 1024));//reset intersection data
+	checkCudaErrors(cudaMemset(normal, 0, sizeof(float3) * 1024 * 1024));//reset intersection data
 	getLastCudaError("cudaGraphicsUnmapResources failed");
-	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, camera);
+	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, normal, camera);
 	/*cudaMemcpy(hintersection, intersection, sizeof(float4) * 1024 * 1024, cudaMemcpyDeviceToHost);
 	for (int i = 500; i < 600; i++){
 		printf("(%f,%f,%f,%f)\n", hintersection[1024 * 512 + i].x, hintersection[1024 * 512 + i].y, hintersection[1024 * 512 + i].z, hintersection[1024 * 512 + i].w);
 	}
 	printf("====================================================\n");*/
+	/*cudaMemcpy(hnormal, normal, sizeof(float3) * 1024 * 1024, cudaMemcpyDeviceToHost);
+	for (int j = 0; j < 1024; j++){
+		for (int i = 0; i < 1024; i++){
+			if (hnormal[1024 * j + i].y!=0)
+				printf("(%f,%f,%f)\n", hnormal[1024 * j + i].x, hnormal[1024 * j + i].y, hnormal[1024 * j + i].z);
+		}
+	}
+	printf("====================================================\n");*/
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_intersection, 0));
+	getLastCudaError("cudaGraphicsUnmapResources failed");
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_normal, 0));
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 }
 

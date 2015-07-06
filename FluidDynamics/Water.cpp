@@ -15,7 +15,7 @@ float4 *ddivergence = NULL;
 float *ddensity = NULL;
 float *hdensity = NULL;
 extern float4 *hintersection = NULL;
-
+extern float3 *hnormal = NULL;
 //level set function
 float *dlsf = NULL;
 float *hlsf = NULL;
@@ -26,12 +26,14 @@ GLuint vbo2 = 0;                 // OpenGL vertex buffer object
 GLuint vbo1 = 0;                 // OpenGL vertex buffer object
 GLuint vbo = 0;                 // OpenGL vertex buffer object
 GLuint vbo_intersection = 0;
+GLuint vbo_normal = 0;
 struct cudaGraphicsResource *cuda_vbo_resource; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource1; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_resource2; // handles OpenGL-CUDA exchange
 struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUDA exchange
 
 struct cudaGraphicsResource *textureCudaResource;
+struct cudaGraphicsResource *cuda_vbo_normal;
 
 // Texture pitch
 size_t tPitch_v = 0;
@@ -209,8 +211,19 @@ void Water::Create(Core::Camera* c)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float4), (void*)0);
 	this->vbos.push_back(vbo_intersection);
-//	free(hintersection);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	hnormal = (float3 *)malloc(sizeof(float3) * 1024 * 1024);
+	memset(hnormal, 0, sizeof(float3) * 1024 * 1024);
+	glGenBuffers(1, &vbo_normal);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_normal);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * 1024 * 1024, hnormal, GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
+	this->vbos.push_back(vbo_normal);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
 	glBindVertexArray(0);
 
 	
@@ -229,6 +242,9 @@ void Water::Create(Core::Camera* c)
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 	//bind intersection value vbo
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_intersection, vbo_intersection, cudaGraphicsMapFlagsNone));
+	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
+	//bind normal value vbo
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_normal, vbo_normal, cudaGraphicsMapFlagsNone));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 
 	int CUDAVersion ;
@@ -328,7 +344,8 @@ void Water::Draw()
 	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "projMatrix"), 1, false, (float*)&projMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(intersection_program, "viewMatrix"), 1, false, (float*)&viewMatrix);
-	glUniform3f(glGetUniformLocation(intersection_program, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+	cameraPos = camera->GetPosition();
+	glUniform3f(glGetUniformLocation(intersection_program, "cameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
 	//	std::cout << cameraPos << std::endl;
 	//	glPointSize(1);
 	glBindVertexArray(intersection_vao);
@@ -340,8 +357,7 @@ void Water::Draw()
 	glDrawArrays(GL_POINTS, 0, 1024 * 1024);
 	glUseProgram(0);
 
-	//cameraPos = Vector3(0, 0, 0);
-	//	cameraPos = Vector3(0, 0.1, 0.1);
+
 	Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
 	cameraPos = reverse_mv*cameraPos;
 	raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
@@ -464,7 +480,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}*/			
+				}	*/		
 			}
 		}
 	}
@@ -588,7 +604,13 @@ void Water::simulateFluids(void)
 
 	advectLevelSet(dvfield, dlsf, NX, NY, NZ, DT);
 	correctLevelSet(dlsf, dcontribution, NX, NY, NZ, DT);
-	
+
+
+	//Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
+	//Vector3 cameraPos = camera->GetPosition();
+	//cameraPos = reverse_mv*cameraPos;
+	//raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
+
 //	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 //	cout_max_length_vector(hvfield);
 //	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
