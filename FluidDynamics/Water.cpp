@@ -471,7 +471,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 				h[k*NX*NY + i*NX + j].y = 0;
 				h[k*NX*NY + i*NX + j].z = 0;
 
-				/*if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
+				if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
 					h[k*NX*NY + i*NX + j].x = 0;
 					h[k*NX*NY + i*NX + j].y = 0.8;
 					h[k*NX*NY + i*NX + j].z = 0;
@@ -480,7 +480,7 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}	*/		
+				}			
 			}
 		}
 	}
@@ -494,9 +494,9 @@ void Water::init_density(float *h, float3* p, float *d){
 	for (k = 1; k < NZ-1; k++){
 		for (i = 1; i < NY-1; i++){
 			for (j = 1; j < NX-1; j++){
-				if (i > 12 && i < 20 && k > 12 && k < 20 && j > 12 && j < 20){
-					h[k*NX*NY + i*NX + j] = 4.4f;
-					total += 4.4f;
+				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && j >= 12 && j <= 20){
+					h[k*NX*NY + i*NX + j] = 10.f;
+					total += 10.f;
 				}
 			}
 		}
