@@ -13,9 +13,9 @@ void main()
 	if(color.a == 0)
 		discard;
 	
-	vec3 lightPos = vec3(100,100,100);
+	vec3 lightPos = vec3(50,20,50);
 	vec4 diffuse = vec4(0,1,0,1);
-	float lightRadius = 5000;
+	float lightRadius = 100;
 	vec4 lightColour = vec4(1,1,1,1);
 	
 	vec3 incident = normalize( lightPos - worldPos );

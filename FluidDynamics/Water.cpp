@@ -136,8 +136,8 @@ void Water::Create(Core::Camera* c)
 	
 	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
-	initParticles(particles);
 	initLevelSetFunc(hlsf, dlsf);
+	initParticles(particles, hlsf);
 	init_density(hdensity, particles, ddensity);
 	cudaMemset(dcontribution, 0, sizeof(float2)*NX*NY*NZ);
 
@@ -404,7 +404,7 @@ void Water::initLevelSetFunc(float *h, float *d){
 	cudaMemcpy(d, h, sizeof(float)* DS, cudaMemcpyHostToDevice);
 }
 
-void Water::initParticles(float3 *p){
+void Water::initParticles(float3 *p, float *l){
 	int i, j, k;
 	int count = 0;
 	int num = 64;
@@ -415,27 +415,53 @@ void Water::initParticles(float3 *p){
 		{
 			for (j = 0; j < NX; j++)
 			{
-				if (j >= 12 && j <= 20 && i >= 12 && i <= 20 && (k == 12 || k == 20)){
+				/*if (l[k*NX*NY + i*NX + j] == 0){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + MYRAND - 0.5) / NX;
-						p[count].y = ((i + 0.5) + MYRAND - 0.5) / NY;
-						p[count].z = ((k + 0.5) + 0.1 * (MYRAND-0.5)) / NZ;
+						if (k == 12 || k == 20){
+
+							p[count].x = (j + MYRAND - 0.5) / NX;
+							p[count].y = (i + MYRAND - 0.5) / NY;
+							p[count].z = (float)k / NZ;
+							count++;
+						}
+						if (i == 12 || i == 20){
+
+							p[count].x = (j + MYRAND - 0.5) / NX;
+							p[count].y = (float)i / NY;
+							p[count].z = (k + MYRAND - 0.5) / NZ;
+							count++;
+						}
+						if (j == 12 || j == 20){
+
+							p[count].x = (float)j / NX;
+							p[count].y = (i + MYRAND - 0.5) / NY;
+							p[count].z = (k + MYRAND - 0.5) / NZ;
+							count++;
+						}
+
+					}
+				}*/
+				if (j >= 12 && j < 20 && i >= 12 && i < 20 && (k == 12 || k == 20)){
+					for (int m = 0; m < num; m++){
+						p[count].x = (float)(j + MYRAND) / NX;
+						p[count].y = (float)(i + MYRAND) / NY;
+						p[count].z = (float)k / NZ;
 						count++;
 					}
 				}
-				if (j >= 12 && j <= 20 && k >= 12 && k <= 20 && (i == 12 || i == 20)){
+				if (j >= 12 && j < 20 && k >= 12 && k < 20 && (i == 12 || i == 20)){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + MYRAND - 0.5) / NX;
-						p[count].y = ((i + 0.5) + 0.1 * (MYRAND - 0.5)) / NY;
-						p[count].z = ((k + 0.5) + MYRAND - 0.5) / NZ;
+						p[count].x = (float)(j + MYRAND) / NX;
+						p[count].y = (float)i / NY;
+						p[count].z = (float)(k + MYRAND) / NZ;
 						count++;
 					}
 				}
-				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && (j == 12 || j == 20)){
+				if (i >= 12 && i < 20 && k >= 12 && k < 20 && (j == 12 || j == 20)){
 					for (int m = 0; m < num; m++){
-						p[count].x = ((j + 0.5) + 0.1 * (MYRAND - 0.5)) / NX;
-						p[count].y = ((i + 0.5) + MYRAND-0.5) / NY;
-						p[count].z = ((k + 0.5) + MYRAND - 0.5) / NZ;
+						p[count].x = (float)j / NX;
+						p[count].y = (float)(i + MYRAND) / NY;
+						p[count].z = (float)(k + MYRAND) / NZ;
 						count++;
 					}
 				}
@@ -471,16 +497,16 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 				h[k*NX*NY + i*NX + j].y = 0;
 				h[k*NX*NY + i*NX + j].z = 0;
 
-				if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
+				/*if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
 					h[k*NX*NY + i*NX + j].x = 0;
-					h[k*NX*NY + i*NX + j].y = 0.8;
+					h[k*NX*NY + i*NX + j].y = 0.2;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}
-				if (j>0 && j<10 && i>20 && i<26 && k>8 && k<28){
+				}*/
+				/*if (j>0 && j<10 && i>20 && i<26 && k>8 && k<28){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}			
+				}*/			
 			}
 		}
 	}
@@ -494,7 +520,7 @@ void Water::init_density(float *h, float3* p, float *d){
 	for (k = 1; k < NZ-1; k++){
 		for (i = 1; i < NY-1; i++){
 			for (j = 1; j < NX-1; j++){
-				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && j >= 12 && j <= 20){
+				if (i >= 11 && i <= 21 && k >= 11 && k <= 21 && j >= 11 && j <= 21){
 					h[k*NX*NY + i*NX + j] = 10.f;
 					total += 10.f;
 				}
@@ -579,10 +605,14 @@ void Water::cout_levelset(float* ls){
 	float total = 0;
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 //	for (k = 8; k < NZ-8; k++){
-		for (i = 8; i < NY-8; i++){
-			for (j = 8; j < NX-8; j++){
+		for (i = NY-1; i >= 0; i--){
+			for (j = 5; j < 30; j++){
 			//	if (k == 16)
-					printf("(%1.1f)", ls[16*NX*NY + i*NX + j]);
+				if (ls[16 * NX*NY + i*NX + j] < 0 || ls[16 * NX*NY + i*NX + j] >= 10)
+					printf("%1.f ", ls[16*NX*NY + i*NX + j]);
+				else
+					
+					printf(" %1.f ", ls[16 * NX*NY + i*NX + j]);
 					//std::cout << ls[k*NX*NY + i*NX + j] << " ";
 			}
 			std::cout << std::endl;

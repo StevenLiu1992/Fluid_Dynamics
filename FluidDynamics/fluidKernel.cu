@@ -56,8 +56,8 @@ void setupTexture(){
 	texref_levelset.addressMode[2] = cudaAddressModeClamp;
 	texref_levelset.normalized = false;
 
-	getLastCudaError("cudaMalloc failed");
 	checkCudaErrors(cudaMalloc3DArray(&array_levelset, &ca_descriptor_1f, volumeSize));
+	getLastCudaError("cudaMalloc failed");
 
 	//density texture
 	texref_den.filterMode = cudaFilterModeLinear;
@@ -66,8 +66,8 @@ void setupTexture(){
 	texref_den.addressMode[2] = cudaAddressModeClamp;
 	texref_den.normalized = false;
 
-	getLastCudaError("cudaMalloc failed");
 	checkCudaErrors(cudaMalloc3DArray(&array_den, &ca_descriptor_1f, volumeSize));
+	getLastCudaError("cudaMalloc failed");
 
 	//velocity texture
 	texref_vel.filterMode = cudaFilterModeLinear;
@@ -432,12 +432,21 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 
 		//get the density of tracing back position
 		den = tex3D(texref_den, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
-
-	//	float *density = (float*)((char *)d + ez * pitch) + ey * dy + ex;
 		d[ez*NX*NY + ey*NX + ex] = den;
-		/*if (ey == 1)
-			d[ez*NX*NY + ey*NX + ex] = velocity.y;*/
-	//	(*density) = den;
+		
+
+		//float3 newPosition;
+		//float3 midPosition;//middle postion
+		//midPosition.x = (float)ex / NX + 0.5 * dt * velocity.x;
+		//midPosition.y = (float)ey / NY + 0.5 * dt * velocity.y;
+		//midPosition.z = (float)ez / NZ + 0.5 * dt * velocity.z;
+		//float4 midVelocity = tex3D(texref_vel, midPosition.x*dx + 0.5, midPosition.y*dy + 0.5, midPosition.z*dz + 0.5);
+
+		//newPosition.x = ((float)ex / NX + dt * midVelocity.x);
+		//newPosition.y = ((float)ey / NY + dt * midVelocity.y);
+		//newPosition.z = ((float)ez / NZ + dt * midVelocity.z);
+		//den = tex3D(texref_den, newPosition.x*dx + 0.5, newPosition.y*dx + 0.5, newPosition.z*dx + 0.5);
+		//d[ez*NX*NY + ey*NX + ex] = den;
 	}
 
 	__syncthreads();
@@ -802,6 +811,7 @@ void addForce(float4 *v, float *d, int dx, int dy, int dz, float dt){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	force_k << <block_size, threads_size >> >(v, d, dt, tPitch_v);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("addForce failed.");
 }
 
@@ -835,10 +845,17 @@ correctLevelset_first_k(float3 *p, float2 *con){
 
 	float e_cons = 2.71828;
 	float constant_c = 1;
-	if (ez*NX*NY + ey*NX + ex > 31104) return;
+	if (ez*NX*NY + ey*NX + ex > 31104) 
+		return;//more than particle amount
+	
 	float3 particle_location = p[ez*NX*NY + ey*NX + ex];
 	//convert to gird space
 	particle_location = make_float3(particle_location.x * NX, particle_location.y * NY, particle_location.z * NZ);
+
+	float value_levelset = tex3D(texref_levelset, particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
+	if (value_levelset > 2 || value_levelset < -2)
+		return;//too far away from zero level set
+
 	int3 grid_location0;
 	grid_location0.x = floor(particle_location.x);
 	grid_location0.y = floor(particle_location.y);
@@ -891,8 +908,8 @@ correctLevelset_first_k(float3 *p, float2 *con){
 				float q_c = - sq_dis / constant_c;
 				float _c = -1 / constant_c;
 				float w = (pow(e_cons, q_c) - pow(e_cons, _c)) / (1 - pow(e_cons, _c));//get w(k)
-				float value_levelset = tex3D(texref_levelset, 
-					particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
+				//float value_levelset = tex3D(texref_levelset, 
+				//	particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
 				con[grid_location[i].z*NX*NY + grid_location[i].y*NX + grid_location[i].x].x += value_levelset * w;
 				con[grid_location[i].z*NX*NY + grid_location[i].y*NX + grid_location[i].x].y += w;
 			}
@@ -933,7 +950,10 @@ reinit_Levelset_k(float *ls){
 	float fron_value = ls[(ez+1)*NX*NY + ey*NX + ex];
 	if (abs(left_value - grid_value) < 1.1 && abs(righ_value - grid_value) < 1.1 &&
 		abs(topp_value - grid_value) < 1.1 && abs(bott_value - grid_value) < 1.1 &&
-		abs(fron_value - grid_value) < 1.1 && abs(back_value - grid_value) < 1.1){
+		abs(fron_value - grid_value) < 1.1 && abs(back_value - grid_value) < 1.1 &&
+		abs(left_value - grid_value) > 0.9 && abs(righ_value - grid_value) > 0.9 &&
+		abs(topp_value - grid_value) > 0.9 && abs(bott_value - grid_value) > 0.9 &&
+		abs(fron_value - grid_value) > 0.9 && abs(back_value - grid_value) > 0.9){
 		//slope is not sufficiently high
 		return;
 	}
@@ -987,6 +1007,7 @@ reinit_Levelset_k(float *ls){
 //	si = grid_value > 0 ? 1 : -1;
 	si = grid_value * rsqrt(grid_value*grid_value + 1);
 	float3 dis = make_float3(si *0.57735, si *0.57735, si *0.57735);
+//	float3 dis = make_float3(si, si, si);
 	float3 cur_loc = make_float3(ex, ey, ez);
 	float3 pre_loc = cur_loc - dis;
 	float value_levelset = tex3D(texref_levelset,
@@ -1234,7 +1255,8 @@ void raycasting(int x, int y, float *ls, float3 camera){
 	for (int j = 0; j < 1024; j++){
 		for (int i = 0; i < 1024; i++){
 			if (hnormal[1024 * j + i].y!=0)
-				printf("(%f,%f,%f)\n", hnormal[1024 * j + i].x, hnormal[1024 * j + i].y, hnormal[1024 * j + i].z);
+				if (i>500 && i<520 && j>500 && j<520)
+					printf("(%f,%f,%f)\n", hnormal[1024 * j + i].x, hnormal[1024 * j + i].y, hnormal[1024 * j + i].z);
 		}
 	}
 	printf("====================================================\n");*/

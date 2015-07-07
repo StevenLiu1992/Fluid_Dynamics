@@ -32,7 +32,7 @@ namespace Rendering
 			void Create(Core::Camera* c = NULL);
 			virtual void Update(Matrix4 viewMatrix) override final;
 			virtual void Draw() override final;
-			void initParticles(float3 *p);
+			void initParticles(float3 *p, float *l);
 			void initLevelSetFunc(float *h, float *d);
 			void initParticles_velocity(float4 *v, float4 *d);
 			void simulateFluids(void);
