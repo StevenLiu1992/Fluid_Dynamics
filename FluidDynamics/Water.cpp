@@ -6,6 +6,8 @@ using namespace Models;
 extern int window_width;
 extern int window_height;
 extern bool start_run = false;
+extern bool isAddSource = false;
+
 extern float4 *dvfield = NULL;
 
 float4 *hvfield = NULL;
@@ -45,11 +47,11 @@ size_t tPitch_lsf = 0;
 size_t tPitch_ctb = 0;
 
 extern "C"
-void advect(float4 *v, int dx, int dy, int dz, float dt);
+void advect(float4 *v);
 extern "C"
-void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt);
+void diffuse(float4 *v, float4 *temp);
 extern "C"
-void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt);
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence);
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d, int dx, int dy, int dz, float dt);
 extern "C"
@@ -62,6 +64,8 @@ extern "C"
 void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt);
 extern "C"
 void raycasting(int x, int y, float *ls, float3 camera);
+extern "C"
+void addSource(float4 *v, float *d, float*l, int dx, int dy, int dz, float size);
 
 Water::Water()
 {
@@ -601,22 +605,21 @@ void Water::cout_density(float* d){
 	
 }
 void Water::cout_levelset(float* ls){
-	int i, j, k;
+	int i, j, k = 31;
 	float total = 0;
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 //	for (k = 8; k < NZ-8; k++){
-		for (i = NY-1; i >= 0; i--){
-			for (j = 5; j < 30; j++){
-			//	if (k == 16)
-				if (ls[16 * NX*NY + i*NX + j] < 0 || ls[16 * NX*NY + i*NX + j] >= 10)
-					printf("%1.f ", ls[16*NX*NY + i*NX + j]);
-				else
+	for (i = 10; i >= 0; i--){
+		for (j = 5; j < 30; j++){
+		//	if (k == 16)
+			if (ls[k * NX*NY + i*NX + j] < 0 || ls[k * NX*NY + i*NX + j] >= 10)
+				printf("%1.f ", ls[k*NX*NY + i*NX + j]);
+			else
 					
-					printf(" %1.f ", ls[16 * NX*NY + i*NX + j]);
-					//std::cout << ls[k*NX*NY + i*NX + j] << " ";
-			}
-			std::cout << std::endl;
+				printf(" %1.f ", ls[k * NX*NY + i*NX + j]);
 		}
+		std::cout << std::endl;
+	}
 //	}
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 
@@ -625,10 +628,14 @@ void Water::simulateFluids(void)
 {
 	// simulate fluid
 	ttt++;
+	if (isAddSource){
+		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 4);
+		//isAddSource = false;
+	}
+	advect(dvfield);
+	diffuse(dvfield, dtemp);
+	projection(dvfield, dtemp, dpressure, ddivergence);
 	addForce(dvfield, ddensity, NX, NY, NZ, DT);
-	advect(dvfield, NX, NY, NZ, DT);
-	diffuse(dvfield, dtemp, NX, NY, NZ, DT);
-	projection(dvfield, dtemp, dpressure, ddivergence, NX, NY, NZ, DT);
 	advectParticles(vbo, dvfield, ddensity, NX, NY, NZ, DT);
 	advectDensity(dvfield, ddensity, NX, NY, NZ, DT);
 

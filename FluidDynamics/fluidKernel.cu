@@ -359,47 +359,68 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 	__syncthreads();
 }
 
+__global__ void
+bc_k(float4 *b, size_t pitch, float scale){
+
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
+		boundary_condition_k(b, ex, ey, ez, scale, pitch);
+	}
+	__syncthreads();
+}
 
 __global__ void
-advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch)
-{
-	//dx = 64
-	//dy = 64
-	//dz = 16
-	//lb = 16
-	
+bc_density_k(float *b, size_t pitch, float scale){
 	// ex is the domain location in x for this thread
-	int ex = threadIdx.x + blockIdx.x*8;
+	int ex = threadIdx.x + blockIdx.x * 8;
 	// ey is the domain location in y for this thread
-	int ey = threadIdx.y + blockIdx.y*8;
+	int ey = threadIdx.y + blockIdx.y * 8;
 	// ez is the domain location in z for this thread
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
+		boundary_density_condition_k(b, ex, ey, ez, scale, pitch);
+	}
+	__syncthreads();
+}
+
+
+__global__ void
+advect_k(float4 *v){
+
+	int ex = threadIdx.x + blockIdx.x*8;
+	int ey = threadIdx.y + blockIdx.y*8;
 	int ez = threadIdx.z + blockIdx.z*8;
 
-	if ((ex != 0) && (ex != (dx-1)) && (ey != 0) && (ey != (dy-1)) && (ez != 0) && (ez != (dz-1))){
-
+	if ((ex != 0) && (ex != (NX-1)) && (ey != 0) && (ey != (NY-1)) && (ez != 0) && (ez != (NZ-1))){
+		//semi-lagrangian method to advect velocity field
 		float4 velocity;
 		float3 ploc;
-
-		
-		//	float3 texcoord = { ex, ey, ez };
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-		ploc.x = (ex ) - dt * velocity.x * dx;
-		ploc.y = (ey ) - dt * velocity.y * dy;
-		ploc.z = (ez ) - dt * velocity.z * dz;
+		ploc.x = ex + 0.5 - DT * velocity.x * NX;
+		ploc.y = ey + 0.5 - DT * velocity.y * NY;
+		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
 
-
-
-
-
-		velocity = tex3D(texref_vel, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
-
-		float4 *Velocity_field = (float4 *)((char *)v + ez * pitch) + ey * dy + ex;
-		(*Velocity_field) = velocity;	
+		v[ez*NY*NZ + ey*NX + ex] = tex3D(texref_vel, ploc.x, ploc.y, ploc.z);
 	}
 
 	__syncthreads();
 }
 
+extern "C"
+void advect(float4 *v, int dx, int dy, int dz, float dt)
+{
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+
+	update_vel_texture(v, NX, NY, tPitch_v);
+	advect_k << <block_size, threads_size >> >(v);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+	getLastCudaError("advectVelocity_k failed.");
+}
 
 __global__ void
 advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
@@ -452,132 +473,91 @@ advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch)
 	__syncthreads();
 }
 
-__global__ void
-advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch){
-	int ex = threadIdx.x + blockIdx.x * 8;
-	int ey = threadIdx.y + blockIdx.y * 8;
-	int ez = threadIdx.z + blockIdx.z * 8;
-
-	float4 velocity;
-	float3 ploc;
-	float new_levelset;
-
-	//	find the velocity of this position
-	velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-
-	//tracing back
-	ploc.x = (ex) - dt * velocity.x * dx;
-	ploc.y = (ey) - dt * velocity.y * dy;
-	ploc.z = (ez) - dt * velocity.z * dz;
-
-	//get the density of tracing back position
-	new_levelset = tex3D(texref_levelset, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
-	ls[ez*NX*NY + ey*NX + ex] = new_levelset;
-
-	__syncthreads();
-}
 
 
 
 
 __global__ void
-jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta,
-int dx, int dy, int dz, size_t pitch){
+jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta, size_t pitch){
 
-	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-
-	int left, right, top, bottom, front, behind;
-	int offset = pitch / sizeof(float4);
 	
-	/*if (ex == 0)
-		left = ez*offset + ey*NX + ex;
-	else
-		left = ez*offset + ey*NX + ex - 1;
-	if (ex == NX - 1)
-		right = ez*offset + ey*NX + ex;
-	else
-		right = ez*offset + ey*NX + ex + 1;
-	if (ey == 0)
-		bottom = ez*offset + ey*NX + ex;
-	else
-		bottom = ez*offset + (ey - 1)*NX + ex;
-	if (ey == NY - 1)
-		top = ez*offset + ey*NX + ex;
-	else
-		top = ez*offset + (ey + 1)*NX + ex;
-	if (ez == 0)
-		behind = ez*offset + ey*NX + ex;
-	else
-		behind = (ez - 1)*offset + ey*NX + ex;
-	if (ex == NZ - 1)
-		front = ez*offset + ey*NX + ex;
-	else
-		front = (ez + 1)*offset + ey*NX + ex;*/
-	
-	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
-		left =		ez*offset + ey*NX + ex - 1;
-		right =		ez*offset + ey*NX + ex + 1;
-		bottom =	ez*offset + (ey - 1)*NX + ex;
-		top =		ez*offset + (ey + 1)*NX + ex;
-		behind =	(ez - 1)*offset + ey*NX + ex;
-		front =		(ez + 1)*offset + ey*NX + ex;
-		float4 p1 = temp[left];//left x
-		float4 p2 = temp[right];//right x
-		float4 p3 = temp[bottom];//bottom x
-		float4 p4 = temp[top];//top x
-		float4 p6 = temp[front];//behind x
-		float4 p5 = temp[behind];//front x
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		int offset = pitch / sizeof(float4);
+		
+		int left = ez*offset + ey*NX + (ex - 1);
+		int righ = ez*offset + ey*NX + (ex + 1);
+		int bott = ez*offset + (ey - 1)*NX + ex;
+		int topp = ez*offset + (ey + 1)*NX + ex;
+		int back = (ez - 1)*offset + ey*NX + ex;
+		int fron = (ez + 1)*offset + ey*NX + ex;
 
-		float4 p0 = b[ez*offset + ey*NX + ex];//value b
-
-
-		//float4 p1 = tex3D(texref_vel, ex - 1, ey, ez);
-		//float4 p2 = tex3D(texref_vel, ex + 1, ey, ez);
-		//float4 p3 = tex3D(texref_vel, ex, ey - 1, ez);
-		//float4 p4 = tex3D(texref_vel, ex, ey + 1, ez);
-		//float4 p5 = tex3D(texref_vel, ex, ey, ez - 1);
-		//float4 p6 = tex3D(texref_vel, ex, ey, ez + 1);
-		//float4 p0 = b[ez*offset + ey*NX + ex];//value b
+		float4 p1 = temp[left];
+		float4 p2 = temp[righ];
+		float4 p3 = temp[bott];
+		float4 p4 = temp[topp];
+		float4 p5 = temp[back];
+		float4 p6 = temp[fron];
+		
+		
+		float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 
 		v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
 	}
 	__syncthreads();
 }
 
-__global__ void
-divergence_k(float4 *d, float4 *v,
-int dx, int dy, int dz, int lb, size_t pitch)
+extern "C"
+void diffuse(float4 *v, float4 *temp)
 {
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
-	// ex is the domain location in x for this thread
+	float rdx = 1.f;
+	float alpha = rdx / VISC / DT;
+	float rBeta = 1.f / (6 + alpha);
+	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
+	update_vel_texture(v, NX, NY, tPitch_v);//use for b
+	for (int i = 0; i<20; i++){
+		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
+		jacobi_k << <block_size, threads_size >> >(v, temp, temp, alpha, rBeta, tPitch_v);
+		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+		SWAP(v, temp);
+	}
+	getLastCudaError("diffuse_k failed.");
+}
+
+__global__ void
+divergence_k(float4 *d, float4 *v, size_t pitch){
+
 	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
 	
-	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
-		int left, right, top, bottom, front, behind;
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		
+		//divergence = 
+		//u(i+1,j,k) - u(i-1,j,k) / 2dx + 
+		//u(i,j+1,k) - u(i,j-1,k) / 2dy +
+		//u(i,j,k+1) - u(i,j,k-1) / 2dz
 		int offset = pitch / sizeof(float4);
 			
-		left	= ez*offset + ey*NX + ex - 1;
-		right	= ez*offset + ey*NX + ex + 1;
-		bottom	= ez*offset + (ey - 1)*NX + ex;
-		top		= ez*offset + (ey + 1)*NX + ex;
-		behind	= (ez - 1)*offset + ey*NX + ex;
-		front	= (ez + 1)*offset + ey*NX + ex;
-		float4 p1 = v[left];//left x
-		float4 p2 = v[right];//right x
-		float4 p3 = v[bottom];//bottom x
-		float4 p4 = v[top];//top x
-		float4 p5 = v[behind];//front x
-		float4 p6 = v[front];//behind x
+		int left = ez*offset + ey*NX + (ex - 1);
+		int righ = ez*offset + ey*NX + (ex + 1);
+		int bott = ez*offset + (ey - 1)*NX + ex;
+		int topp = ez*offset + (ey + 1)*NX + ex;
+		int back = (ez - 1)*offset + ey*NX + ex;
+		int fron = (ez + 1)*offset + ey*NX + ex;
+
+		float4 p1 = v[left];
+		float4 p2 = v[righ];
+		float4 p3 = v[bott];
+		float4 p4 = v[topp];
+		float4 p5 = v[back];
+		float4 p6 = v[fron];
 
 		float div = 0.5*((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));
 		d[ez*offset + ey*NX + ex].x = div;
@@ -591,61 +571,28 @@ int dx, int dy, int dz, int lb, size_t pitch)
 
 
 __global__ void
-gradient_k(float4 *v, float4 *p,
-int dx, int dy, int dz, int lb, size_t pitch)
-{
-	//dx = 64
-	//dy = 64
-	//dz = 16
+gradient_k(float4 *v, float4 *p, size_t pitch){
 
-	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (ex != 0 && ex != (dx - 1) && ey != 0 && ey != (dy - 1) && ez != 0 && ez != (dz - 1)){
-		int left, right, top, bottom, front, behind;
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		/*if (ex == 0)
-			left = ez*offset + ey*NX + ex;
-			else
-			left = ez*offset + ey*NX + ex - 1;
-			if (ex == NX - 1)
-			right = ez*offset + ey*NX + ex;
-			else
-			right = ez*offset + ey*NX + ex + 1;
-			if (ey == 0)
-			bottom = ez*offset + ey*NX + ex;
-			else
-			bottom = ez*offset + (ey - 1)*NX + ex;
-			if (ey == NY - 1)
-			top = ez*offset + ey*NX + ex;
-			else
-			top = ez*offset + (ey + 1)*NX + ex;
-			if (ez == 0)
-			behind = ez*offset + ey*NX + ex;
-			else
-			behind = (ez - 1)*offset + ey*NX + ex;
-			if (ex == NZ - 1)
-			front = ez*offset + ey*NX + ex;
-			else
-			front = (ez + 1)*offset + ey*NX + ex;*/
 
-		left =		ez*offset + ey*NX + ex - 1;
-		right =		ez*offset + ey*NX + ex + 1;
-		bottom =	ez*offset + (ey - 1)*NX + ex;
-		top	=		ez*offset + (ey + 1)*NX + ex;
-		behind =	(ez - 1)*offset + ey*NX + ex;
-		front =		(ez + 1)*offset + ey*NX + ex;
+		int left = ez*offset + ey*NX + (ex - 1);
+		int righ = ez*offset + ey*NX + (ex + 1);
+		int bott = ez*offset + (ey - 1)*NX + ex;
+		int topp = ez*offset + (ey + 1)*NX + ex;
+		int back = (ez - 1)*offset + ey*NX + ex;
+		int fron = (ez + 1)*offset + ey*NX + ex;
 
-		float4 p1 = p[left];//left x
-		float4 p2 = p[right];//right x
-		float4 p3 = p[bottom];//bottom x
-		float4 p4 = p[top];//top x
-		float4 p5 = p[behind];//front x
-		float4 p6 = p[front];//behind x
+		float4 p1 = p[left];
+		float4 p2 = p[righ];
+		float4 p3 = p[bott];
+		float4 p4 = p[topp];
+		float4 p5 = p[back];
+		float4 p6 = p[fron];
 
 		float4 vel = v[ez*offset + ey*NX + ex];
 		float4 grad;
@@ -660,6 +607,28 @@ int dx, int dy, int dz, int lb, size_t pitch)
 	}
 	
 	
+}
+
+extern "C"
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence)
+{
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+
+	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
+	divergence_k << <block_size, threads_size >> >(divergence, v, tPitch_v);
+	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
+	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
+	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
+	for (int i = 0; i < 60; i++){
+		//	update_vel_texture(pressure, NX, NY, tPitch_v);
+		jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, -1, 1.f / 6, tPitch_v);
+		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);
+		SWAP(pressure, temp);
+	}
+	gradient_k << <block_size, threads_size >> >(v, pressure, tPitch_v);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+	getLastCudaError("diffuse_k failed.");
 }
 
 __global__ void
@@ -748,35 +717,6 @@ int dx, int dy, int dz, float dt, int lb, size_t pitch)
 
 }
 
-__global__ void
-bc_k(float4 *b, size_t pitch,float scale){
-	// ex is the domain location in x for this thread
-	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
-	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
-	int ez = threadIdx.z + blockIdx.z * 8;
-
-	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
-		boundary_condition_k(b, ex, ey, ez, scale, pitch);
-	}
-	__syncthreads();
-}
-
-__global__ void
-bc_density_k(float *b, size_t pitch, float scale){
-	// ex is the domain location in x for this thread
-	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
-	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
-	int ez = threadIdx.z + blockIdx.z * 8;
-
-	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
-		boundary_density_condition_k(b, ex, ey, ez, scale, pitch);
-	}
-	__syncthreads();
-}
 
 __global__ void
 force_k(float4 *v, float *d, float dt, size_t pitch){
@@ -794,17 +734,9 @@ force_k(float4 *v, float *d, float dt, size_t pitch){
 }
 
 
-extern "C"
-void advect(float4 *v, int dx, int dy, int dz, float dt)
-{
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
-	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
-	update_vel_texture(v, NX, NY, tPitch_v);
-	advect_k<<<block_size, threads_size >>>(v, dx, dy, dz, dt, tPitch_v);
-	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-	getLastCudaError("advectVelocity_k failed.");
-}
+
+
 
 extern "C"
 void addForce(float4 *v, float *d, int dx, int dy, int dz, float dt){
@@ -826,6 +758,33 @@ void advectDensity(float4 *v, float *d, int dx, int dy, int dz, float dt){
 	getLastCudaError("advectDensity_k failed.");
 }
 
+
+__global__ void
+advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch){
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	float4 velocity;
+	float3 ploc;
+	float new_levelset;
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		//	find the velocity of this position
+		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
+
+		//tracing back
+		ploc.x = (ex)-dt * velocity.x * dx;
+		ploc.y = (ey)-dt * velocity.y * dy;
+		ploc.z = (ez)-dt * velocity.z * dz;
+
+		//get the density of tracing back position
+		new_levelset = tex3D(texref_levelset, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
+		ls[ez*NX*NY + ey*NX + ex] = new_levelset;
+
+		__syncthreads();
+	}
+}
+
 extern "C"
 void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
@@ -833,6 +792,7 @@ void advectLevelSet(float4 *v, float *ls, int dx, int dy, int dz, float dt){
 	update_vel_texture(v, NX, NY, tPitch_v);
 	update_1f_texture(array_levelset, ls, NX, NY, tPitch_lsf);
 	advect_levelset_k << <block_size, threads_size >> >(ls, dx, dy, dz, dt, tPitch_den);
+//	bc_density_k << <block_size, threads_size >> >(ls, tPitch_den, 1.f);
 	getLastCudaError("advectLevelSet_k failed.");
 }
 
@@ -1043,51 +1003,8 @@ void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt){
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 }
 
-extern "C"
-void diffuse(float4 *v, float4 *temp, int dx, int dy, int dz, float dt)
-{
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
-	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
-	float rdx = 1.f;
-	float alpha = rdx / VISC / dt;
-	float rBeta = 1.f / (6 + alpha);
-	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
-	for(int i=0;i<20;i++){
-		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
-	//	update_vel_texture(temp, NX, NY, tPitch_v);
-		jacobi_k << <block_size, threads_size >> >(v, temp, temp, alpha, rBeta, dx, dy, dz, tPitch_v);
-		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-		SWAP(v, temp);
-	}
-	getLastCudaError("diffuse_k failed.");
-}
 
-extern "C"
-void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, int dx, int dy, int dz, float dt)
-{
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
-
-	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-	
-	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
-	divergence_k<<<block_size, threads_size >>>(divergence, v, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
-	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
-	
-	for(int i = 0; i < 60; i++){
-	//	update_vel_texture(pressure, NX, NY, tPitch_v);
-		jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, -1, 1.f / 6, dx, dy, dz, tPitch_v);
-		bc_k << <block_size, threads_size >> >(pressure, tPitch_p, 1.f);
-		SWAP(pressure, temp);
-	}
-
-	
-
-	gradient_k<<<block_size, threads_size >>>(v, pressure, dx, dy, dz, NY / THREAD_Y, tPitch_v);
-	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-	getLastCudaError("diffuse_k failed.");
-}
 
 
 extern "C"
@@ -1169,6 +1086,24 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 *normal
 		//get the levelset value at pos
 		advect_value = tex3D(texref_levelset, pos.x*NX + 0.5, pos.y*NY + 0.5, pos.z*NZ + 0.5);
 		float d = 0.05;
+		if (advect_value < 0.01 && counter == 0){
+			//zero level is on the boundary of entire volume
+			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
+			if (pos.x < 0.05)
+				normal[ey * 1024 + ex] = make_float3(-1, 0, 0);
+			if (pos.x > 0.95)
+				normal[ey * 1024 + ex] = make_float3(1, 0, 0);
+			if (pos.y < 0.05)
+				normal[ey * 1024 + ex] = make_float3(0, -1, 0);
+			if (pos.y > 0.95)
+				normal[ey * 1024 + ex] = make_float3(0, 1, 0);
+			if (pos.z < 0.05)
+				normal[ey * 1024 + ex] = make_float3(0, 0, -1);
+			if (pos.z > 0.95)
+				normal[ey * 1024 + ex] = make_float3(0, 0, 1);
+			return;
+		}
+		
 		if (counter == 0 && advect_value < 0){
 			//first pos in water
 			intersection[ey * 1024 + ex] = make_float4(pos.x, pos.y, pos.z, 1);
@@ -1280,4 +1215,34 @@ void bindTexturetoCudaArray(){
 	checkCudaErrors(cudaBindTextureToArray(&texref_ray, array_ray, &ca_descriptor_4f));
 	getLastCudaError("cudaGraphicsGLRegisterBuffer failed");
 	cudaGraphicsUnmapResources(1, &textureCudaResource, 0);
+}
+
+__global__ void
+add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	int far_x = x + size;
+	int far_y = y + size;
+	int far_z = z + size;
+	if (x >= 0 && far_x < NX && y >= 0 && far_y < NY && z >= 0 && far_z < NZ){
+		//location is inside the volume
+		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
+			//this thread is inside the location
+			v[ez*NX*NY + ey*NX + ex].y += 0.4;
+		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
+		//	l[ez*NX*NY + ey*NX + ex] = -1;
+		}
+	}
+}
+
+extern "C"
+void addSource(float4 *v, float *d, float*l, int dx, int dy, int dz, float size){
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+
+	add_source_k << <block_size, threads_size >> >(v, d, l, dx, dy, dz, size);
+	reinit_Levelset_k << <block_size, threads_size >> >(l);
+	getLastCudaError("add_source_k failed.");
 }

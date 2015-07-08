@@ -31,18 +31,16 @@ __global__ void
 forces_k(float4 *v, int dx, int dy, int spx, int spy, float fx, float fy, int r, size_t pitch);
 
 __global__ void
-advect_k(float4 *v, int dx, int dy, int dz, float dt, size_t pitch);
+advect_k(float4 *v);
 
 __global__ void
 advect_density_k(float *d, int dx, int dy, int dz, float dt, size_t pitch);
 
 __global__ void
-jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta,
-int dx, int dy, int dz, size_t pitch);
+jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta, size_t pitch);
 
 __global__ void
-divergence_k(float4 *d, float4 *v,
-int dx, int dy, int dz, int lb, size_t pitch);
+divergence_k(float4 *d, float4 *v, size_t pitch);
 
 __global__ void
 gradient_k(float4 *v, float4 *p,

@@ -66,6 +66,7 @@ namespace Rendering
 			int particle_count;
 			int ttt;
 			
+
 			GLuint cube_vao;
 			GLuint cube_vbo;
 			GLuint cube_vbo_index;

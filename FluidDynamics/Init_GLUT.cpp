@@ -32,6 +32,7 @@ float Init_GLUT::current_time = 0;
 float Init_GLUT::previous_time = 0;
 
 extern bool start_run;
+extern bool isAddSource;
 
 void Init_GLUT::init(const Core::WindowInfo& windowInfo,
 	const Core::ContextInfo& contextInfo,
@@ -179,6 +180,10 @@ void Init_GLUT::keyboardCallback(unsigned char key, int x, int y)
 		start_run = true;
 		break;
 	}
+	case 'l':{
+		isAddSource = true;
+		break;
+	}
 	}
 }
 
@@ -213,6 +218,10 @@ void Init_GLUT::keyboardUpCallback(unsigned char key, int x, int y)
 	}
 	case 'r':{
 		start_run = false;
+		break;
+	}
+	case 'l':{
+		isAddSource = false;
 		break;
 	}
 	}
