@@ -7,6 +7,12 @@
 #define NX 32
 #define NY 32
 #define NZ 32
+
+#define LNX 64
+#define LNY 64
+#define LNZ 64
+#define LDS LNX*LNY*LNZ
+
 #define DT 0.1f
 #define DS (NX*NY*NZ)
 

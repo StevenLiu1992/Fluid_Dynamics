@@ -18,7 +18,6 @@
 #include <helper_cuda_gl.h>
 
 #include "fluidKernel.cuh"
-
 namespace Rendering
 {
 	namespace Models
