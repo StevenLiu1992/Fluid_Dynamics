@@ -377,6 +377,7 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 	if (ex == (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
 		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex - 1];
 	}
+//	v[ez*pitch0 + ey*NX + ex].w = 1;
 	__syncthreads();
 }
 
@@ -423,11 +424,19 @@ advect_k(float4 *v){
 		//semi-lagrangian method to advect velocity field
 		float4 velocity;
 		float3 ploc;
+		float density;
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
+		//density = tex3D(texref_den, ex + 0.5, ey + 0.5, ez + 0.5);
+		//if (density == 0){
+		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0, 0, 0, 0);
+		//	return;//in the air
+		//}
+
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
-
+//		density = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
+//		if (density == 0)
 		v[ez*NY*NZ + ey*NX + ex] = tex3D(texref_vel, ploc.x, ploc.y, ploc.z);
 	}
 
@@ -565,12 +574,13 @@ force_k(float4 *v, float *d, size_t pitch){
 
 
 extern "C"
-void advect(float4 *v)
+void advect(float4 *v, float *d)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	update_vel_texture(v, NX, NY, tPitch_v);
+	update_1f_texture(array_den, d, NX, NY, tPitch_den);
 	advect_k << <block_size, threads_size >> >(v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
@@ -830,6 +840,45 @@ advect_levelset_k(float *ls, size_t pitch){
 	}
 }
 
+__global__ void
+advect_levelset_BFECC_k(float *ls, size_t pitch){
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	float4 velocity;
+	float3 ploc;
+	float new_levelset;
+
+	float3 grid_position = make_float3(ex, ey, ez);
+
+	if (ex != 0 && ex != (LNX - 1) && ey != 0 && ey != (LNY - 1) && ez != 0 && ez != (LNZ - 1)){
+		//tracing backward
+		velocity = tex3D(texref_vel, ex * 0.5 + 0.5, ey * 0.5 + 0.5, ez * 0.5 + 0.5);
+		ploc.x = (ex) - DT * velocity.x * LNX;
+		ploc.y = (ey) - DT * velocity.y * LNY;
+		ploc.z = (ez) - DT * velocity.z * LNZ;
+		
+		//tracing forward
+		velocity = tex3D(texref_vel, ploc.x * 0.5 + 0.5, ploc.y * 0.5 + 0.5, ploc.z * 0.5 + 0.5);
+		ploc.x = ploc.x + DT * velocity.x * LNX;
+		ploc.y = ploc.y + DT * velocity.y * LNY;
+		ploc.z = ploc.z + DT * velocity.z * LNZ;
+
+		grid_position = grid_position + 0.5*(grid_position - ploc);
+		velocity = tex3D(texref_vel, grid_position.x * 0.5 + 0.5, grid_position.y * 0.5 + 0.5, grid_position.z * 0.5 + 0.5);
+		ploc.x = grid_position .x - DT * velocity.x * LNX;
+		ploc.y = grid_position .y - DT * velocity.y * LNY;
+		ploc.z = grid_position .z - DT * velocity.z * LNZ;
+
+		new_levelset = tex3D(texref_levelset, ploc.x + 0.5, ploc.y + 0.5, ploc.z + 0.5);
+		ls[ez*LNX*LNY + ey*LNX + ex] = new_levelset;
+		
+
+		__syncthreads();
+	}
+}
+
 extern "C"
 void advectLevelSet(float4 *v, float *ls){
 	dim3 block_size(LNX / THREAD_X, LNY / THREAD_Y, LNZ / THREAD_Z);
@@ -849,7 +898,7 @@ correctLevelset_first_k(float3 *p, float2 *con){
 	int ez = threadIdx.z + blockIdx.z * 8;
 
 	float e_cons = 2.71828;
-	float constant_c = 1;
+	float constant_c = 0.5;
 	if (ez*NX*NY + ey*NX + ex > 31104) 
 		return;//more than particle amount
 	
@@ -910,8 +959,8 @@ correctLevelset_first_k(float3 *p, float2 *con){
 				(particle_location.z - grid_location[i].z)*(particle_location.z - grid_location[i].z);
 			if (sq_dis < 1){
 				//calculate contribution of this particle
-				float q_c = - sq_dis / constant_c;
-				float _c = -1 / constant_c;
+				float q_c = -sq_dis / constant_c / constant_c;
+				float _c = -1.f / constant_c / constant_c;
 				float w = (pow(e_cons, q_c) - pow(e_cons, _c)) / (1 - pow(e_cons, _c));//get w(k)
 				//float value_levelset = tex3D(texref_levelset, 
 				//	particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
@@ -1011,8 +1060,8 @@ reinit_Levelset_k(float *ls){
 	int si = 0;
 //	si = grid_value > 0 ? 1 : -1;
 	si = grid_value * rsqrt(grid_value*grid_value + 1);
-	float3 dis = make_float3(si *0.57735, si *0.57735, si *0.57735);
-//	float3 dis = make_float3(si, si, si);
+//	float3 dis = make_float3(si *0.57735, si *0.57735, si *0.57735);
+	float3 dis = make_float3(si, si, si);
 	float3 cur_loc = make_float3(ex, ey, ez);
 	float3 pre_loc = cur_loc - dis;
 	float value_levelset = tex3D(texref_levelset,
@@ -1038,7 +1087,7 @@ void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt){
 	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
 	correctLevelset_first_k << <block_size, threads_size >> >(particle, con);
 	correctLevelset_second_k << <block_size, threads_size >> >(ls, con);
-	for (int i = 0; i < 6; i++){
+	for (int i = 0; i <6; i++){
 		update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
 		reinit_Levelset_k << <block_size, threads_size >> >(ls);
 	}
@@ -1139,7 +1188,7 @@ raycasting_k(int maxx, int maxy, float *ls, float4 *intersection, float3 *normal
 			normal[ey * 1024 + ex] = g;
 			return;
 		}
-		pos = pos + advect_value * dir / LNX / 1.5;
+		pos = pos + advect_value * dir / LNX;
 		advect_value0 = advect_value;
 		counter++;
 	}

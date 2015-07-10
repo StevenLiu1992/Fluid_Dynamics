@@ -47,7 +47,7 @@ size_t tPitch_lsf = 0;
 size_t tPitch_ctb = 0;
 
 extern "C"
-void advect(float4 *v);
+void advect(float4 *v, float *d);
 extern "C"
 void diffuse(float4 *v, float4 *temp);
 extern "C"
@@ -775,7 +775,7 @@ void Water::simulateFluids(void)
 		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 4);
 		//isAddSource = false;
 	}
-	advect(dvfield);
+	advect(dvfield, ddensity);
 	diffuse(dvfield, dtemp);
 	projection(dvfield, dtemp, dpressure, ddivergence);
 	addForce(dvfield, ddensity);
