@@ -49,7 +49,7 @@ size_t tPitch_ctb = 0;
 extern "C"
 void advect(float4 *v, float *d);
 extern "C"
-void diffuse(float4 *v, float4 *temp);
+void diffuse(float4 *v, float4 *temp, float *d);
 extern "C"
 void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence);
 extern "C"
@@ -61,7 +61,7 @@ void addForce(float4 *v, float *d);
 extern "C"
 void advectLevelSet(float4 *v, float *ls);
 extern "C"
-void correctLevelSet(float *ls, float2 *con, int dx, int dy, int dz, float dt);
+void correctLevelSet(float *ls, float2 *con);
 extern "C"
 void raycasting(int x, int y, float *ls, float3 camera);
 extern "C"
@@ -399,6 +399,25 @@ void Water::initLevelSetFunc(float *h, float *d){
 					int c = 8 - std::abs(k - 32);
 					h[k*LNX*LNY + i*LNX + j] = -MIN(a, b, c);
 				}
+				if (i > 3 && i < 24){
+					h[k*LNX*LNY + i*LNX + j] = (i - 3) > (24 - i) ? (24 - i) : (i - 3);
+				}
+				if (i == 0){
+					
+					h[k*LNX*LNY + i*LNX + j] = -3;
+				}
+				if (i == 1){
+
+					h[k*LNX*LNY + i*LNX + j] = -2;
+				}
+				if (i == 2){
+
+					h[k*LNX*LNY + i*LNX + j] = -1;
+				}
+				if (i == 3){
+
+					h[k*LNX*LNY + i*LNX + j] = 0;
+				}
 			}
 		}
 	}
@@ -499,12 +518,12 @@ void Water::initParticles_velocity(float4 *h, float4 *d){
 				h[k*NX*NY + i*NX + j].y = 0;
 				h[k*NX*NY + i*NX + j].z = 0;
 
-				/*if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
+			/*	if (j>14 && j<18 && i>0 && i<12 && k>14 && k<18){
 					h[k*NX*NY + i*NX + j].x = 0;
-					h[k*NX*NY + i*NX + j].y = 0.2;
+					h[k*NX*NY + i*NX + j].y = 0.8;
 					h[k*NX*NY + i*NX + j].z = 0;
-				}*/
-				/*if (j>0 && j<10 && i>20 && i<26 && k>8 && k<28){
+				}
+				if (j>0 && j<10 && i>20 && i<26 && k>8 && k<28){
 					h[k*NX*NY + i*NX + j].x = 0.7;
 					h[k*NX*NY + i*NX + j].y = 0;
 					h[k*NX*NY + i*NX + j].z = 0;
@@ -522,10 +541,15 @@ void Water::init_density(float *h, float3* p, float *d){
 	for (k = 1; k < NZ-1; k++){
 		for (i = 1; i < NY-1; i++){
 			for (j = 1; j < NX-1; j++){
-				if (i >= 11 && i <= 21 && k >= 11 && k <= 21 && j >= 11 && j <= 21){
+				if (i >= 12 && i <= 20 && k >= 12 && k <= 20 && j >= 12 && j <= 20){
 					h[k*NX*NY + i*NX + j] = 10.f;
 					total += 10.f;
 				}
+				if (i <= 1){
+					h[k*NX*NY + i*NX + j] = 10.f;
+					total += 10.f;
+				}
+
 			}
 		}
 	}
@@ -603,18 +627,18 @@ void Water::cout_density(float* d){
 	
 }
 void Water::cout_levelset(float* ls){
-	int i, j, k = 31;
+	int i, j, k = 30;
 	float total = 0;
 	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 //	for (k = 8; k < NZ-8; k++){
 	for (i = 10; i >= 0; i--){
-		for (j = 5; j < 30; j++){
+		for (j = 30; j < 50; j++){
 		//	if (k == 16)
-			if (ls[k * NX*NY + i*NX + j] < 0 || ls[k * NX*NY + i*NX + j] >= 10)
-				printf("%1.f ", ls[k*NX*NY + i*NX + j]);
+			if (ls[k * LNX*LNY + i*LNX + j] < 0 || ls[k * LNX*LNY + i*LNX + j] >= 10)
+				printf("%1.f ", ls[k*LNX*LNY + i*LNX + j]);
 			else
 					
-				printf(" %1.f ", ls[k * NX*NY + i*NX + j]);
+				printf(" %1.f ", ls[k * LNX*LNY + i*LNX + j]);
 		}
 		std::cout << std::endl;
 	}
@@ -776,14 +800,14 @@ void Water::simulateFluids(void)
 		//isAddSource = false;
 	}
 	advect(dvfield, ddensity);
-	diffuse(dvfield, dtemp);
+	diffuse(dvfield, dtemp, ddensity);
 	projection(dvfield, dtemp, dpressure, ddivergence);
 	addForce(dvfield, ddensity);
 	advectParticles(vbo, dvfield, ddensity);
 	advectDensity(dvfield, ddensity);
 
 	advectLevelSet(dvfield, dlsf);
-	correctLevelSet(dlsf, dcontribution, NX, NY, NZ, DT);
+	correctLevelSet(dlsf, dcontribution);
 
 
 	//Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
@@ -797,6 +821,6 @@ void Water::simulateFluids(void)
 	//	cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
 	//	cout_density(hdensity);
-	//	cudaMemcpy(hlsf, dlsf, sizeof(float)* DS, cudaMemcpyDeviceToHost);
+	//	cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
 	//	cout_levelset(hlsf);
 }
