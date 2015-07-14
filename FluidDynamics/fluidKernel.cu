@@ -105,6 +105,14 @@ void bindTexture(void){
 void unbindTexture(void){
 	cudaUnbindTexture(texref_vel);
 	cudaUnbindTexture(texref_den);
+	cudaUnbindTexture(texref_temp);
+	cudaUnbindTexture(texref_levelset);
+	cudaUnbindTexture(texref_ray);
+
+	cudaFreeArray(array_temp);
+	cudaFreeArray(array_levelset);
+	cudaFreeArray(array_den);
+	cudaFreeArray(array_vel);
 }
 
 void update_temp_texture(float4 *data,int dimx, int dimy, size_t pitch){
@@ -558,16 +566,24 @@ advect_k(float4 *v){
 }
 
 __global__ void
-jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *d, float alpha, float rBeta, size_t pitch){
+jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, float rBeta, size_t pitch){
 
 	int ex = threadIdx.x + blockIdx.x * 8;
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (d[ez*NX*NY + ey*NX + ex] < 0.1)
-		return;
+	
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1 &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0.1 &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0.1 &&
+			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > 0.1 &&
+			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > 0.1 &&
+			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1 &&
+			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1)
+			return;
+
 		int offset = pitch / sizeof(float4);
 
 		int left = ez*offset + ey*NX + (ex - 1);
@@ -702,7 +718,7 @@ gradient_k(float4 *v, float4 *p, size_t pitch){
 }
 
 __global__ void
-force_k(float4 *v, float *d, size_t pitch){
+force_k(float4 *v, float *l, size_t pitch){
 	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
 	// ey is the domain location in y for this thread
@@ -711,7 +727,7 @@ force_k(float4 *v, float *d, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (d[ez*NX*NY + ey*NX + ex] > 0.1){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] < 0.1){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
@@ -738,7 +754,7 @@ void advect(float4 *v, float *d)
 
 
 extern "C"
-void diffuse(float4 *v, float4 *temp,float *d)
+void diffuse(float4 *v, float4 *temp,float *l)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
@@ -750,7 +766,7 @@ void diffuse(float4 *v, float4 *temp,float *d)
 	update_vel_texture(v, NX, NY, tPitch_v);//use for b
 	for (int i = 0; i<20; i++){
 		//xNew, x, b, alpha, rBeta, dx, dy, dz, pitch;
-		jacobi_diffuse_k << <block_size, threads_size >> >(v, temp, temp, d, alpha, rBeta, tPitch_v);
+		jacobi_diffuse_k << <block_size, threads_size >> >(v, temp, temp, l, alpha, rBeta, tPitch_v);
 		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 		SWAP(v, temp);
 	}
@@ -758,19 +774,20 @@ void diffuse(float4 *v, float4 *temp,float *d)
 }
 
 extern "C"
-void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence)
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, float *l)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
+	cudaMemset(temp, 0, sizeof(float4)*NX*NY*NZ);
 	divergence_k << <block_size, threads_size >> >(divergence, v, tPitch_v);
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
 	for (int i = 0; i < 60; i++){
 		//	update_vel_texture(pressure, NX, NY, tPitch_v);
-		jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, -1, 1.f / 6, tPitch_v);
+		jacobi_diffuse_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v);
 		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);
 		SWAP(pressure, temp);
 	}
@@ -780,10 +797,10 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence)
 }
 
 extern "C"
-void addForce(float4 *v, float *d){
+void addForce(float4 *v, float *l){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-	force_k << <block_size, threads_size >> >(v, d, tPitch_v);
+	force_k << <block_size, threads_size >> >(v, l, tPitch_v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("addForce failed.");
 }

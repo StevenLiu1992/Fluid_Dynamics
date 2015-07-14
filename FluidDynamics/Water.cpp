@@ -51,7 +51,7 @@ void advect(float4 *v, float *d);
 extern "C"
 void diffuse(float4 *v, float4 *temp, float *d);
 extern "C"
-void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence);
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, float *d);
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d);
 extern "C"
@@ -90,7 +90,10 @@ Water::~Water()
 	cudaFree(dtemp);
 	cudaFree(dpressure);
 	cudaFree(ddivergence);
-
+	free(hdensity);
+	free(hintersection);
+	free(hnormal);
+	free(hlsf);
 }
 
 void Water::Create(Core::Camera* c)
@@ -800,9 +803,9 @@ void Water::simulateFluids(void)
 		//isAddSource = false;
 	}
 	advect(dvfield, ddensity);
-	diffuse(dvfield, dtemp, ddensity);
-	projection(dvfield, dtemp, dpressure, ddivergence);
-	addForce(dvfield, ddensity);
+//	diffuse(dvfield, dtemp, dlsf);
+	addForce(dvfield, dlsf);
+	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
 	advectParticles(vbo, dvfield, ddensity);
 	advectDensity(dvfield, ddensity);
 
