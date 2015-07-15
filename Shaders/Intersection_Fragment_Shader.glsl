@@ -33,5 +33,5 @@ void main()
 	colour += ( lightColour.rgb * sFactor ) * 0.33;
 	out_color = vec4 ( colour * atten * lambert , diffuse.a);
 	out_color.rgb += ( diffuse.rgb * lightColour.rgb ) * 0.4;
-	
+	out_color.a = 0.2;
 }

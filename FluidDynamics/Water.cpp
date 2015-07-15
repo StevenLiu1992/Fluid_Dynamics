@@ -47,7 +47,7 @@ size_t tPitch_lsf = 0;
 size_t tPitch_ctb = 0;
 
 extern "C"
-void advect(float4 *v, float *d);
+void advect(float4 *v, float *l);
 extern "C"
 void diffuse(float4 *v, float4 *temp, float *d);
 extern "C"
@@ -376,7 +376,7 @@ void Water::Draw()
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
 void Water::initLevelSetFunc(float *h, float *d){
-	memset(h, -1, sizeof(float) * LDS);
+	memset(h, 5, sizeof(float) * LDS);
 	int i, j, k;
 	for (k = 0; k < LNZ; k++){
 		for (i = 0; i < LNY; i++){
@@ -421,6 +421,11 @@ void Water::initLevelSetFunc(float *h, float *d){
 
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
+				
+				/*if (j==2||j == 3||j==4){
+
+					h[k*LNX*LNY + i*LNX + j] = -1;
+				}*/
 			}
 		}
 	}
@@ -548,10 +553,10 @@ void Water::init_density(float *h, float3* p, float *d){
 					h[k*NX*NY + i*NX + j] = 10.f;
 					total += 10.f;
 				}
-				if (i <= 1){
+				/*if (i <= 1){
 					h[k*NX*NY + i*NX + j] = 10.f;
 					total += 10.f;
-				}
+				}*/
 
 			}
 		}
@@ -802,8 +807,8 @@ void Water::simulateFluids(void)
 		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 4);
 		//isAddSource = false;
 	}
-	advect(dvfield, ddensity);
-//	diffuse(dvfield, dtemp, dlsf);
+	advect(dvfield, dlsf);
+	diffuse(dvfield, dtemp, dlsf);
 	addForce(dvfield, dlsf);
 	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
 	advectParticles(vbo, dvfield, ddensity);

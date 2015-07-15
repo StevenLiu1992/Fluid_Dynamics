@@ -553,7 +553,9 @@ advect_k(float4 *v){
 		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0, 0, 0, 0);
 		//	return;//in the air
 		//}
-
+		float ls = tex3D(texref_levelset, ex + 0.5, ey + 0.5, ez + 0.5);
+		if (ls > 0.5)
+			return;
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
@@ -575,13 +577,14 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 	
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1 &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0.1 &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0.1 &&
-			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > 0.1 &&
-			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > 0.1 &&
-			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1 &&
-			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.1)
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5 &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0.5 &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0.5 &&
+			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > 0.5 &&
+			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > 0.5 &&
+			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5 &&
+			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5)
+			//outside of liquid
 			return;
 
 		int offset = pitch / sizeof(float4);
@@ -727,7 +730,7 @@ force_k(float4 *v, float *l, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] < 0.1){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 6){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
@@ -740,13 +743,14 @@ force_k(float4 *v, float *l, size_t pitch){
 
 
 extern "C"
-void advect(float4 *v, float *d)
+void advect(float4 *v, float *ls)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	update_vel_texture(v, NX, NY, tPitch_v);
-	update_1f_texture(array_den, d, NX, NY, tPitch_den);
+	//update_1f_texture(array_den, d, NX, NY, tPitch_den);
+	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
 	advect_k << <block_size, threads_size >> >(v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("advectVelocity_k failed.");
@@ -760,7 +764,7 @@ void diffuse(float4 *v, float4 *temp,float *l)
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	float rdx = 1.f;
-	float alpha = rdx / VISC / DT;
+	float alpha = rdx*rdx / VISC / DT;
 	float rBeta = 1.f / (6 + alpha);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
 	update_vel_texture(v, NX, NY, tPitch_v);//use for b
@@ -1501,7 +1505,7 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 		//location is inside the volume
 		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
 			//this thread is inside the location
-			v[ez*NX*NY + ey*NX + ex].y += 0.4;
+			v[ez*NX*NY + ey*NX + ex].x -= 0.4;
 		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
 		//	l[ez*NX*NY + ey*NX + ex] = -1;
 		}
