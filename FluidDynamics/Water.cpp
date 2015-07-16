@@ -402,7 +402,7 @@ void Water::initLevelSetFunc(float *h, float *d){
 					int c = 8 - std::abs(k - 32);
 					h[k*LNX*LNY + i*LNX + j] = -MIN(a, b, c);
 				}
-				if (i > 3 && i < 24){
+			/*	if (i > 3 && i < 24){
 					h[k*LNX*LNY + i*LNX + j] = (i - 3) > (24 - i) ? (24 - i) : (i - 3);
 				}
 				if (i == 0){
@@ -420,7 +420,7 @@ void Water::initLevelSetFunc(float *h, float *d){
 				if (i == 3){
 
 					h[k*LNX*LNY + i*LNX + j] = 0;
-				}
+				}*/
 				
 				/*if (j==2||j == 3||j==4){
 
@@ -634,26 +634,7 @@ void Water::cout_density(float* d){
 	std::cout << d[1 * NZ*NY + 1 * NX + NX - 2] << std::endl;
 	
 }
-void Water::cout_levelset(float* ls){
-	int i, j, k = 30;
-	float total = 0;
-	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
-//	for (k = 8; k < NZ-8; k++){
-	for (i = 10; i >= 0; i--){
-		for (j = 30; j < 50; j++){
-		//	if (k == 16)
-			if (ls[k * LNX*LNY + i*LNX + j] < 0 || ls[k * LNX*LNY + i*LNX + j] >= 10)
-				printf("%1.f ", ls[k*LNX*LNY + i*LNX + j]);
-			else
-					
-				printf(" %1.f ", ls[k * LNX*LNY + i*LNX + j]);
-		}
-		std::cout << std::endl;
-	}
-//	}
-	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 
-}
 
 
 void Water::generateCube(){
@@ -804,7 +785,7 @@ void Water::simulateFluids(void)
 	// simulate fluid
 	ttt++;
 	if (isAddSource){
-		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 4);
+		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 6);
 		//isAddSource = false;
 	}
 	advect(dvfield, dlsf);
@@ -831,4 +812,36 @@ void Water::simulateFluids(void)
 	//	cout_density(hdensity);
 	//	cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
 	//	cout_levelset(hlsf);
+}
+void Water::cout_levelset(float* ls){
+	int i, j, k = 30;
+	float total = 0;
+	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+	
+	for (i = 10; i >= 0; i--){
+		for (j = 40; j < LNX; j++){
+			//	if (k == 16)
+			if (ls[k * LNX*LNY + i*LNX + j] < 0 || ls[k * LNX*LNY + i*LNX + j] >= 10)
+				printf("%1.f ", ls[k*LNX*LNY + i*LNX + j]);
+			else
+
+				printf(" %1.f ", ls[k * LNX*LNY + i*LNX + j]);
+		}
+		std::cout << std::endl;
+	}
+	
+
+	/*printf(" %1.1f ", ls[62 * LNX*LNY + 1 * LNX + 62]);
+	printf(" %1.1f ", ls[63 * LNX*LNY + 1 * LNX + 62]);
+	printf(" %1.1f ", ls[63 * LNX*LNY + 1 * LNX + 63]);
+	printf(" %1.1f ", ls[62 * LNX*LNY + 1 * LNX + 63]);
+	printf("\n");
+	printf(" %1.1f ", ls[62 * LNX*LNY + 0 * LNX + 62]);
+	printf(" %1.1f ", ls[63 * LNX*LNY + 0 * LNX + 62]);
+	printf(" %1.1f ", ls[63 * LNX*LNY + 0 * LNX + 63]);
+	printf(" %1.1f ", ls[62 * LNX*LNY + 0 * LNX + 63]);
+	printf("\n");
+	printf(" %1.1f ", ls[61 * LNX*LNY + 3 * LNX + 61]);*/
+	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+
 }

@@ -553,9 +553,11 @@ advect_k(float4 *v){
 		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0, 0, 0, 0);
 		//	return;//in the air
 		//}
-		float ls = tex3D(texref_levelset, ex + 0.5, ey + 0.5, ez + 0.5);
-		if (ls > 0.5)
+		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
+		if (ls > 4){
+			v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
 			return;
+		}
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
@@ -730,12 +732,12 @@ force_k(float4 *v, float *l, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 6){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 8){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{
-		//	v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
+			v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 0;
 		}
 	}
@@ -785,9 +787,11 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 
 	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(temp, 0, sizeof(float4)*NX*NY*NZ);
+	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
+
 	divergence_k << <block_size, threads_size >> >(divergence, v, tPitch_v);
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
-	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
+	
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
 	for (int i = 0; i < 60; i++){
 		//	update_vel_texture(pressure, NX, NY, tPitch_v);
@@ -1236,7 +1240,7 @@ reinit_Levelset_k(float *ls){
 			grid_location[i].y >= 0 && grid_location[i].y < LNY &&
 			grid_location[i].z >= 0 && grid_location[i].z < LNZ){
 			float value = ls[grid_location[i].z*LNX*LNY + grid_location[i].y*LNX + grid_location[i].x];
-			if (value*grid_value < 0)
+			if (value*grid_value < 0 && abs(grid_value - value) < 1)
 				//grid point is close to the interface
 				return;
 		}
