@@ -99,6 +99,9 @@
     <ClInclude Include="fluidKernel.cuh">
       <Filter>Rendering\Models\WaterModel</Filter>
     </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>Rendering\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -137,6 +140,9 @@
     </ClCompile>
     <ClCompile Include="Water.cpp">
       <Filter>Rendering\Models\WaterModel</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain.cpp">
+      <Filter>Rendering\Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

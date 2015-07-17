@@ -18,6 +18,11 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	quad->Create();
 	gameModelList["quad"] = quad;
 
+	Models::Terrain* terrain = new Models::Terrain();
+	terrain->SetProgram(Shader_Manager::GetShader("terrainShader"));
+	terrain->Create("../Textures/HB_dem_5m.txt");
+	gameModelList["terrain"] = terrain;
+
 	Models::Water* water = new Models::Water();
 	water->SetProgram(Shader_Manager::GetShader("particleShader"));
 	water->SetProgram1(Shader_Manager::GetShader("velocityFieldShader"));
@@ -27,6 +32,8 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	
 	water->Create(camera);
 	
+
+
 
 //	quad->setTexture(water->getTexture());
 

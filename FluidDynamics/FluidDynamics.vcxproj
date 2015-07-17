@@ -191,6 +191,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="Scene_Manager.cpp" />
     <ClCompile Include="Shader_Manager.cpp" />
+    <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Water.cpp" />
   </ItemGroup>
@@ -212,6 +213,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Scene_Manager.h" />
     <ClInclude Include="Shader_Manager.h" />
+    <ClInclude Include="Terrain.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="Vector3.h" />

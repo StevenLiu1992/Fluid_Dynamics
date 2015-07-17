@@ -5,6 +5,7 @@
 #include "Triangle.h"
 #include "Quad.h"
 #include "Water.h"
+#include "Terrain.h"
 #include "Matrix4.h"
 #include "Vector3.h"
 #include "Camera.h"
