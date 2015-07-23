@@ -25,6 +25,7 @@ __device__ float3 operator-(const float3 &a, const float3 &b);
 __device__ float4 operator-(const float4 &a, const float4 &b);
 __device__ float4 operator*(const float  &a, const float4 &b);
 __device__ float3 operator*(const float  &a, const float3 &b);
+__device__ float operator*(const float3 &a, const float3 &b);
 __device__ float3 operator/(const float3 &b, const float  &a);
 __device__ float3 normalize(const float3 &a);
 
@@ -46,10 +47,13 @@ __global__ void
 divergence_k(float4 *d, float4 *v, size_t pitch);
 
 __global__ void
-gradient_k(float4 *v, float4 *p, size_t pitch);
+gradient_k(float4 *v, float4 *p, float *l, size_t pitch);
 
 __global__ void
 force_k(float4 *v, float *d, size_t pitch);
+
+__global__ void
+exterapolation_k(float4 *v, float4 *temp,float *l);
 ///////////////////////////////////////////////////////////
 __global__ void
 advectParticles_k(float3 *particle, float4 *v,

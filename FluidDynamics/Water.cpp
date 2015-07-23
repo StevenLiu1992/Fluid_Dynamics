@@ -47,6 +47,8 @@ size_t tPitch_lsf = 0;
 size_t tPitch_ctb = 0;
 
 extern "C"
+void exterapolation(float4 *v, float4 *temp, float *ls);
+extern "C"
 void advect(float4 *v, float *l);
 extern "C"
 void diffuse(float4 *v, float4 *temp, float *d);
@@ -319,31 +321,31 @@ void Water::Draw()
 
 
 	//draw density field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	glUseProgram(program2);
+	//glUseProgram(program2);
 
 
-	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
-	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(1, 0, 0));
+	////*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
+	//modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(1, 0, 0));
 
-	glUniformMatrix4fv(glGetUniformLocation(program2, "projMatrix"), 1, false, (float*)&projMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program2, "modelMatrix"), 1, false, (float*)&modelMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program2, "viewMatrix"), 1, false, (float*)&viewMatrix);
-	Vector3 cameraPos = camera->GetPosition();
-	glUniform3f(glGetUniformLocation(program2, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
-	//	std::cout << cameraPos << std::endl;
-	//	glPointSize(1);
-	glBindVertexArray(grid_vao);
+	//glUniformMatrix4fv(glGetUniformLocation(program2, "projMatrix"), 1, false, (float*)&projMatrix);
+	//glUniformMatrix4fv(glGetUniformLocation(program2, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	//glUniformMatrix4fv(glGetUniformLocation(program2, "viewMatrix"), 1, false, (float*)&viewMatrix);
+	//Vector3 cameraPos = camera->GetPosition();
+	//glUniform3f(glGetUniformLocation(program2, "gCameraPos"), cameraPos.x, cameraPos.y, cameraPos.z);
+	////	std::cout << cameraPos << std::endl;
+	////	glPointSize(1);
+	//glBindVertexArray(grid_vao);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glDrawArrays(GL_POINTS, 0, DS);
-	glUseProgram(0);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glDisable(GL_CULL_FACE);
+	//glDisable(GL_DEPTH_TEST);
+	//glDrawArrays(GL_POINTS, 0, DS);
+	//glUseProgram(0);
 
 	//draw intersection>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	glUseProgram(intersection_program);
-
+	Vector3 cameraPos = camera->GetPosition();
 
 	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
 	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10));
@@ -607,8 +609,11 @@ void Water::cout_max_length_vector(float4* h){
 	for (j = 0; j < NX; j++){
 		std::cout << h[k*NZ*NY + j*NX + i].x << "," << h[k*NZ*NY + j*NX + i].y << "," << h[k*NZ*NY + j*NX + i].z << std::endl;
 	}*/
-	std::cout << h[1*NZ*NY + 1*NX + 1].y;
-	std::cout << h[1 * NZ*NY + 1 * NX + 1].y;
+	for (int i = 0; i < 32; i++){
+		std::cout << h[16 * NZ*NY + i * NX + 16].x << " "<<h[16 * NZ*NY + i * NX + 16].x << " "<<h[16 * NZ*NY + i * NX + 16].x << std::endl;
+	}
+	/*std::cout << h[1*NZ*NY + 1*NX + 1].y;
+	std::cout << h[1 * NZ*NY + 1 * NX + 1].y;*/
 	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 }
 void Water::cout_density(float* d){
@@ -788,8 +793,10 @@ void Water::simulateFluids(void)
 		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 6);
 		//isAddSource = false;
 	}
+	correctLevelSet(dlsf, dcontribution);
+	exterapolation(dvfield, dtemp, dlsf);
 	advect(dvfield, dlsf);
-	diffuse(dvfield, dtemp, dlsf);
+//	diffuse(dvfield, dtemp, dlsf);
 	addForce(dvfield, dlsf);
 	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
 	advectParticles(vbo, dvfield, ddensity);
@@ -798,14 +805,14 @@ void Water::simulateFluids(void)
 	advectLevelSet(dvfield, dlsf);
 	correctLevelSet(dlsf, dcontribution);
 
-
+	
 	//Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
 	//Vector3 cameraPos = camera->GetPosition();
 	//cameraPos = reverse_mv*cameraPos;
 	//raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
 
-	//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-	//	cout_max_length_vector(hvfield);
+		cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+		cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 	//	cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);

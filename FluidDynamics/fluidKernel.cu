@@ -183,9 +183,14 @@ __device__ float4 operator*(const float &a, const float4 &b) {
 __device__ float3 operator*(const float &a, const float3 &b) {
 	return make_float3(a * b.x, a * b.y, a * b.z);
 }
+__device__ float operator*(const float3 &a, const float3 &b) {
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
 __device__ float3 operator/(const float3 &b, const float &a) {
 	return make_float3(b.x/a, b.y/a, b.z/a);
 }
+
+
 __device__ float3 normalize(const float3 &a) {
 	float3 dir = a;//the direction from camera to ray inter in model space
 	dir = rsqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z) * dir;
@@ -554,10 +559,10 @@ advect_k(float4 *v){
 		//	return;//in the air
 		//}
 		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
-		if (ls > 4){
-			v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
-			return;
-		}
+		//if (ls > 0){
+		////	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
+		//	return;
+		//}
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
@@ -576,16 +581,16 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	
+	float th = 1;
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5 &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0.5 &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0.5 &&
-			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > 0.5 &&
-			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > 0.5 &&
-			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5 &&
-			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0.5)
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
+			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
+			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
+			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th)
 			//outside of liquid
 			return;
 
@@ -684,13 +689,24 @@ divergence_k(float4 *d, float4 *v, size_t pitch){
 }
 
 __global__ void
-gradient_k(float4 *v, float4 *p, size_t pitch){
+gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
 
 	int ex = threadIdx.x + blockIdx.x * 8;
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
+	float th = 0;
+	
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
+			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
+			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
+			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
+			//outside of liquid
+			return;
 		int offset = pitch / sizeof(float4);
 
 		int left = ez*offset + ey*NX + (ex - 1);
@@ -732,17 +748,143 @@ force_k(float4 *v, float *l, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 8){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 1){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
-			v[ez*offset + ey*NX + ex].w = 1;
+		//	v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{
-			v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
-			v[ez*offset + ey*NX + ex].w = 0;
+		//	v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
+		//	v[ez*offset + ey*NX + ex].w = 0;
 		}
 	}
 }
 
+__global__ void
+exterapolation_k(float4 *v, float4 *temp, float *l){
+
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+
+
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		float midd_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex];
+		if (midd_levelset <= 0)
+			return;//in the liquid
+
+		float left_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)];
+		float righ_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)];
+		float bott_levelset = l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex];
+		float topp_levelset = l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex];
+		float back_levelset = l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
+		float fron_levelset = l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
+
+		
+
+		int s0, s1, s2;
+		//x - direction
+		if (midd_levelset > righ_levelset && midd_levelset > left_levelset){
+			if (left_levelset > righ_levelset){
+				s0 = 1;
+			}
+			else{
+				s0 = -1;
+			}
+		}
+		else if (midd_levelset > righ_levelset){
+			s0 = 1;
+		}
+		else if (midd_levelset > left_levelset){
+			s0 = -1;
+		}
+		else{
+			s0 = 0;
+		}
+
+		//y - direction
+		if (midd_levelset > topp_levelset && midd_levelset > bott_levelset){
+			if (bott_levelset > topp_levelset){
+				s1 = 1;
+			}
+			else{
+				s1 = -1;
+			}
+		}
+		else if (midd_levelset > topp_levelset){
+			s1 = 1;
+		}
+		else if (midd_levelset > bott_levelset){
+			s1 = -1;
+		}
+		else{
+			s1 = 0;
+		}
+
+		//z - direction
+		if (midd_levelset > fron_levelset && midd_levelset > back_levelset){
+			if (back_levelset > fron_levelset){
+				s2 = 1;
+			}
+			else{
+				s2 = -1;
+			}
+		}
+		else if (midd_levelset > fron_levelset){
+			s2 = 1;
+		}
+		else if (midd_levelset > back_levelset){
+			s2 = -1;
+		}
+		else{
+			s2 = 0;
+		}
+
+		float3 fi0 = make_float3(midd_levelset, midd_levelset, midd_levelset);
+		float3 fi1 = make_float3(
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - s0)],
+			l[2 * ez*LNX*LNY + (2 * ey - s1)*LNX + 2 * ex],
+			l[(2 * ez - s2)*LNX*LNY + 2 * ey*LNX + 2 * ex]);
+		float3 vx0 = make_float3(
+			temp[ez*NX*NY + ey*NX + (ex - s0)].x,
+			temp[ez*NX*NY + (ey - s1)*NX + ex].x,
+			temp[(ez - s2)*NX*NY + ey*NX + ex].x
+			);
+		float3 vy0 = make_float3(
+			temp[ez*NX*NY + ey*NX + (ex - s0)].y,
+			temp[ez*NX*NY + (ey - s1)*NX + ex].y,
+			temp[(ez - s2)*NX*NY + ey*NX + ex].y
+			);
+		float3 vz0 = make_float3(
+			temp[ez*NX*NY + ey*NX + (ex - s0)].z,
+			temp[ez*NX*NY + (ey - s1)*NX + ex].z,
+			temp[(ez - s2)*NX*NY + ey*NX + ex].z
+			);
+		float3 I = make_float3(1, 1, 1);
+		float3 fi2 = fi0 - fi1;
+		float vx1 = (vx0*fi2) / (I*fi2);
+		float vy1 = (vy0*fi2) / (I*fi2);
+		float vz1 = (vz0*fi2) / (I*fi2);
+
+		v[ez*NX*NY + ey*NX + ex] = make_float4(vx1, vy1, vz1, 1);
+	
+	}
+	__syncthreads();
+}
+
+extern "C"
+void exterapolation(float4 *v, float4 *temp, float *ls){
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
+	for (int i = 0; i < 6; i++){
+
+		exterapolation_k << <block_size, threads_size >> >(v, temp, ls);
+		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+		SWAP(v, temp);
+	}
+	getLastCudaError("exterapolation_Velocity_k failed.");
+}
 
 extern "C"
 void advect(float4 *v, float *ls)
@@ -760,7 +902,7 @@ void advect(float4 *v, float *ls)
 
 
 extern "C"
-void diffuse(float4 *v, float4 *temp,float *l)
+void diffuse(float4 *v, float4 *temp, float *l)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
@@ -799,7 +941,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);
 		SWAP(pressure, temp);
 	}
-	gradient_k << <block_size, threads_size >> >(v, pressure, tPitch_v);
+	gradient_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("diffuse_k failed.");
 }

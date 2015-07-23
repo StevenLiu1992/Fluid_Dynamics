@@ -5,7 +5,7 @@ using namespace Models;
 Quad::Quad()
 {
 	position = Vector3(0, 0, 0);
-	orientation = Quaternion::AxisAngleToQuaterion(Vector3(1, 0, 0), 90);
+	orientation = Quaternion::AxisAngleToQuaterion(Vector3(1, 0, 0), -90);
 }
 
 Quad::~Quad()
