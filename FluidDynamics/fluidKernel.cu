@@ -559,10 +559,10 @@ advect_k(float4 *v){
 		//	return;//in the air
 		//}
 		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
-		//if (ls > 0){
-		////	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
-		//	return;
-		//}
+		if (ls > 0){
+		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
+			return;
+		}
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
@@ -581,16 +581,16 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	float th = 1;
+	float th = 3;
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
 			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
 			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
 			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
 			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
 			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
-			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th)
+			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
 			//outside of liquid
 			return;
 
@@ -695,7 +695,7 @@ gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	float th = 0;
+	float th = 3;
 	
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
@@ -748,13 +748,13 @@ force_k(float4 *v, float *l, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 1){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 0){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
-		//	v[ez*offset + ey*NX + ex].w = 1;
+			v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{
 		//	v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
-		//	v[ez*offset + ey*NX + ex].w = 0;
+			v[ez*offset + ey*NX + ex].w = 0;
 		}
 	}
 }
@@ -772,7 +772,8 @@ exterapolation_k(float4 *v, float4 *temp, float *l){
 		float midd_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex];
 		if (midd_levelset <= 0)
 			return;//in the liquid
-
+		if (temp[ez*NX*NY + ey*NX + ex].w == 1)
+			return;//has velocity
 		float left_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)];
 		float righ_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)];
 		float bott_levelset = l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex];
@@ -842,31 +843,37 @@ exterapolation_k(float4 *v, float4 *temp, float *l){
 
 		float3 fi0 = make_float3(midd_levelset, midd_levelset, midd_levelset);
 		float3 fi1 = make_float3(
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - s0)],
-			l[2 * ez*LNX*LNY + (2 * ey - s1)*LNX + 2 * ex],
-			l[(2 * ez - s2)*LNX*LNY + 2 * ey*LNX + 2 * ex]);
+			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + s0)],
+			l[2 * ez*LNX*LNY + (2 * ey + s1)*LNX + 2 * ex],
+			l[(2 * ez + s2)*LNX*LNY + 2 * ey*LNX + 2 * ex]);
 		float3 vx0 = make_float3(
-			temp[ez*NX*NY + ey*NX + (ex - s0)].x,
-			temp[ez*NX*NY + (ey - s1)*NX + ex].x,
-			temp[(ez - s2)*NX*NY + ey*NX + ex].x
+			temp[ez*NX*NY + ey*NX + (ex + s0)].x,
+			temp[ez*NX*NY + (ey + s1)*NX + ex].x,
+			temp[(ez + s2)*NX*NY + ey*NX + ex].x
 			);
 		float3 vy0 = make_float3(
-			temp[ez*NX*NY + ey*NX + (ex - s0)].y,
-			temp[ez*NX*NY + (ey - s1)*NX + ex].y,
-			temp[(ez - s2)*NX*NY + ey*NX + ex].y
+			temp[ez*NX*NY + ey*NX + (ex + s0)].y,
+			temp[ez*NX*NY + (ey + s1)*NX + ex].y,
+			temp[(ez + s2)*NX*NY + ey*NX + ex].y
 			);
 		float3 vz0 = make_float3(
-			temp[ez*NX*NY + ey*NX + (ex - s0)].z,
-			temp[ez*NX*NY + (ey - s1)*NX + ex].z,
-			temp[(ez - s2)*NX*NY + ey*NX + ex].z
+			temp[ez*NX*NY + ey*NX + (ex + s0)].z,
+			temp[ez*NX*NY + (ey + s1)*NX + ex].z,
+			temp[(ez + s2)*NX*NY + ey*NX + ex].z
 			);
 		float3 I = make_float3(1, 1, 1);
 		float3 fi2 = fi0 - fi1;
-		float vx1 = (vx0*fi2) / (I*fi2);
-		float vy1 = (vy0*fi2) / (I*fi2);
-		float vz1 = (vz0*fi2) / (I*fi2);
+		if (fi2.x == 0 && fi2.y == 0 && fi2.z == 0){
+			v[ez*NX*NY + ey*NX + ex] = make_float4(0, 0, 0, 0);
+		}
+		else{
+			
+			float vx1 = (vx0*fi2) / (I*fi2);
+			float vy1 = (vy0*fi2) / (I*fi2);
+			float vz1 = (vz0*fi2) / (I*fi2);
 
-		v[ez*NX*NY + ey*NX + ex] = make_float4(vx1, vy1, vz1, 1);
+			v[ez*NX*NY + ey*NX + ex] = make_float4(vx1, vy1, vz1, 0.5);
+		}
 	
 	}
 	__syncthreads();
@@ -877,7 +884,7 @@ void exterapolation(float4 *v, float4 *temp, float *ls){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
-	for (int i = 0; i < 6; i++){
+	for (int i = 0; i < 10; i++){
 
 		exterapolation_k << <block_size, threads_size >> >(v, temp, ls);
 		bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);

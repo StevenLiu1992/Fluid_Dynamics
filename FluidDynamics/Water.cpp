@@ -260,7 +260,7 @@ void Water::Create(Core::Camera* c)
 	cudaRuntimeGetVersion(&CUDAVersion);
 	std::cout << "CUDA version: "<< CUDAVersion << std::endl;
 
-	
+	correctLevelSet(dlsf, dcontribution);
 	
 }
 
@@ -571,49 +571,11 @@ void Water::cout_max_length_vector(float4* h){
 	int i, j, k;
 	int a, b, c, d, e, f;
 	float max = 0, min = 10;
-	/*for (k = 0; k <= (NZ - 1); k++){
-
-		for (i = 0; i <= (NY - 1); i++)
-		{
-			for (j = 0; j <= (NX - 1); j++)
-			{
-				float sq = h[k*NZ*NY + i*NX + j].x*h[k*NZ*NY + i*NX + j].x +
-					h[k*NZ*NY + i*NX + j].y*h[k*NZ*NY + i*NX + j].y +
-					h[k*NZ*NY + i*NX + j].z*h[k*NZ*NY + i*NX + j].z;
-				
-				if (max < sq){
-					a = j;
-					b = i;
-					c = k;
-					max = sq;
-				}
-				if (min > sq){
-					d = j;
-					e = i;
-					f = k;
-					min = sq;
-				}
-			}
-		}
-	}
-	std::cout << "time: "<<ttt << std::endl;
-	std::cout << "max <" << h[c*NZ*NY + b*NX + a].x << "," << h[c*NZ*NY + b*NX + a].y << "," << h[c*NZ*NY + b*NX + a].z << ">" << std::endl;
-	std::cout << "cor <" << a << "," << b << "," << c << ">" << std::endl;
-	float qq = h[16 * NZ*NY + 22 * NX + 30].x*h[16 * NZ*NY + 22 * NX + 30].x + h[16 * NZ*NY + 22 * NX + 30].y*h[16 * NZ*NY + 22 * NX + 30].y + h[16 * NZ*NY + 22 * NX + 30].z*h[16 * NZ*NY + 22 * NX + 30].z;
-	std::cout << qq << std::endl << std::endl;*/
-//	std::cout << "cor <" << 30 << "," << 22 << "," << 16 << ">" << std::endl << std::endl;
-//	std::cout << "cor <" << d << "," << e << "," << f << ">" << std::endl;
-//	std::cout << "min <" << h[f*NZ*NY + e*NX + d].x << "," << h[f*NZ*NY + e*NX + d].y << "," << h[f*NZ*NY + e*NX + d].z << ">" << std::endl;
-	/*k = 16;
-	i = 16;
-	for (j = 0; j < NX; j++){
-		std::cout << h[k*NZ*NY + j*NX + i].x << "," << h[k*NZ*NY + j*NX + i].y << "," << h[k*NZ*NY + j*NX + i].z << std::endl;
-	}*/
+	
 	for (int i = 0; i < 32; i++){
-		std::cout << h[16 * NZ*NY + i * NX + 16].x << " "<<h[16 * NZ*NY + i * NX + 16].x << " "<<h[16 * NZ*NY + i * NX + 16].x << std::endl;
+		std::cout << i << " * "<<h[16 * NZ*NY + i * NX + 16].x << " " << h[16 * NZ*NY + i * NX + 16].y << " " << h[16 * NZ*NY + i * NX + 16].z << " " << h[16 * NZ*NY + i * NX + 16].w << std::endl;
 	}
-	/*std::cout << h[1*NZ*NY + 1*NX + 1].y;
-	std::cout << h[1 * NZ*NY + 1 * NX + 1].y;*/
+	
 	std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 }
 void Water::cout_density(float* d){
@@ -793,17 +755,19 @@ void Water::simulateFluids(void)
 		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 6);
 		//isAddSource = false;
 	}
-	correctLevelSet(dlsf, dcontribution);
+	
 	exterapolation(dvfield, dtemp, dlsf);
+	correctLevelSet(dlsf, dcontribution);
 	advect(dvfield, dlsf);
 //	diffuse(dvfield, dtemp, dlsf);
-	addForce(dvfield, dlsf);
-	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
 	advectParticles(vbo, dvfield, ddensity);
-	advectDensity(dvfield, ddensity);
+//	advectDensity(dvfield, ddensity);
 
 	advectLevelSet(dvfield, dlsf);
-	correctLevelSet(dlsf, dcontribution);
+	addForce(dvfield, dlsf);
+	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
+	
+	
 
 	
 	//Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
@@ -811,44 +775,22 @@ void Water::simulateFluids(void)
 	//cameraPos = reverse_mv*cameraPos;
 	//raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
 
-		cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
-		cout_max_length_vector(hvfield);
+	//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
+	//	cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hvfield, dpressure, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 	//	cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
 	//	cout_density(hdensity);
-	//	cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
-	//	cout_levelset(hlsf);
+		cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
+		cout_levelset(hlsf);
 }
 void Water::cout_levelset(float* ls){
-	int i, j, k = 30;
-	float total = 0;
-	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
-	
-	for (i = 10; i >= 0; i--){
-		for (j = 40; j < LNX; j++){
-			//	if (k == 16)
-			if (ls[k * LNX*LNY + i*LNX + j] < 0 || ls[k * LNX*LNY + i*LNX + j] >= 10)
-				printf("%1.f ", ls[k*LNX*LNY + i*LNX + j]);
-			else
 
-				printf(" %1.f ", ls[k * LNX*LNY + i*LNX + j]);
-		}
-		std::cout << std::endl;
+	std::cout << "<<<<<<<<<<<<<<<levelset>>>>>>>>>>>>>>>>>" << std::endl;
+	
+	for (int i = 0; i < 64; i++){
+		std::cout << i << " * " << ls[32 * LNZ*LNY + i * LNX + 32] << std::endl;
 	}
-	
-
-	/*printf(" %1.1f ", ls[62 * LNX*LNY + 1 * LNX + 62]);
-	printf(" %1.1f ", ls[63 * LNX*LNY + 1 * LNX + 62]);
-	printf(" %1.1f ", ls[63 * LNX*LNY + 1 * LNX + 63]);
-	printf(" %1.1f ", ls[62 * LNX*LNY + 1 * LNX + 63]);
-	printf("\n");
-	printf(" %1.1f ", ls[62 * LNX*LNY + 0 * LNX + 62]);
-	printf(" %1.1f ", ls[63 * LNX*LNY + 0 * LNX + 62]);
-	printf(" %1.1f ", ls[63 * LNX*LNY + 0 * LNX + 63]);
-	printf(" %1.1f ", ls[62 * LNX*LNY + 0 * LNX + 63]);
-	printf("\n");
-	printf(" %1.1f ", ls[61 * LNX*LNY + 3 * LNX + 61]);*/
-	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+	std::cout << "<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>" << std::endl;
 
 }
