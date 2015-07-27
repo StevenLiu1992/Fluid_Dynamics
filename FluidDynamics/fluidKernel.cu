@@ -581,7 +581,7 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	float th = 3;
+	float th = 0;
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
@@ -604,11 +604,47 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 		int fron = (ez + 1)*offset + ey*NX + ex;
 
 		float4 p1 = temp[left];
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex - 1] > th && (ex - 1) != 0){
+			p1 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ex - 1) == 0){
+			p1 = temp[ez*offset + ey*NX + ex];
+		}
 		float4 p2 = temp[righ];
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex + 1] > th && (ex + 1) != NX){
+			p2 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ex + 1) == NX){
+			p2 = temp[ez*offset + ey*NX + ex];
+		}
 		float4 p3 = temp[bott];
+		if (l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th && (ey - 1) != 0){
+			p3 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ey - 1) == 0){
+			p3 = temp[ez*offset + ey*NX + ex];
+		}
 		float4 p4 = temp[topp];
+		if (l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th && (ey + 1) != 0){
+			p4 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ey + 1) == NY){
+			p4 = temp[ez*offset + ey*NX + ex];
+		}
 		float4 p5 = temp[back];
+		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez - 1) != 0){
+			p5 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ez - 1) == 0){
+			p5 = temp[ez*offset + ey*NX + ex];
+		}
 		float4 p6 = temp[fron];
+		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez + 1) != 0){
+			p6 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ez + 1) == NZ){
+			p6 = temp[ez*offset + ey*NX + ex];
+		}
 
 
 		float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
@@ -695,18 +731,18 @@ gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	float th = 3;
+	float th = 0;
 	
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
-			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
-			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
-			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
-			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
-			//outside of liquid
-			return;
+		//if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
+		//	l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
+		//	l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
+		//	l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
+		//	l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
+		//	l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+		//	l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
+		//	//outside of liquid
+		//	return;
 		int offset = pitch / sizeof(float4);
 
 		int left = ez*offset + ey*NX + (ex - 1);
@@ -942,7 +978,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
-	for (int i = 0; i < 60; i++){
+	for (int i = 0; i < 40; i++){
 		//	update_vel_texture(pressure, NX, NY, tPitch_v);
 		jacobi_diffuse_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v);
 		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);

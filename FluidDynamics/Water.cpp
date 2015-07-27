@@ -757,23 +757,15 @@ void Water::simulateFluids(void)
 	}
 	
 	exterapolation(dvfield, dtemp, dlsf);
-	correctLevelSet(dlsf, dcontribution);
 	advect(dvfield, dlsf);
+	addForce(dvfield, dlsf);
 //	diffuse(dvfield, dtemp, dlsf);
+	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
 	advectParticles(vbo, dvfield, ddensity);
 //	advectDensity(dvfield, ddensity);
 
 	advectLevelSet(dvfield, dlsf);
-	addForce(dvfield, dlsf);
-	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
-	
-	
-
-	
-	//Matrix4 reverse_mv = Matrix4::Scale(Vector3(0.1, 0.1, 0.1));
-	//Vector3 cameraPos = camera->GetPosition();
-	//cameraPos = reverse_mv*cameraPos;
-	//raycasting(window_width, window_height, dlsf, make_float3(cameraPos.x, cameraPos.y, cameraPos.z));
+	correctLevelSet(dlsf, dcontribution);
 
 	//	cudaMemcpy(hvfield, dvfield, sizeof(float4)* DS, cudaMemcpyDeviceToHost);
 	//	cout_max_length_vector(hvfield);
@@ -781,8 +773,8 @@ void Water::simulateFluids(void)
 	//	cout_max_length_vector(hvfield);
 	//	cudaMemcpy(hdensity, ddensity, sizeof(float)* DS, cudaMemcpyDeviceToHost);
 	//	cout_density(hdensity);
-		cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
-		cout_levelset(hlsf);
+	//	cudaMemcpy(hlsf, dlsf, sizeof(float)* LDS, cudaMemcpyDeviceToHost);
+	//	cout_levelset(hlsf);
 }
 void Water::cout_levelset(float* ls){
 
