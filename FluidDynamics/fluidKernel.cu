@@ -1053,7 +1053,7 @@ advectParticles_Runge_Kutta_k(float3 *particle, float4 *v, size_t pitch){
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	int index = ez*NX*NY + ey*NX + ex;
+	int index = ez*LNX*LNY + ey*LNX + ex;
 	float3 position = particle[index];
 
 	float3 newPosition;
@@ -1108,9 +1108,9 @@ advect_density_k(float *d, size_t pitch){
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d)
 {
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 block_size1(LNX / THREAD_X, LNY / THREAD_Y, LNZ / THREAD_Z);
 
-	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+	dim3 threads_size1(THREAD_X, THREAD_Y, THREAD_Z);
 	//change location of particles>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	float3 *p;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);
@@ -1121,13 +1121,16 @@ void advectParticles(GLuint vbo, float4 *v, float *d)
 	getLastCudaError("cudaGraphicsResourceGetMappedPointer failed");
 
 	update_vel_texture(v, NX, NY, tPitch_v);
-	advectParticles_Runge_Kutta_k << <block_size, threads_size >> >(p, v, tPitch_v);
+	advectParticles_Runge_Kutta_k << <block_size1, threads_size1 >> >(p, v, tPitch_v);
 	getLastCudaError("advectParticles_k failed.");
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 
 	//change velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+
+	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	float4 *p1;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource1, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");

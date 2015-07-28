@@ -132,7 +132,7 @@ void Water::Create(Core::Camera* c)
 	hvfield		= (float4 *)malloc(sizeof(float4) * DS);
 	hdensity	= (float *)malloc(sizeof(float) * DS);
 	hlsf		= (float *)malloc(sizeof(float) * LDS);
-	particles	= (float3 *)malloc(sizeof(float3) * DS);
+	particles	= (float3 *)malloc(sizeof(float3) * LDS);
 
 	//Allocate device data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
@@ -157,9 +157,9 @@ void Water::Create(Core::Camera* c)
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * DS, particles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * LDS, particles, GL_DYNAMIC_DRAW);
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-	if (bsize != (sizeof(float3) * DS)) return;
+	if (bsize != (sizeof(float3) * LDS)) return;
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
 
@@ -294,7 +294,7 @@ void Water::Draw()
 	glPointSize(3);
 	glBindVertexArray(vao);
 
-	glDrawArrays(GL_POINTS, 0, DS);
+	glDrawArrays(GL_POINTS, 0, LDS);
 	glUseProgram(0);
 
 	//draw velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -383,25 +383,25 @@ void Water::initLevelSetFunc(float *h, float *d){
 	for (k = 0; k < LNZ; k++){
 		for (i = 0; i < LNY; i++){
 			for (j = 0; j < LNX; j++){
-				if (j >= 24 && j <= 40 && i >= 24 && i <= 40 && (k == 24 || k == 40)){
+				if (j >= 12 && j <= 52 && i >= 12 && i <= 52 && (k == 12 || k == 52)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (j >= 24 && j <= 40 && k >= 24 && k <= 40 && (i == 24 || i == 40)){
+				if (j >= 12 && j <= 52 && k >= 12 && k <= 52 && (i == 12 || i == 52)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (i >= 24 && i <= 40 && k >= 24 && k <= 40 && (j == 24 || j == 40)){
+				if (i >= 12 && i <= 52 && k >= 12 && k <= 52 && (j == 12 || j == 52)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (k < 24 || k > 40 || i < 24 || i > 40 || j < 24 || j > 40){
-					int a = std::abs(j - 32) - 8;
-					int b = std::abs(i - 32) - 8;
-					int c = std::abs(k - 32) - 8;
+				if (k < 12 || k > 52 || i < 12 || i > 52 || j < 12 || j > 52){
+					int a = std::abs(j - 32) - 20;
+					int b = std::abs(i - 32) - 20;
+					int c = std::abs(k - 32) - 20;
 					h[k*LNX*LNY + i*LNX + j] = MAX(a, b, c);
 				}
-				if (k > 24 && k < 40 && i > 24 && i < 40 && j > 24 && j < 40){
-					int a = 8 - std::abs(j - 32);
-					int b = 8 - std::abs(i - 32);
-					int c = 8 - std::abs(k - 32);
+				if (k > 12 && k < 52 && i > 12 && i < 52 && j > 12 && j < 52){
+					int a = 20 - std::abs(j - 32);
+					int b = 20 - std::abs(i - 32);
+					int c = 20 - std::abs(k - 32);
 					h[k*LNX*LNY + i*LNX + j] = -MIN(a, b, c);
 				}
 			/*	if (i > 3 && i < 24){
@@ -439,7 +439,7 @@ void Water::initParticles(float3 *p, float *l){
 	int i, j, k;
 	int count = 0;
 	int num = 64;
-	memset(p, 0, sizeof(float3) * DS);
+	memset(p, 0, sizeof(float3) * LDS);
 	for (k = 0; k < NZ; k++){
 
 		for (i = 0; i < NY; i++)
@@ -472,7 +472,7 @@ void Water::initParticles(float3 *p, float *l){
 
 					}
 				}*/
-				if (j >= 12 && j < 20 && i >= 12 && i < 20 && (k == 12 || k == 20)){
+				if (j >= 6 && j < 26 && i >= 6 && i < 26 && (k == 6 || k == 26)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
@@ -480,7 +480,7 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (j >= 12 && j < 20 && k >= 12 && k < 20 && (i == 12 || i == 20)){
+				if (j >= 6 && j < 26 && k >= 6 && k < 26 && (i == 6 || i == 26)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)i / NY;
@@ -488,7 +488,7 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (i >= 12 && i < 20 && k >= 12 && k < 20 && (j == 12 || j == 20)){
+				if (i >= 6 && i < 26 && k >= 6 && k < 26 && (j == 6 || j == 26)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)j / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
