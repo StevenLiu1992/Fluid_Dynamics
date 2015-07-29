@@ -13,7 +13,7 @@
 #define LNZ 64
 #define LDS LNX*LNY*LNZ
 
-#define DT 0.05f
+#define DT 0.09f
 #define DS (NX*NY*NZ)
 
 #define IX ( x , y , z ,NX,NY) ( ( x ) + ( (NX) * ( ( y ) +( z ) *(NY) ) ) )

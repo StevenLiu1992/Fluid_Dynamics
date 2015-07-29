@@ -197,110 +197,10 @@ __device__ float3 normalize(const float3 &a) {
 	return dir;
 }
 __device__ void
-boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t pitch){
-	
-	int pitch0 = pitch / sizeof(float);
-	
-	//surface>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex == 0){
-		//	float3 offset = make_float3(1, 0, 0);
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
-	}
-	if (ex == (NX - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
-	}
-	if (ey == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
-	}
-	if (ey == (NY - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
-	}
-	if (ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
-	}
-	if (ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
-	}
-
-	//edge>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	//<<<<<<<<<<<<<<<<<<bottom four>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex];
-	}
-	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1];
-	}
-	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex];
-	}
-	if (ex == 0 && ey == 0 && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1];
-	}
-
-	//<<<<<<<<<<<<<<<<<<middle four>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1];
-	}
-	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1];
-	}
-	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1];
-	}
-	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1];
-	}
-
-	//<<<<<<<<<<<<<<<<<<top four>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
-	}
-	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
-	}
-	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
-	}
-	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
-	}
-
-
-	//corner>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex == 0 && ey == 0 && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex + 1];
-	}
-	if (ex == (NX - 1) && ey == 0 && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex - 1];
-	}
-	if (ex == 0 && ey == (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex + 1];
-	}
-	if (ex == 0 && ey == 0 && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex + 1];
-	}
-
-	if (ex == (NX - 1) && ey == (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex - 1];
-	}
-	if (ex == (NX - 1) && ey == 0 && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex - 1];
-	}
-	if (ex == 0 && ey == (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex + 1];
-	}
-	if (ex == (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex - 1];
-	}
-	__syncthreads();
-}
-
-
-__device__ void
 boundary_levelset_condition_k(float *v, int ex, int ey, int ez, int scale, size_t pitch){
-
+	
 	int pitch0 = pitch / sizeof(float);
-
+	
 	//surface>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	if (ex == 0){
 		//	float3 offset = make_float3(1, 0, 0);
@@ -394,30 +294,57 @@ boundary_levelset_condition_k(float *v, int ex, int ey, int ez, int scale, size_
 	}
 	__syncthreads();
 }
+
+
+
 __device__ void
 boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch){
 	int pitch0 = pitch / sizeof(float4);
 	
 	//surface>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	if (ex == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
-	}
-	if (ex == (NX - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
-	}
+	/*if (scale == -1){
+
+		if (ex == 0){
+			v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex + 1].x;
+		}
+		if (ex == (NX - 1)){
+			v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex - 1].x;
+		}
 	
-	if (ey == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
+		if (ey == 0){
+			v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex].y;
+		}
+		if (ey == (NY - 1)){
+			v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex].y;
+		}
+		if (ez == 0){
+			v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex].z;
+		}
+		if (ez == (NZ - 1)){
+			v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex].z;
+		}
 	}
-	if (ey == (NY - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
-	}
-	if (ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
-	}
-	if (ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
-	}
+	else{*/
+		if (ex == 0){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
+		}
+		if (ex == (NX - 1)){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
+		}
+
+		if (ey == 0){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
+		}
+		if (ey == (NY - 1)){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
+		}
+		if (ez == 0){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
+		}
+		if (ez == (NZ - 1)){
+			v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
+		}
+//	}
 
 	//edge>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	//<<<<<<<<<<<<<<<<<<bottom four>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -506,20 +433,20 @@ bc_k(float4 *b, size_t pitch, float scale){
 	__syncthreads();
 }
 
-__global__ void
-bc_density_k(float *b, size_t pitch, float scale){
-	// ex is the domain location in x for this thread
-	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
-	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
-	int ez = threadIdx.z + blockIdx.z * 8;
-
-	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
-		boundary_density_condition_k(b, ex, ey, ez, scale, pitch);
-	}
-	__syncthreads();
-}
+//__global__ void
+//bc_density_k(float *b, size_t pitch, float scale){
+//	// ex is the domain location in x for this thread
+//	int ex = threadIdx.x + blockIdx.x * 8;
+//	// ey is the domain location in y for this thread
+//	int ey = threadIdx.y + blockIdx.y * 8;
+//	// ez is the domain location in z for this thread
+//	int ez = threadIdx.z + blockIdx.z * 8;
+//
+//	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
+//		boundary_density_condition_k(b, ex, ey, ez, scale, pitch);
+//	}
+//	__syncthreads();
+//}
 
 __global__ void
 bc_levelset_k(float *l, size_t pitch, float scale){
@@ -559,10 +486,10 @@ advect_k(float4 *v){
 		//	return;//in the air
 		//}
 		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
-		if (ls > 0){
-		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
-			return;
-		}
+		//if (ls > 0){
+		////	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
+		//	return;
+		//}
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
@@ -574,85 +501,7 @@ advect_k(float4 *v){
 	__syncthreads();
 }
 
-__global__ void
-jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, float rBeta, size_t pitch){
 
-	int ex = threadIdx.x + blockIdx.x * 8;
-	int ey = threadIdx.y + blockIdx.y * 8;
-	int ez = threadIdx.z + blockIdx.z * 8;
-
-	float th = 0;
-
-	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
-			l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
-			l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
-			l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
-			l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
-			//outside of liquid
-			return;
-
-		int offset = pitch / sizeof(float4);
-
-		int left = ez*offset + ey*NX + (ex - 1);
-		int righ = ez*offset + ey*NX + (ex + 1);
-		int bott = ez*offset + (ey - 1)*NX + ex;
-		int topp = ez*offset + (ey + 1)*NX + ex;
-		int back = (ez - 1)*offset + ey*NX + ex;
-		int fron = (ez + 1)*offset + ey*NX + ex;
-
-		float4 p1 = temp[left];
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex - 1] > th && (ex - 1) != 0){
-			p1 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ex - 1) == 0){
-			p1 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p2 = temp[righ];
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex + 1] > th && (ex + 1) != NX){
-			p2 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ex + 1) == NX){
-			p2 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p3 = temp[bott];
-		if (l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th && (ey - 1) != 0){
-			p3 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ey - 1) == 0){
-			p3 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p4 = temp[topp];
-		if (l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th && (ey + 1) != 0){
-			p4 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ey + 1) == NY){
-			p4 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p5 = temp[back];
-		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez - 1) != 0){
-			p5 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ez - 1) == 0){
-			p5 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p6 = temp[fron];
-		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez + 1) != 0){
-			p6 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ez + 1) == NZ){
-			p6 = temp[ez*offset + ey*NX + ex];
-		}
-
-
-		float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-
-		v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
-	}
-	__syncthreads();
-}
 
 __global__ void
 jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta, size_t pitch){
@@ -687,7 +536,7 @@ jacobi_k(float4 *v, float4 *temp, float4 *b, float alpha, float rBeta, size_t pi
 }
 
 __global__ void
-divergence_k(float4 *d, float4 *v, size_t pitch){
+divergence_k(float4 *d, float4 *v, float *l, size_t pitch){
 
 	int ex = threadIdx.x + blockIdx.x * 8;
 	int ey = threadIdx.y + blockIdx.y * 8;
@@ -715,6 +564,21 @@ divergence_k(float4 *d, float4 *v, size_t pitch){
 		float4 p5 = v[back];
 		float4 p6 = v[fron];
 
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0 && (ex - 1) != 0)
+				p1 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0 && (ex + 1) != (NX - 1))
+				p2 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0 && (ey - 1) != 0)
+				p3 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0 && (ey + 1) != (NY - 1))
+				p4 = make_float4(0, 0, 0, 0);
+			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez - 1) != 0)
+				p5 = make_float4(0, 0, 0, 0);
+			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez + 1) != (NZ - 1))
+				p6 = make_float4(0, 0, 0, 0);
+		}
+
 		float div = 0.5*((p2.x - p1.x) + (p4.y - p3.y) + (p6.z - p5.z));
 		d[ez*offset + ey*NX + ex].x = div;
 		d[ez*offset + ey*NX + ex].y = div;
@@ -723,6 +587,142 @@ divergence_k(float4 *d, float4 *v, size_t pitch){
 	}
 	__syncthreads();
 }
+
+__global__ void
+jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, float rBeta, size_t pitch){
+
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	float th = 0;
+
+	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
+		//if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
+		//												l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
+		//												l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
+		//												l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
+		//												l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
+		//												l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
+		//												l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
+		//												//outside of liquid
+		//												return;
+
+		int offset = pitch / sizeof(float4);
+
+		int left = ez*offset + ey*NX + (ex - 1);
+		int righ = ez*offset + ey*NX + (ex + 1);
+		int bott = ez*offset + (ey - 1)*NX + ex;
+		int topp = ez*offset + (ey + 1)*NX + ex;
+		int back = (ez - 1)*offset + ey*NX + ex;
+		int fron = (ez + 1)*offset + ey*NX + ex;
+		
+		float4 p1 = temp[left];
+		float4 p2 = temp[righ];
+		float4 p3 = temp[bott];
+		float4 p4 = temp[topp];
+		float4 p5 = temp[back];
+		float4 p6 = temp[fron];
+
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0 && (ex - 1) != 0)
+				p1 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0 && (ex + 1) != (NX - 1))
+				p2 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0 && (ey - 1) != 0)
+				p3 = make_float4(0, 0, 0, 0);
+			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0 && (ey + 1) != (NY - 1))
+				p4 = make_float4(0, 0, 0, 0);
+			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez - 1) != 0)
+				p5 = make_float4(0, 0, 0, 0);
+			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez + 1) != (NZ - 1))
+				p6 = make_float4(0, 0, 0, 0);
+		}
+
+	////	if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
+	//		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0)
+	//			p1 = make_float4(0, 0, 0, 0);
+	//		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0)
+	//			p2 = make_float4(0, 0, 0, 0);
+	//		if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0)
+	//			p3 = make_float4(0, 0, 0, 0);
+	//		if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0)
+	//			p4 = make_float4(0, 0, 0, 0);
+	//		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
+	//			p5 = make_float4(0, 0, 0, 0);
+	//		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
+	//			p6 = make_float4(0, 0, 0, 0);
+	////	}
+
+	//		if ((ex - 1) == 0){
+	//			p1 = temp[ez*offset + ey*NX + ex];
+	//		}
+	//		if ((ex + 1) == NX){
+	//			p2 = temp[ez*offset + ey*NX + ex];
+	//		}
+	//		if ((ey - 1) == 0){
+	//			p3 = temp[ez*offset + ey*NX + ex];
+	//		}
+	//		if ((ey + 1) == NY){
+	//			p4 = temp[ez*offset + ey*NX + ex];
+	//		}
+	//		if ((ez - 1) == 0){
+	//			p5 = temp[ez*offset + ey*NX + ex];
+	//		}
+	//		if ((ez + 1) == NZ){
+	//			p6 = temp[ez*offset + ey*NX + ex];
+	//		}
+		/*float4 p1 = temp[left];
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex - 1] > th && (ex - 1) != 0){
+			p1 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ex - 1) == 0){
+			p1 = temp[ez*offset + ey*NX + ex];
+		}
+		float4 p2 = temp[righ];
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex + 1] > th && (ex + 1) != NX){
+			p2 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ex - 1) == 0){
+			p1 = temp[ez*offset + ey*NX + ex];
+		}
+		float4 p3 = temp[bott];
+		if (l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th && (ey - 1) != 0){
+			p3 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ey - 1) == 0){
+			p3 = temp[ez*offset + ey*NX + ex];
+		}
+		float4 p4 = temp[topp];
+		if (l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th && (ey + 1) != 0){
+			p4 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ey + 1) == NY){
+			p4 = temp[ez*offset + ey*NX + ex];
+		}
+		float4 p5 = temp[back];
+		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez - 1) != 0){
+			p5 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ez - 1) == 0){
+			p5 = temp[ez*offset + ey*NX + ex];
+		}
+		float4 p6 = temp[fron];
+		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez + 1) != 0){
+			p6 = make_float4(0, 0, 0, 0);
+		}
+		else if ((ez + 1) == NZ){
+			p6 = temp[ez*offset + ey*NX + ex];
+		}*/
+
+
+		float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
+
+		v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+	}
+	__syncthreads();
+}
+
 
 __global__ void
 gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
@@ -752,12 +752,30 @@ gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
 		int back = (ez - 1)*offset + ey*NX + ex;
 		int fron = (ez + 1)*offset + ey*NX + ex;
 
+
+
 		float4 p1 = p[left];
+		
 		float4 p2 = p[righ];
 		float4 p3 = p[bott];
 		float4 p4 = p[topp];
 		float4 p5 = p[back];
 		float4 p6 = p[fron];
+
+
+		/*if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0)
+			p1 = make_float4(0, 0, 0, 0);
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0)
+			p2 = make_float4(0, 0, 0, 0);
+		if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0)
+			p3 = make_float4(0, 0, 0, 0);
+		if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0)
+			p4 = make_float4(0, 0, 0, 0);
+		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
+			p5 = make_float4(0, 0, 0, 0);
+		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
+			p6 = make_float4(0, 0, 0, 0);*/
+
 
 		float4 vel = v[ez*offset + ey*NX + ex];
 		float4 grad;
@@ -785,7 +803,7 @@ force_k(float4 *v, float *l, size_t pitch){
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
 		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 0){
-			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.009, 0, 0);
+			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.019, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{
@@ -974,7 +992,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	cudaMemset(temp, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
 
-	divergence_k << <block_size, threads_size >> >(divergence, v, tPitch_v);
+	divergence_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v);
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
 	
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
@@ -1071,6 +1089,24 @@ advectParticles_Runge_Kutta_k(float3 *particle, float4 *v, size_t pitch){
 	newPosition.y = (position.y + DT * midVelocity.y);
 	newPosition.z = (position.z + DT * midVelocity.z);
 
+	/*if (newPosition.x <= 1.f / NX){
+		newPosition.x += 0.01;
+	}
+	if (newPosition.x >= (1 - 1.f / NX)){
+		newPosition.x -= 0.01;
+	}
+	if (newPosition.y <= 1.f / NY){
+		newPosition.y += 0.01;
+	}
+	if (newPosition.y >= (1 - 1.f / NY)){
+		newPosition.y -= 0.01;
+	}
+	if (newPosition.z <= 1.f / NZ){
+		newPosition.z += 0.01;
+	}
+	if (newPosition.z >= (1 - 1.f / NZ)){
+		newPosition.z -= 0.01;
+	}*/
 	particle[index] = newPosition;
 	__syncthreads();
 
@@ -1147,7 +1183,7 @@ void advectParticles(GLuint vbo, float4 *v, float *d)
 
 
 	//change density field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	float *p2;
+	/*float *p2;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource2, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");
 
@@ -1159,20 +1195,20 @@ void advectParticles(GLuint vbo, float4 *v, float *d)
 	cudaMemcpy(p2, d, sizeof(float)* DS, cudaMemcpyDeviceToDevice);
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource2, 0);
-	getLastCudaError("cudaGraphicsUnmapResources failed");
+	getLastCudaError("cudaGraphicsUnmapResources failed");*/
 }
 
 
-extern "C"
-void advectDensity(float4 *v, float *d){
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
-	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-	update_vel_texture(v, NX, NY, tPitch_v);
-	update_1f_texture(array_den, d, NX, NY, tPitch_den);
-	advect_density_k << <block_size, threads_size >> >(d, tPitch_den);
-	bc_density_k << <block_size, threads_size >> >(d, tPitch_den, 1.f);
-	getLastCudaError("advectDensity_k failed.");
-}
+//extern "C"
+//void advectDensity(float4 *v, float *d){
+//	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+//	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+//	update_vel_texture(v, NX, NY, tPitch_v);
+//	update_1f_texture(array_den, d, NX, NY, tPitch_den);
+//	advect_density_k << <block_size, threads_size >> >(d, tPitch_den);
+//	bc_density_k << <block_size, threads_size >> >(d, tPitch_den, 1.f);
+//	getLastCudaError("advectDensity_k failed.");
+//}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //welcome to the marker level set method<><><><><><><><><><><><><><><><><><><><><><><><><><><><
@@ -1248,8 +1284,8 @@ void advectLevelSet(float4 *v, float *ls){
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	update_vel_texture(v, NX, NY, tPitch_v);
 	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
-	advect_levelset_k << <block_size, threads_size >> >(ls, tPitch_den);
-//	bc_density_k << <block_size, threads_size >> >(ls, tPitch_den, 1.f);
+	advect_levelset_k << <block_size, threads_size >> >(ls, tPitch_lsf);
+//	bc_levelset_k << <block_size, threads_size >> >(ls, tPitch_lsf, 1.f);
 	getLastCudaError("advectLevelSet_k failed.");
 }
 
@@ -1262,15 +1298,15 @@ correctLevelset_first_k(float3 *p, float2 *con){
 
 	float e_cons = 2.71828;
 	float constant_c = 0.5;
-	if (ez*NX*NY + ey*NX + ex > 31104) 
+	if (ez*LNX*LNY + ey*LNX + ex > 153600) 
 		return;//more than particle amount
 	
-	float3 particle_location = p[ez*NX*NY + ey*NX + ex];
+	float3 particle_location = p[ez*LNX*LNY + ey*LNX + ex];
 	//convert to gird space
 	particle_location = make_float3(particle_location.x * LNX, particle_location.y * LNY, particle_location.z * LNZ);
 
 	float value_levelset = tex3D(texref_levelset, particle_location.x + 0.5, particle_location.y + 0.5, particle_location.z + 0.5);//get phi(k)
-	if (value_levelset > 2 || value_levelset < -2)
+	if (value_levelset > 1 || value_levelset < -0.5)
 		return;//too far away from zero level set
 
 	int3 grid_location0;
@@ -1428,7 +1464,7 @@ reinit_Levelset_k(float *ls){
 			grid_location[i].y >= 0 && grid_location[i].y < LNY &&
 			grid_location[i].z >= 0 && grid_location[i].z < LNZ){
 			float value = ls[grid_location[i].z*LNX*LNY + grid_location[i].y*LNX + grid_location[i].x];
-			if (value*grid_value < 0 && abs(grid_value - value) < 1)
+			if (value*grid_value < 0 /*&& abs(grid_value - value) < 1*/)
 				//grid point is close to the interface
 				return;
 		}
@@ -1697,7 +1733,7 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 		//location is inside the volume
 		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
 			//this thread is inside the location
-			v[ez*NX*NY + ey*NX + ex].x -= 0.4;
+			v[ez*NX*NY + ey*NX + ex].x -= 0.1;
 		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
 		//	l[ez*NX*NY + ey*NX + ex] = -1;
 		}

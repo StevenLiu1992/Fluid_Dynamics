@@ -67,7 +67,7 @@ advect_density_k(float *d, size_t pitch);
 __global__ void
 bc_k(float4 *b, size_t pitch, float scale);
 __global__ void
-bc_density_k(float *b, size_t pitch, float scale);
+bc_levelset_k(float *b, size_t pitch, float scale);
 __global__ void
 advect_levelset_k(float *ls, int dx, int dy, int dz, float dt, size_t pitch);
 

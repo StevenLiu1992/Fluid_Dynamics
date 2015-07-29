@@ -377,31 +377,39 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
+int3 center = make_int3(22, 11, 22);
+int3 length = make_int3(20, 9, 20);
+
+int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
+int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
+
 void Water::initLevelSetFunc(float *h, float *d){
 	memset(h, 5, sizeof(float) * LDS);
 	int i, j, k;
+
+
 	for (k = 0; k < LNZ; k++){
 		for (i = 0; i < LNY; i++){
 			for (j = 0; j < LNX; j++){
-				if (j >= 12 && j <= 52 && i >= 12 && i <= 52 && (k == 12 || k == 52)){
+				if (j >= start.x && j <= end.x && i >= start.y && i <= end.y && (k == start.z || k == end.z)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (j >= 12 && j <= 52 && k >= 12 && k <= 52 && (i == 12 || i == 52)){
+				if (j >= start.x && j <= end.x && k >= start.z && k <= end.z && (i == start.y || i == end.y)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (i >= 12 && i <= 52 && k >= 12 && k <= 52 && (j == 12 || j == 52)){
+				if (i >= start.y && i <= end.y && k >= start.z && k <= end.z && (j == start.x || j == end.x)){
 					h[k*LNX*LNY + i*LNX + j] = 0;
 				}
-				if (k < 12 || k > 52 || i < 12 || i > 52 || j < 12 || j > 52){
-					int a = std::abs(j - 32) - 20;
-					int b = std::abs(i - 32) - 20;
-					int c = std::abs(k - 32) - 20;
+				if (k < start.z || k > end.z || i < start.y || i > end.y || j < start.x || j > end.x){
+					int a = std::abs(j - center.x) - length.x;
+					int b = std::abs(i - center.y) - length.y;
+					int c = std::abs(k - center.z) - length.z;
 					h[k*LNX*LNY + i*LNX + j] = MAX(a, b, c);
 				}
-				if (k > 12 && k < 52 && i > 12 && i < 52 && j > 12 && j < 52){
-					int a = 20 - std::abs(j - 32);
-					int b = 20 - std::abs(i - 32);
-					int c = 20 - std::abs(k - 32);
+				if (k > start.z && k < end.z && i > start.y && i < end.y && j > start.x && j < end.x){
+					int a = length.x - std::abs(j - center.x);
+					int b = length.y - std::abs(i - center.y);
+					int c = length.z - std::abs(k - center.z);
 					h[k*LNX*LNY + i*LNX + j] = -MIN(a, b, c);
 				}
 			/*	if (i > 3 && i < 24){
@@ -441,38 +449,9 @@ void Water::initParticles(float3 *p, float *l){
 	int num = 64;
 	memset(p, 0, sizeof(float3) * LDS);
 	for (k = 0; k < NZ; k++){
-
-		for (i = 0; i < NY; i++)
-		{
-			for (j = 0; j < NX; j++)
-			{
-				/*if (l[k*NX*NY + i*NX + j] == 0){
-					for (int m = 0; m < num; m++){
-						if (k == 12 || k == 20){
-
-							p[count].x = (j + MYRAND - 0.5) / NX;
-							p[count].y = (i + MYRAND - 0.5) / NY;
-							p[count].z = (float)k / NZ;
-							count++;
-						}
-						if (i == 12 || i == 20){
-
-							p[count].x = (j + MYRAND - 0.5) / NX;
-							p[count].y = (float)i / NY;
-							p[count].z = (k + MYRAND - 0.5) / NZ;
-							count++;
-						}
-						if (j == 12 || j == 20){
-
-							p[count].x = (float)j / NX;
-							p[count].y = (i + MYRAND - 0.5) / NY;
-							p[count].z = (k + MYRAND - 0.5) / NZ;
-							count++;
-						}
-
-					}
-				}*/
-				if (j >= 6 && j < 26 && i >= 6 && i < 26 && (k == 6 || k == 26)){
+		for (i = 0; i < NY; i++){
+			for (j = 0; j < NX; j++){
+				if (j >= start.x/2 && j < end.x/2 && i >= start.y/2 && i < end.y/2 && (k == start.z/2 || k == end.z/2)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
@@ -480,7 +459,7 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (j >= 6 && j < 26 && k >= 6 && k < 26 && (i == 6 || i == 26)){
+				if (j >= start.x / 2 && j < end.x / 2 && k >= start.z / 2 && k < end.z / 2 && (i == start.y / 2 || i == end.y / 2)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)i / NY;
@@ -488,7 +467,7 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (i >= 6 && i < 26 && k >= 6 && k < 26 && (j == 6 || j == 26)){
+				if (i >= start.y / 2 && i < end.y / 2 && k >= start.z / 2 && k < end.z / 2 && (j == start.x / 2 || j == end.x / 2)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)j / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
@@ -752,7 +731,7 @@ void Water::simulateFluids(void)
 	// simulate fluid
 	ttt++;
 	if (isAddSource){
-		addSource(dvfield, ddensity, dlsf, 20, 5, 16, 6);
+		addSource(dvfield, ddensity, dlsf, 20, 2, 16, 6);
 		//isAddSource = false;
 	}
 	
