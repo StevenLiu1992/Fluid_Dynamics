@@ -302,91 +302,143 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 	int pitch0 = pitch / sizeof(float4);
 	
 	//surface>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	/*if (scale == -1){
 
-		if (ex == 0){
-			v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex + 1].x;
-		}
-		if (ex == (NX - 1)){
-			v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex - 1].x;
-		}
-	
-		if (ey == 0){
-			v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex].y;
-		}
-		if (ey == (NY - 1)){
-			v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex].y;
-		}
-		if (ez == 0){
-			v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex].z;
-		}
-		if (ez == (NZ - 1)){
-			v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex].z;
-		}
+	if (ex == 0){
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = v[ez*pitch0 + ey*NX + ex + 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + ey*NX + ex + 1].z;
 	}
-	else{*/
-		if (ex == 0){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
-		}
-		if (ex == (NX - 1)){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
-		}
+	if (ex == (NX - 1)){
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + ey*NX + ex - 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = v[ez*pitch0 + ey*NX + ex - 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + ey*NX + ex - 1].z;
+	}
+	
+	if (ey == 0){
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].x = v[ez*pitch0 + (ey + 1)*NX + ex].x;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey + 1)*NX + ex].z;
+	}
+	if (ey == (NY - 1)){
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].x = v[ez*pitch0 + (ey - 1)*NX + ex].x;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey - 1)*NX + ex].z;
+	}
+	if (ez == 0){
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez + 1)*pitch0 + ey*NX + ex].x;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez + 1)*pitch0 + ey*NX + ex].y;
+	}
+	if (ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez - 1)*pitch0 + ey*NX + ex].x;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez - 1)*pitch0 + ey*NX + ex].y;
+	}
+		
+	//}
+	//else{
+	//	if (ex == 0){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex + 1];
+	//	}
+	//	if (ex == (NX - 1)){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + ey*NX + ex - 1];
+	//	}
 
-		if (ey == 0){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
-		}
-		if (ey == (NY - 1)){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
-		}
-		if (ez == 0){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
-		}
-		if (ez == (NZ - 1)){
-			v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
-		}
-//	}
+	//	if (ey == 0){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex];
+	//	}
+	//	if (ey == (NY - 1)){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex];
+	//	}
+	//	if (ez == 0){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex];
+	//	}
+	//	if (ez == (NZ - 1)){
+	//		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex];
+	//	}
+	//}
 
 	//edge>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	//<<<<<<<<<<<<<<<<<<bottom four>>>>>>>>>>>>>>>>>>>>>>>>>>
 	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex];
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + (ey + 1)*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez + 1)*pitch0 + (ey + 1)*NX + ex].x;
 	}
 	if (ex == (NX - 1) && ey == 0 && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1];
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex - 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey + 1)*NX + ex - 1].z;
 	}
-	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ-1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex];
+	if (ex != 0 && ex != (NX - 1) && ey == 0 && ez == (NZ - 1)){
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + (ey + 1)*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez - 1)*pitch0 + (ey + 1)*NX + ex].x;
 	}
 	if (ex == 0 && ey == 0 && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1];
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey + 1)*NX + ex + 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey + 1)*NX + ex + 1].z;
 	}
 
 	//<<<<<<<<<<<<<<<<<<middle four>>>>>>>>>>>>>>>>>>>>>>>>>>
 	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex + 1].z;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez + 1)*pitch0 + ey*NX + ex + 1].y;
 	}
 	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1].x;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + ey*NX + ex - 1].z;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez + 1)*pitch0 + ey*NX + ex - 1].y;
 	}
 	if (ex == (NX - 1) && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1].x;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex - 1].z;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez - 1)*pitch0 + ey*NX + ex - 1].y;
 	}
 	if (ex == 0 && ey != 0 && ey != (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + ey*NX + ex + 1].z;
+		v[ez*pitch0 + ey*NX + ex].y = v[(ez - 1)*pitch0 + ey*NX + ex + 1].y;
 	}
 
 	//<<<<<<<<<<<<<<<<<<top four>>>>>>>>>>>>>>>>>>>>>>>>>>
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == 0){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex];
+
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez + 1)*pitch0 + (ey - 1)*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez + 1)*pitch0 + (ey - 1)*NX + ex].x;
 	}
 	if (ex == (NX - 1) && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex - 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey - 1)*NX + ex - 1].z;
 	}
 	if (ex != 0 && ex != (NX - 1) && ey == (NY - 1) && ez == (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex];
+
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex].y;
+		v[ez*pitch0 + ey*NX + ex].z = scale * v[(ez - 1)*pitch0 + (ey - 1)*NX + ex].z;
+		v[ez*pitch0 + ey*NX + ex].x = v[(ez - 1)*pitch0 + (ey - 1)*NX + ex].x;
 	}
 	if (ex == 0 && ey == (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
+	//	v[ez*pitch0 + ey*NX + ex] = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1];
+
+		v[ez*pitch0 + ey*NX + ex].x = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1].x;
+		v[ez*pitch0 + ey*NX + ex].y = scale * v[ez*pitch0 + (ey - 1)*NX + ex + 1].y;
+		v[ez*pitch0 + ey*NX + ex].z = v[ez*pitch0 + (ey - 1)*NX + ex + 1].z;
 	}
 
 
@@ -433,20 +485,6 @@ bc_k(float4 *b, size_t pitch, float scale){
 	__syncthreads();
 }
 
-//__global__ void
-//bc_density_k(float *b, size_t pitch, float scale){
-//	// ex is the domain location in x for this thread
-//	int ex = threadIdx.x + blockIdx.x * 8;
-//	// ey is the domain location in y for this thread
-//	int ey = threadIdx.y + blockIdx.y * 8;
-//	// ez is the domain location in z for this thread
-//	int ez = threadIdx.z + blockIdx.z * 8;
-//
-//	if (ex == 0 || ex == (NX - 1) || ey == 0 || ey == (NY - 1) || ez == 0 || ez == (NZ - 1)){
-//		boundary_density_condition_k(b, ex, ey, ez, scale, pitch);
-//	}
-//	__syncthreads();
-//}
 
 __global__ void
 bc_levelset_k(float *l, size_t pitch, float scale){
@@ -480,11 +518,7 @@ advect_k(float4 *v){
 		float3 ploc;
 		float density;
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-		//density = tex3D(texref_den, ex + 0.5, ey + 0.5, ez + 0.5);
-		//if (density == 0){
-		//	v[ez*NY*NZ + ey*NX + ex] = make_float4(0, 0, 0, 0);
-		//	return;//in the air
-		//}
+		
 		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
 		//if (ls > 0){
 		////	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
@@ -493,11 +527,9 @@ advect_k(float4 *v){
 		ploc.x = ex + 0.5 - DT * velocity.x * NX;
 		ploc.y = ey + 0.5 - DT * velocity.y * NY;
 		ploc.z = ez + 0.5 - DT * velocity.z * NZ;
-//		density = tex3D(texref_den, ploc.x, ploc.y, ploc.z);
-//		if (density == 0)
+
 		v[ez*NY*NZ + ey*NX + ex] = tex3D(texref_vel, ploc.x, ploc.y, ploc.z);
 	}
-
 	__syncthreads();
 }
 
@@ -564,18 +596,20 @@ divergence_k(float4 *d, float4 *v, float *l, size_t pitch){
 		float4 p5 = v[back];
 		float4 p6 = v[fron];
 
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0 && (ex - 1) != 0)
-				p1 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0 && (ex + 1) != (NX - 1))
-				p2 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0 && (ey - 1) != 0)
-				p3 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0 && (ey + 1) != (NY - 1))
-				p4 = make_float4(0, 0, 0, 0);
-			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez - 1) != 0)
-				p5 = make_float4(0, 0, 0, 0);
-			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez + 1) != (NZ - 1))
+		float tf = 0;
+
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
+				p1 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
+				p2 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
+				p3 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
+				p4 = make_float4(0, 0, 0, 0);					
+			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
+				p5 = make_float4(0, 0, 0, 0);					
+			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
 				p6 = make_float4(0, 0, 0, 0);
 		}
 
@@ -624,97 +658,22 @@ jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, floa
 		float4 p5 = temp[back];
 		float4 p6 = temp[fron];
 
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0 && (ex - 1) != 0)
-				p1 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0 && (ex + 1) != (NX - 1))
-				p2 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0 && (ey - 1) != 0)
-				p3 = make_float4(0, 0, 0, 0);
-			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0 && (ey + 1) != (NY - 1))
-				p4 = make_float4(0, 0, 0, 0);
-			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez - 1) != 0)
-				p5 = make_float4(0, 0, 0, 0);
-			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0 && (ez + 1) != (NZ - 1))
+		float tf = 0;
+
+		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
+				p1 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
+				p2 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
+				p3 = make_float4(0, 0, 0, 0);					
+			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
+				p4 = make_float4(0, 0, 0, 0);					
+			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
+				p5 = make_float4(0, 0, 0, 0);					
+			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
 				p6 = make_float4(0, 0, 0, 0);
 		}
-
-	////	if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0){
-	//		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > 0)
-	//			p1 = make_float4(0, 0, 0, 0);
-	//		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > 0)
-	//			p2 = make_float4(0, 0, 0, 0);
-	//		if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > 0)
-	//			p3 = make_float4(0, 0, 0, 0);
-	//		if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > 0)
-	//			p4 = make_float4(0, 0, 0, 0);
-	//		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
-	//			p5 = make_float4(0, 0, 0, 0);
-	//		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > 0)
-	//			p6 = make_float4(0, 0, 0, 0);
-	////	}
-
-	//		if ((ex - 1) == 0){
-	//			p1 = temp[ez*offset + ey*NX + ex];
-	//		}
-	//		if ((ex + 1) == NX){
-	//			p2 = temp[ez*offset + ey*NX + ex];
-	//		}
-	//		if ((ey - 1) == 0){
-	//			p3 = temp[ez*offset + ey*NX + ex];
-	//		}
-	//		if ((ey + 1) == NY){
-	//			p4 = temp[ez*offset + ey*NX + ex];
-	//		}
-	//		if ((ez - 1) == 0){
-	//			p5 = temp[ez*offset + ey*NX + ex];
-	//		}
-	//		if ((ez + 1) == NZ){
-	//			p6 = temp[ez*offset + ey*NX + ex];
-	//		}
-		/*float4 p1 = temp[left];
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex - 1] > th && (ex - 1) != 0){
-			p1 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ex - 1) == 0){
-			p1 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p2 = temp[righ];
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex + 1] > th && (ex + 1) != NX){
-			p2 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ex - 1) == 0){
-			p1 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p3 = temp[bott];
-		if (l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th && (ey - 1) != 0){
-			p3 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ey - 1) == 0){
-			p3 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p4 = temp[topp];
-		if (l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th && (ey + 1) != 0){
-			p4 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ey + 1) == NY){
-			p4 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p5 = temp[back];
-		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez - 1) != 0){
-			p5 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ez - 1) == 0){
-			p5 = temp[ez*offset + ey*NX + ex];
-		}
-		float4 p6 = temp[fron];
-		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th && (ez + 1) != 0){
-			p6 = make_float4(0, 0, 0, 0);
-		}
-		else if ((ez + 1) == NZ){
-			p6 = temp[ez*offset + ey*NX + ex];
-		}*/
-
 
 		float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 
@@ -802,7 +761,7 @@ force_k(float4 *v, float *l, size_t pitch){
 	int ez = threadIdx.z + blockIdx.z * 8;
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 0){
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 4){
 			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.019, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
@@ -1297,7 +1256,7 @@ correctLevelset_first_k(float3 *p, float2 *con){
 	int ez = threadIdx.z + blockIdx.z * 8;
 
 	float e_cons = 2.71828;
-	float constant_c = 0.5;
+	float constant_c = 0.9;
 	if (ez*LNX*LNY + ey*LNX + ex > 153600) 
 		return;//more than particle amount
 	
@@ -1733,7 +1692,7 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 		//location is inside the volume
 		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
 			//this thread is inside the location
-			v[ez*NX*NY + ey*NX + ex].x -= 0.1;
+			v[ez*NX*NY + ey*NX + ex].x -= 0.05;
 		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
 		//	l[ez*NX*NY + ey*NX + ex] = -1;
 		}

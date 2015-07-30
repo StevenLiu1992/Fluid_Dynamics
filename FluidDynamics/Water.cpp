@@ -377,8 +377,8 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-int3 center = make_int3(22, 11, 22);
-int3 length = make_int3(20, 9, 20);
+int3 center = make_int3(16, 18, 16);
+int3 length = make_int3(14, 16, 14);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);

@@ -46,7 +46,7 @@ void Quad::Create()
 	this->vao = vao;
 	this->vbos.push_back(vbo);
 
-	texture = SOIL_load_OGL_texture("../Textures/ground.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	texture = SOIL_load_OGL_texture("../Textures/xiangqi.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 }
 
 void Quad::Update(Matrix4 viewMatrix)
