@@ -40,9 +40,8 @@ boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch)
 __global__ void
 advect_k(float4 *v);
 __global__ void
-jacobi_diffuse_k(float4 *v, float4 *temp, float4 *b, float *d, float alpha, float rBeta, size_t pitch);
-__global__ void
 jacobi_k(float4 *v, float4 *temp, float4 *b, float *d, float alpha, float rBeta, size_t pitch);
+
 __global__ void
 divergence_k(float4 *d, float4 *v, size_t pitch);
 
@@ -86,7 +85,10 @@ reinit_Levelset_k(float *ls);
 __global__ void
 add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size);
 
-
+/////////////////////////////////////////////////////////////////////////////////
+__global__ void
+exterapolation_obstacle_k(float4 *v, float4 *temp, float *l, int *o);
+/////////////////////////////////////////////////////////////////////////////////
 void setupTexture(void);
 void bindTexture(void);
 void unbindTexture(void);

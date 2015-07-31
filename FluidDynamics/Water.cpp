@@ -22,6 +22,8 @@ extern float3 *hnormal = NULL;
 float *dlsf = NULL;
 float *hlsf = NULL;
 float2 *dcontribution = NULL;
+int *hobstacle = NULL;
+int *dobstacle = NULL;
 
 GLuint vbo3 = 0;                 // OpenGL vertex buffer object
 GLuint vbo2 = 0;                 // OpenGL vertex buffer object
@@ -45,21 +47,22 @@ size_t tPitch_p = 0;
 size_t tPitch_den = 0; 
 size_t tPitch_lsf = 0; 
 size_t tPitch_ctb = 0;
+size_t tPitch_obs = 0;
 
 extern "C"
-void exterapolation(float4 *v, float4 *temp, float *ls);
+void exterapolation(float4 *v, float4 *temp, float *ls, int* obstacle);
 extern "C"
-void advect(float4 *v, float *l);
+void advect(float4 *v, float *l, int* obstacle);
+//extern "C"
+//void diffuse(float4 *v, float4 *temp, float *d);
 extern "C"
-void diffuse(float4 *v, float4 *temp, float *d);
-extern "C"
-void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, float *d);
+void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, float *d, int* obstacle);
 extern "C"
 void advectParticles(GLuint vbo, float4 *v, float *d);
 extern "C"
 void advectDensity(float4 *v, float *d);
 extern "C"
-void addForce(float4 *v, float *d);
+void addForce(float4 *v, float *d, int* obstacle);
 extern "C"
 void advectLevelSet(float4 *v, float *ls);
 extern "C"
@@ -92,6 +95,8 @@ Water::~Water()
 	cudaFree(dtemp);
 	cudaFree(dpressure);
 	cudaFree(ddivergence);
+	cudaFree(dobstacle);
+	free(hobstacle);
 	free(hdensity);
 	free(hintersection);
 	free(hnormal);
@@ -111,6 +116,7 @@ void Water::Create(Core::Camera* c)
 	tPitch_den = 0;
 	tPitch_lsf = 0;
 	tPitch_ctb = 0;
+	tPitch_obs = 0;
 
 	texture = SOIL_load_OGL_texture("../Textures/water_particle.jpg",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
@@ -133,6 +139,7 @@ void Water::Create(Core::Camera* c)
 	hdensity	= (float *)malloc(sizeof(float) * DS);
 	hlsf		= (float *)malloc(sizeof(float) * LDS);
 	particles	= (float3 *)malloc(sizeof(float3) * LDS);
+	hobstacle   = (int *)malloc(sizeof(int) * DS);
 
 	//Allocate device data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	cudaMallocPitch((void **)&dvfield, &tPitch_v, sizeof(float4)*NX*NY, NZ);
@@ -142,12 +149,13 @@ void Water::Create(Core::Camera* c)
 	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dlsf, &tPitch_lsf, sizeof(float)*LNX*LNY, LNZ);
 	cudaMallocPitch((void **)&dcontribution, &tPitch_ctb, sizeof(float2)*LNX*LNY, LNZ);
-	
+	cudaMallocPitch((void **)&dobstacle, &tPitch_obs, sizeof(float)*NX*NY, NZ);
 	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
 	initLevelSetFunc(hlsf, dlsf);
 	initParticles(particles, hlsf);
 	init_density(hdensity, particles, ddensity);
+	init_obstacle(hobstacle, dobstacle);
 	cudaMemset(dcontribution, 0, sizeof(float2)*LNX*LNY*LNZ);
 
 	//paritcles system vbo>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -377,8 +385,8 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-int3 center = make_int3(16, 18, 16);
-int3 length = make_int3(14, 16, 14);
+int3 center = make_int3(20, 24, 20);
+int3 length = make_int3(18, 22, 18);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
@@ -481,6 +489,32 @@ void Water::initParticles(float3 *p, float *l){
 	particle_count = count;
 	std::cout << "particle amount:" << particle_count << std::endl;
 }
+
+void Water::init_obstacle(int *h, int*d){
+	int i, j, k;
+	memset(h, 0, sizeof(int) * DS);
+	for (i = 0; i < NY; i++){
+		for (j = 0; j < NX; j++){
+			for (k = 0; k < NZ; k++){
+				if (k == 0 || k == (NZ - 1) ||
+					j == 0 || j == (NY - 1) ||
+					i == 0 || i == (NX - 1)){
+					h[i*NX*NY + j*NX + k] = 1;
+				}
+			}
+		}
+	}
+
+	/*for (j = 0; j < NX; j++){
+		for (k = 0; k < NZ; k++){ 
+			
+			std::cout << h[0*NX*NY + j*NX + k] << " ";
+		}
+		std::cout << std::endl;
+	}*/
+	cudaMemcpy(d, h, sizeof(int)* DS, cudaMemcpyHostToDevice);
+}
+
 void Water::initVelocityPosition(float3 *vp, int dx, int dy, int dz){
 	int i, j, k;
 	for (k = 0; k <= (dz - 1); k++){
@@ -735,11 +769,11 @@ void Water::simulateFluids(void)
 		//isAddSource = false;
 	}
 	
-	exterapolation(dvfield, dtemp, dlsf);
-	advect(dvfield, dlsf);
-	addForce(dvfield, dlsf);
+	exterapolation(dvfield, dtemp, dlsf, dobstacle);
+	advect(dvfield, dlsf, dobstacle);
+	addForce(dvfield, dlsf, dobstacle);
 //	diffuse(dvfield, dtemp, dlsf);
-	projection(dvfield, dtemp, dpressure, ddivergence, dlsf);
+	projection(dvfield, dtemp, dpressure, ddivergence, dlsf, dobstacle);
 	advectParticles(vbo, dvfield, ddensity);
 //	advectDensity(dvfield, ddensity);
 

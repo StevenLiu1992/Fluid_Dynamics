@@ -43,6 +43,7 @@ namespace Rendering
 			void SetInterProgram(GLuint p) { this->intersection_program = p; }
 			void cout_max_length_vector(float4* h);
 			void init_density(float *h, float3* p, float *d);
+			void init_obstacle(int *h, int*d);
 			void cout_density(float* d);
 			void cout_levelset(float* ls);
 			void generateCube();

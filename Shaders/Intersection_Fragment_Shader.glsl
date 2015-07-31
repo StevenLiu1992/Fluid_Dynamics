@@ -14,7 +14,7 @@ void main()
 		discard;
 	
 	vec3 lightPos = vec3(50,20,50);
-	vec4 diffuse = vec4(0,1,0,1);
+	vec4 diffuse = vec4(1,0.7,0,1);
 	float lightRadius = 100;
 	vec4 lightColour = vec4(1,1,1,1);
 	
@@ -30,8 +30,8 @@ void main()
 	float sFactor = pow ( rFactor , 50.0 );
 
 	vec3 colour = ( diffuse.rgb * lightColour.rgb );
-	colour += ( lightColour.rgb * sFactor ) * 0.33;
+	colour += ( lightColour.rgb * sFactor ) * 0.8;
 	out_color = vec4 ( colour * atten * lambert , diffuse.a);
 	out_color.rgb += ( diffuse.rgb * lightColour.rgb ) * 0.4;
-	out_color.a = 0.2;
+	out_color.a = 0.3;
 }
