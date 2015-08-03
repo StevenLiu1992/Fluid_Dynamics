@@ -149,7 +149,7 @@ void Water::Create(Core::Camera* c)
 	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dlsf, &tPitch_lsf, sizeof(float)*LNX*LNY, LNZ);
 	cudaMallocPitch((void **)&dcontribution, &tPitch_ctb, sizeof(float2)*LNX*LNY, LNZ);
-	cudaMallocPitch((void **)&dobstacle, &tPitch_obs, sizeof(float)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dobstacle, &tPitch_obs, sizeof(int)*NX*NY, NZ);
 	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
 	initLevelSetFunc(hlsf, dlsf);
@@ -385,8 +385,8 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-int3 center = make_int3(20, 24, 20);
-int3 length = make_int3(18, 22, 18);
+int3 center = make_int3(16, 20, 20);
+int3 length = make_int3(12, 18, 18);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
@@ -765,7 +765,7 @@ void Water::simulateFluids(void)
 	// simulate fluid
 	ttt++;
 	if (isAddSource){
-		addSource(dvfield, ddensity, dlsf, 20, 2, 16, 6);
+		addSource(dvfield, ddensity, dlsf, 32, 16, 32, 3);
 		//isAddSource = false;
 	}
 	

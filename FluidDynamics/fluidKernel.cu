@@ -43,7 +43,7 @@ extern struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUD
 extern struct cudaGraphicsResource *cuda_vbo_normal; // handles OpenGL-CUDA exchange
 
 
-
+#define OBSTACLE
 
 
 void setupTexture(){
@@ -657,7 +657,7 @@ divergence_obstacle_k(float4 *d, float4 *v, float *l, size_t pitch, int*o){
 	float4 p6 = v[fron];
 
 
-	/*if (o[left] == 1){
+	if (o[left] == 1){
 		p1 = make_float4(0, 0, 0, 0);
 	}
 	if (o[righ] == 1){
@@ -674,9 +674,9 @@ divergence_obstacle_k(float4 *d, float4 *v, float *l, size_t pitch, int*o){
 	}
 	if (o[fron] == 1){
 		p6 = make_float4(0, 0, 0, 0);
-	}*/
+	}
 
-	if (o[left] == 1){
+	/*if (o[left] == 1){
 		p1 = make_float4(-p0.x, p0.y, p0.z, p0.w);
 	}
 	if (o[righ] == 1){
@@ -693,7 +693,7 @@ divergence_obstacle_k(float4 *d, float4 *v, float *l, size_t pitch, int*o){
 	}
 	if (o[fron] == 1){
 		p4 = make_float4(p0.x, p0.y, p0.z, p0.w);
-	}
+	}*/
 
 
 	float tf = 0;
@@ -806,8 +806,8 @@ jacobi_obstacle_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, flo
 	int back = (ez - 1)*offset + ey*NX + ex;
 	int fron = (ez + 1)*offset + ey*NX + ex;
 
-	float4 p0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
-
+	
+	float4 pc = temp[ez*offset + ey*NX + ex];
 	float4 p1 = temp[left];
 	float4 p2 = temp[righ];
 	float4 p3 = temp[bott];
@@ -816,22 +816,22 @@ jacobi_obstacle_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, flo
 	float4 p6 = temp[fron];
 
 	if (o[left] == 1){
-		p1 = p0;
+		p1 = pc;
 	}
 	if (o[righ] == 1){
-		p2 = p0;
+		p2 = pc;
 	}
 	if (o[bott] == 1){
-		p3 = p0;
+		p3 = pc;
 	}
 	if (o[topp] == 1){
-		p4 = p0;
+		p4 = pc;
 	}
 	if (o[back] == 1){
-		p5 = p0;
+		p5 = pc;
 	}
 	if (o[fron] == 1){
-		p6 = p0;
+		p6 = pc;
 	}
 
 	float tf = 0;
@@ -851,9 +851,9 @@ jacobi_obstacle_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, flo
 			p6 = make_float4(0, 0, 0, 0);
 	}
 
-	
+	float4 d0 = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 
-	v[ez*offset + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * p0);
+	v[ez*NX*NY + ey*NX + ex] = rBeta * (p1 + p2 + p3 + p4 + p5 + p6 + alpha * d0);
 	
 	__syncthreads();
 }
@@ -1011,16 +1011,14 @@ gradient_obstacle_k(float4 *v, float4 *p, float *l, size_t pitch, int *o){
 
 __global__ void
 force_k(float4 *v, float *l, size_t pitch){
-	// ex is the domain location in x for this thread
 	int ex = threadIdx.x + blockIdx.x * 8;
-	// ey is the domain location in y for this thread
 	int ey = threadIdx.y + blockIdx.y * 8;
-	// ez is the domain location in z for this thread
 	int ez = threadIdx.z + blockIdx.z * 8;
+
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 3){
-			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.019, 0, 0);
+		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 2){
+			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.005, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{
@@ -1296,9 +1294,12 @@ void advect(float4 *v, float *ls, int* obstacle)
 	update_vel_texture(v, NX, NY, tPitch_v);
 	//update_1f_texture(array_den, d, NX, NY, tPitch_den);
 	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
-//	advect_k << <block_size, threads_size >> >(v);
-//	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+#ifdef OBSTACLE
+	advect_k << <block_size, threads_size >> >(v);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+#else
 	advect_obstacle_k << <block_size, threads_size >> >(v, obstacle);
+#endif
 	getLastCudaError("advectVelocity_k failed.");
 }
 
@@ -1332,23 +1333,28 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(temp, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
-
-//	divergence_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v);
-//	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
+#ifdef OBSTACLE
+	divergence_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v);
+	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
+#else
 	divergence_obstacle_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v, obstacle);
-	
+#endif
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
 	for (int i = 0; i < 60; i++){
-		//	update_vel_texture(pressure, NX, NY, tPitch_v);
-		/*jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v);
-		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);*/
-
+#ifdef OBSTACLE
+		jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v);
+		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);
+#else
 		jacobi_obstacle_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v, obstacle);
+#endif
 		SWAP(pressure, temp);
 	}
-	/*gradient_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v);
-	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);*/
+#ifdef OBSTACLE
+	gradient_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v);
+	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
+#else
 	gradient_obstacle_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v, obstacle);
+#endif
 	getLastCudaError("diffuse_k failed.");
 }
 
@@ -2064,7 +2070,8 @@ void raycasting(int x, int y, float *ls, float3 camera){
 
 
 
-
+#define MAX3(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
+#define MIN3(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 __global__ void
 add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 	int ex = threadIdx.x + blockIdx.x * 8;
@@ -2074,20 +2081,47 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 	int far_x = x + size;
 	int far_y = y + size;
 	int far_z = z + size;
-	if (x >= 0 && far_x < NX && y >= 0 && far_y < NY && z >= 0 && far_z < NZ){
-		//location is inside the volume
-		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
-			//this thread is inside the location
-			v[ez*NX*NY + ey*NX + ex].x -= 0.05;
-		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
-		//	l[ez*NX*NY + ey*NX + ex] = -1;
+	//if (x >= 0 && far_x < NX && y >= 0 && far_y < NY && z >= 0 && far_z < NZ){
+	//	//location is inside the volume
+	//	if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
+	//		//this thread is inside the location
+	//		v[ez*NX*NY + ey*NX + ex].x -= 0.01;
+	//	//	d[ez*NX*NY + ey*NX + ex] += 10.f;
+	//		l[2*ez*LNX*LNY + 2*ey*LNX + 2*ex] = -5;
+	//	}
+	//}
+	float3 start = make_float3(x - size, y - size, z - size);
+	float3 end = make_float3(x + size, y + size, z + size);
+	float3 center = make_float3(x, y, z);
+	if (ex >= start.x && ex <= end.x && ey >= start.y && ey <= end.y && (ez == start.z || ez == end.z)){
+		l[ez*LNX*LNY + ey*LNX + ex] = 0;
+	}
+	if (ex >= start.x && ex <= end.x && ez >= start.z && ez <= end.z && (ey == start.y || ey == end.y)){
+		l[ez*LNX*LNY + ey*LNX + ex] = 0;
+	}
+	if (ey >= start.y && ey <= end.y && ez >= start.z && ez <= end.z && (ex == start.x || ex == end.x)){
+		l[ez*LNX*LNY + ey*LNX + ex] = 0;
+	}
+	if (ez < start.z || ez > end.z || ey < start.y || ey > end.y || ex < start.x || ex > end.x){
+		int a = std::abs(ex - center.x) - size;
+		int b = std::abs(ey - center.y) - size;
+		int c = std::abs(ez - center.z) - size;
+		if (a < 3 && b < 3 && c < 3){
+			l[ez*LNX*LNY + ey*LNX + ex] = MAX3(a, b, c);
 		}
 	}
+	if (ez > start.z && ez < end.z && ey > start.y && ey < end.y && ex > start.x && ex < end.x){
+		int a = size - std::abs(ex - center.x);
+		int b = size - std::abs(ey - center.y);
+		int c = size - std::abs(ez - center.z);
+		l[ez*LNX*LNY + ey*LNX + ex] = -MIN3(a, b, c);
+	}
+
 }
 
 extern "C"
 void addSource(float4 *v, float *d, float*l, int dx, int dy, int dz, float size){
-	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
+	dim3 block_size(LNX / THREAD_X, LNY / THREAD_Y, LNZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	add_source_k << <block_size, threads_size >> >(v, d, l, dx, dy, dz, size);
