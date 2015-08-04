@@ -4,6 +4,8 @@
 #include "Models_Manager.h"
 #include "IListener.h"
 #include "Camera.h"
+#include "GameTimer.h"
+
 namespace Managers
 {
 	class Scene_Manager : public Core::IListener
@@ -29,5 +31,10 @@ namespace Managers
 		Managers::Models_Manager* models_manager;
 		
 		Core::Camera* camera;
+
+		float updateCounter;
+		float renderCounter;
+		GameTimer *renderTimer;
+		GameTimer *updateTimer;
 	};
 }

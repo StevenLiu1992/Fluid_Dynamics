@@ -181,6 +181,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="Init_GLEW.cpp" />
     <ClCompile Include="Init_GLUT.cpp" />
     <ClCompile Include="main.cpp" />
@@ -202,6 +203,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="fluidDefine.h" />
     <ClInclude Include="fluidKernel.cuh" />
     <ClInclude Include="FrameBufferInfo.h" />
+    <ClInclude Include="GameTimer.h" />
     <ClInclude Include="IGameObject.h" />
     <ClInclude Include="IListener.h" />
     <ClInclude Include="Init_GLEW.h" />

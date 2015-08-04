@@ -1018,7 +1018,7 @@ force_k(float4 *v, float *l, size_t pitch){
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
 		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 2){
-			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.005, 0, 0);
+			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.002, 0, 0);
 			v[ez*offset + ey*NX + ex].w = 1;
 		}
 		else{

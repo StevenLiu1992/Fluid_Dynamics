@@ -38,6 +38,12 @@ Scene_Manager::Scene_Manager()
 	camera = new Core::Camera(0, 0, Vector3(5,10,25));
 	models_manager = new Models_Manager(camera);
 //	models_manager->setCamera(camera);
+
+	renderTimer = new GameTimer();
+	updateTimer = new GameTimer();
+
+	updateCounter = 0.f;
+	renderCounter = 0.f;
 	
 }
 
@@ -53,17 +59,34 @@ Scene_Manager::~Scene_Manager()
 //	
 //}
 
+#define RENDER_HZ	30
+#define PHYSICS_HZ	120
+
+#define PHYSICS_TIMESTEP (1000.0f / (float)PHYSICS_HZ)
+
 void Scene_Manager::notifyBeginFrame()
 {
+	updateCounter += updateTimer->GetTimedMS();
+
+	while (updateCounter >= 0.0f){
+		//update everything
+		models_manager->Update(camera->BuildViewMatrix());
+		updateCounter -= PHYSICS_TIMESTEP;
+	}
+
 	
-	models_manager->Update(camera->BuildViewMatrix());
 }
 
 void Scene_Manager::notifyDisplayFrame()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	models_manager->Draw();
+	renderCounter -= renderTimer->GetTimedMS();
+	if (renderCounter <= 0.0f){
+		//render everything
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		models_manager->Draw();
+		renderCounter += (1000.0f / (float)RENDER_HZ);
+	}
 }
 
 void Scene_Manager::notifyMouseMoveEvent(int delta_x, int delta_y){

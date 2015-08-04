@@ -102,6 +102,9 @@
     <ClInclude Include="Terrain.h">
       <Filter>Rendering\Models</Filter>
     </ClInclude>
+    <ClInclude Include="GameTimer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -143,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="Terrain.cpp">
       <Filter>Rendering\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTimer.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
