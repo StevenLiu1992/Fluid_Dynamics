@@ -36,6 +36,9 @@ boundary_density_condition_k(float *v, int ex, int ey, int ez, int scale, size_t
 __device__ void
 boundary_condition_k(float4 *v, int ex, int ey, int ez, int scale, size_t pitch);
 
+__global__ void
+bc_obstacle_k(float4 *v, size_t pitch, float scale, float* o);
+
 /////////////////////////////////////////////////////////
 __global__ void
 advect_k(float4 *v);
@@ -49,7 +52,7 @@ __global__ void
 gradient_k(float4 *v, float4 *p, float *l, size_t pitch);
 
 __global__ void
-force_k(float4 *v, float *d, size_t pitch);
+force_k(float4 *v, float *l, size_t pitch, int* obstacle);
 
 __global__ void
 exterapolation_k(float4 *v, float4 *temp,float *l);

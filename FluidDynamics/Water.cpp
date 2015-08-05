@@ -501,6 +501,12 @@ void Water::init_obstacle(int *h, int*d){
 					i == 0 || i == (NX - 1)){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
+				if (k > 15 && k < 25 &&
+					j > 0 && j < 20 &&
+					i > 15 && i < 25){
+					h[i*NX*NY + j*NX + k] = 1;
+				}
+
 			}
 		}
 	}

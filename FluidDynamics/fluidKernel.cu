@@ -43,7 +43,7 @@ extern struct cudaGraphicsResource *cuda_vbo_intersection; // handles OpenGL-CUD
 extern struct cudaGraphicsResource *cuda_vbo_normal; // handles OpenGL-CUDA exchange
 
 
-#define OBSTACLE
+//#define OBSTACLE
 
 
 void setupTexture(){
@@ -485,6 +485,48 @@ bc_k(float4 *b, size_t pitch, float scale){
 	__syncthreads();
 }
 
+__global__ void
+bc_obstacle_k(float4 *v, size_t pitch, float scale, int* o){
+
+	int ex = threadIdx.x + blockIdx.x * 8;
+	int ey = threadIdx.y + blockIdx.y * 8;
+	int ez = threadIdx.z + blockIdx.z * 8;
+
+	if (o[ez*NX*NY+ey*NX+ex] == 1){
+		int offset = pitch / sizeof(float4);
+		int cent = ez*offset + ey*NX + ex;
+		int left = ez*offset + ey*NX + (ex - 1);
+		int righ = ez*offset + ey*NX + (ex + 1);
+		int bott = ez*offset + (ey - 1)*NX + ex;
+		int topp = ez*offset + (ey + 1)*NX + ex;
+		int back = (ez - 1)*offset + ey*NX + ex;
+		int fron = (ez + 1)*offset + ey*NX + ex;
+
+		if (o[left] < 1 && (ex - 1) >= 0){
+			v[cent] = make_float4(-v[left].x, v[left].y, v[left].z, 0);
+		}
+		else if (o[righ] < 1 && (ex + 1) <= (NX - 1)){
+			v[cent] = make_float4(-v[righ].x, v[righ].y, v[righ].z, 0);
+		}
+		else if(o[bott] < 1 && (ey - 1) >= 0){
+			v[cent] = make_float4(v[bott].x, -v[bott].y, v[bott].z, 0);
+		}
+		else if (o[topp] < 1 && (ey + 1) <= (NY - 1)){
+			v[cent] = make_float4(v[topp].x, -v[topp].y, v[topp].z, 0);
+		}
+		else if(o[back] < 1 && (ez - 1) >= 0){
+			v[cent] = make_float4(v[back].x, v[back].y, -v[back].z, 0);
+		}
+		else if(o[fron] < 1 && (ez + 1) <= (NZ - 1)){
+			v[cent] = make_float4(v[fron].x, v[fron].y, -v[fron].z, 0);
+		}
+		else{
+			v[cent] = make_float4(0, 0, 0, 0);
+		}
+	}
+	__syncthreads();
+}
+
 
 __global__ void
 bc_levelset_k(float *l, size_t pitch, float scale){
@@ -658,24 +700,31 @@ divergence_obstacle_k(float4 *d, float4 *v, float *l, size_t pitch, int*o){
 
 
 	if (o[left] == 1){
-		p1 = make_float4(0, 0, 0, 0);
+		p1 = make_float4(-p0.x, p0.y, p0.z, 1);
+		v[left] = p1;
 	}
 	if (o[righ] == 1){
-		p2 = make_float4(0, 0, 0, 0);
+		p2 = make_float4(-p0.x, p0.y, p0.z, 1);
+		v[righ] = p2;
 	}
 	if (o[bott] == 1){
-		p3 = make_float4(0, 0, 0, 0);
+		p3 = make_float4(p0.x, -p0.y, p0.z, 1);
+		v[bott] = p3;
 	}
 	if (o[topp] == 1){
-		p4 = make_float4(0, 0, 0, 0);
+		p4 = make_float4(p0.x, -p0.y, p0.z, 1);
+		v[topp] = p4;
 	}
 	if (o[back] == 1){
-		p5 = make_float4(0, 0, 0, 0);
+		p5 = make_float4(p0.x, p0.y, -p0.z, 1);
+		v[back] = p5;
 	}
 	if (o[fron] == 1){
-		p6 = make_float4(0, 0, 0, 0);
+		p6 = make_float4(p0.x, p0.y, -p0.z, 1);
+		v[fron] = p6;
 	}
 
+	
 	/*if (o[left] == 1){
 		p1 = make_float4(-p0.x, p0.y, p0.z, p0.w);
 	}
@@ -999,33 +1048,44 @@ gradient_obstacle_k(float4 *v, float4 *p, float *l, size_t pitch, int *o){
 	grad.z = 0.5*(p6.z - p5.z);
 	grad.w = 0;
 	v[ez*offset + ey*NX + ex] = vel - grad;
-	//	v[ez*offset + ey*NX + ex].w = 0;
-	v[ez*offset + ey*NX + ex] = make_float4(
-		v[ez*offset + ey*NX + ex].x * vMask.x,
-		v[ez*offset + ey*NX + ex].y * vMask.y, 
-		v[ez*offset + ey*NX + ex].z * vMask.z, 
-		1);
+	////	v[ez*offset + ey*NX + ex].w = 0;
+	//v[ez*offset + ey*NX + ex] = make_float4(
+	//	v[ez*offset + ey*NX + ex].x * vMask.x,
+	//	v[ez*offset + ey*NX + ex].y * vMask.y, 
+	//	v[ez*offset + ey*NX + ex].z * vMask.z, 
+	//	1);
 	__syncthreads();
 }
 
 
 __global__ void
-force_k(float4 *v, float *l, size_t pitch){
+force_k(float4 *v, float *l, size_t pitch, int* o){
 	int ex = threadIdx.x + blockIdx.x * 8;
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
 		int offset = pitch / sizeof(float4);
-		if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 2){
-			v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.002, 0, 0);
-			v[ez*offset + ey*NX + ex].w = 1;
+		if (o[ez*offset + ey*NX + ex] != 1){
+		
+			if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 2){
+				v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.002, 0, 0);
+				v[ez*offset + ey*NX + ex].w = 1;
+			}
 		}
-		else{
-		//	v[ez*offset + ey*NX + ex] = make_float4(0, 0, 0, 0);
-			v[ez*offset + ey*NX + ex].w = 0;
-		}
-	}
+		
+		/*else{
+			float4 p0 = v[ez*NX*NY + ey*NX + ex];
+			if (ex == 0 || ex == (NX - 1)){
+				v[ez*offset + ey*NX + ex] = make_float4(-p0.x, p0.y, p0.z, 1);
+			}
+			if (ey == 0 || ey == (NY - 1)){
+				v[ez*offset + ey*NX + ex] = make_float4(p0.x, -p0.y, p0.z, 1);
+			}
+			if (ez == 0 || ez == (NZ - 1)){
+				v[ez*offset + ey*NX + ex] = make_float4(p0.x, p0.y, -p0.z, 1);
+			}
+		}*/
+	
 }
 
 __global__ void
@@ -1354,6 +1414,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 #else
 	gradient_obstacle_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v, obstacle);
+	bc_obstacle_k << <block_size, threads_size >> >(v, tPitch_v, -1.f, obstacle);
 #endif
 	getLastCudaError("diffuse_k failed.");
 }
@@ -1362,7 +1423,7 @@ extern "C"
 void addForce(float4 *v, float *l, int* obstacle){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-	force_k << <block_size, threads_size >> >(v, l, tPitch_v);
+	force_k << <block_size, threads_size >> >(v, l, tPitch_v, obstacle);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 	getLastCudaError("addForce failed.");
 }

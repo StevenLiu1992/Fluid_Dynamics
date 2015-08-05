@@ -1,8 +1,24 @@
-﻿Build started 04/08/2015 14:17:15.
+﻿Build started 05/08/2015 14:01:08.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Models_Manager.cpp
-         Models_Manager.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Water.cpp
+         Water.cpp
+     1>Water.cpp(378): warning C4305: 'argument' : truncation from 'double' to 'const float'
+     1>Water.cpp(385): warning C4005: 'MAX' : macro redefinition
+                 D:\CUDA Samples\v6.5\common\inc\helper_image.h(30) : see previous definition of 'MAX'
+     1>Water.cpp(386): warning C4005: 'MIN' : macro redefinition
+                 D:\CUDA Samples\v6.5\common\inc\helper_image.h(27) : see previous definition of 'MIN'
+     1>Water.cpp(415): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Water.cpp(421): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Water.cpp(591): warning C4101: 'a' : unreferenced local variable
+     1>Water.cpp(590): warning C4101: 'i' : unreferenced local variable
+     1>Water.cpp(591): warning C4101: 'f' : unreferenced local variable
+     1>Water.cpp(591): warning C4101: 'b' : unreferenced local variable
+     1>Water.cpp(590): warning C4101: 'k' : unreferenced local variable
+     1>Water.cpp(591): warning C4101: 'd' : unreferenced local variable
+     1>Water.cpp(591): warning C4101: 'c' : unreferenced local variable
+     1>Water.cpp(591): warning C4101: 'e' : unreferenced local variable
+     1>Water.cpp(590): warning C4101: 'j' : unreferenced local variable
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.exe" /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.lib" /MACHINE:X86 /SAFESEH Release\fluidKernel.cu.obj
          Release\Camera.obj
@@ -41,4 +57,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.74
+Time Elapsed 00:00:01.70
