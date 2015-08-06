@@ -366,11 +366,12 @@ void Water::Draw()
 	//	std::cout << cameraPos << std::endl;
 	//	glPointSize(1);
 	glBindVertexArray(intersection_vao);
-	glPointSize(3);
+	glPointSize(2);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
+//	glEnable(GL_DEPTHM)
 	glDrawArrays(GL_POINTS, 0, 1024 * 1024);
 	glUseProgram(0);
 
@@ -502,10 +503,22 @@ void Water::init_obstacle(int *h, int*d){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
 				if (k > 15 && k < 25 &&
-					j > 0 && j < 20 &&
+					j > 0 && j < 30 &&
 					i > 15 && i < 25){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
+				/*if (k>15 && i > 15){
+					if (k > i){
+						for (int xx = 0; xx < (i - 15); xx++){
+							h[i*NX*NY + xx*NX + k] = 1;
+						}
+					}
+					else{
+						for (int xx = 0; xx < (k - 15); xx++){
+							h[i*NX*NY + xx*NX + k] = 1;
+						}
+					}
+				}*/
 
 			}
 		}
@@ -771,7 +784,7 @@ void Water::simulateFluids(void)
 	// simulate fluid
 	ttt++;
 	if (isAddSource){
-		addSource(dvfield, ddensity, dlsf, 32, 16, 32, 3);
+		addSource(dvfield, ddensity, dlsf, 5, 2, 5, 3);
 		//isAddSource = false;
 	}
 	

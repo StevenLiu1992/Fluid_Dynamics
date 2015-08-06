@@ -18,6 +18,11 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	quad->Create();
 	gameModelList["quad"] = quad;
 
+	Models::Cube* cube = new Models::Cube();
+	cube->SetProgram(Shader_Manager::GetShader("colorShader"));
+	cube->Create();
+	gameModelList["cube"] = cube;
+
 	/*Models::Terrain* terrain = new Models::Terrain();
 	terrain->SetProgram(Shader_Manager::GetShader("terrainShader"));
 	terrain->Create("../Textures/HB_dem_5m.txt", camera);

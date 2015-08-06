@@ -21,7 +21,8 @@ Scene_Manager::Scene_Manager()
 		"../Shaders/Volume_Fragment_Shader.glsl");
 	shader_manager->CreateProgram("intersectionShader",
 		"../Shaders/Intersection_Vertex_Shader.glsl",
-		"../Shaders/Intersection_Fragment_Shader.glsl");
+		"../Shaders/Intersection_Fragment_Shader.glsl",
+		"../Shaders/Intersection_Geometry_Shader.glsl");
 
 	shader_manager->CreateProgram("velocityFieldShader",
 	"../Shaders/VF_Vertex_Shader.glsl",

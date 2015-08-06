@@ -9,10 +9,13 @@ uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 
-out vec4 color;
-out vec3 normal;
-out vec3 worldPos;
-//out vec2 texCoord;
+
+
+out Vertex	{
+	out vec4 color;
+	out vec3 normal;
+	out vec3 worldPos;
+} OUT;
 
 void main()
 {
@@ -20,15 +23,15 @@ void main()
 	//texCoord = in_texCoord;
 	if(in_position.w>0){
 		gl_Position = (projMatrix * viewMatrix * modelMatrix) * in_position;
-		color = vec4(0,1,0,1);
+		OUT.color = vec4(0,1,0,1);
 		mat3 normalMatrix = transpose (inverse(mat3 ( modelMatrix )));
 
-		normal = normalize ( normalMatrix * normalize ( in_normal ));
-		worldPos = ( modelMatrix * in_position).xyz;
+		OUT.normal = normalize ( normalMatrix * normalize ( in_normal ));
+		OUT.worldPos = ( modelMatrix * in_position).xyz;
 		
 	}
 	else{
-		color = vec4(0,0,0,0);
+		OUT.color = vec4(0,0,0,0);
 	}
 		
 	

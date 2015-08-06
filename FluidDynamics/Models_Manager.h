@@ -6,6 +6,7 @@
 #include "Quad.h"
 #include "Water.h"
 #include "Terrain.h"
+#include "Cube.h"
 #include "Matrix4.h"
 #include "Vector3.h"
 #include "Camera.h"

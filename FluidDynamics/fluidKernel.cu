@@ -492,9 +492,10 @@ bc_obstacle_k(float4 *v, size_t pitch, float scale, int* o){
 	int ey = threadIdx.y + blockIdx.y * 8;
 	int ez = threadIdx.z + blockIdx.z * 8;
 
-	if (o[ez*NX*NY+ey*NX+ex] == 1){
-		int offset = pitch / sizeof(float4);
-		int cent = ez*offset + ey*NX + ex;
+	int offset = pitch / sizeof(float4);
+	int cent = ez*offset + ey*NX + ex;
+	
+	if (o[cent] == 1){
 		int left = ez*offset + ey*NX + (ex - 1);
 		int righ = ez*offset + ey*NX + (ex + 1);
 		int bott = ez*offset + (ey - 1)*NX + ex;
@@ -502,24 +503,28 @@ bc_obstacle_k(float4 *v, size_t pitch, float scale, int* o){
 		int back = (ez - 1)*offset + ey*NX + ex;
 		int fron = (ez + 1)*offset + ey*NX + ex;
 
-		if (o[left] < 1 && (ex - 1) >= 0){
-			v[cent] = make_float4(-v[left].x, v[left].y, v[left].z, 0);
+		if (o[left] < 1 && (ex - 1) > 0){
+			v[cent] = make_float4(-v[left].x, v[left].y, v[left].z, 0.1);
 		}
-		else if (o[righ] < 1 && (ex + 1) <= (NX - 1)){
-			v[cent] = make_float4(-v[righ].x, v[righ].y, v[righ].z, 0);
+		else if (o[righ] < 1 && (ex + 1) < (NX - 1)){
+			v[cent] = make_float4(-v[righ].x, v[righ].y, v[righ].z, 0.1);
 		}
-		else if(o[bott] < 1 && (ey - 1) >= 0){
-			v[cent] = make_float4(v[bott].x, -v[bott].y, v[bott].z, 0);
+		else if(o[bott] < 1 && (ey - 1) > 0){
+			v[cent] = make_float4(v[bott].x, -v[bott].y, v[bott].z, 0.1);
 		}
-		else if (o[topp] < 1 && (ey + 1) <= (NY - 1)){
-			v[cent] = make_float4(v[topp].x, -v[topp].y, v[topp].z, 0);
+		else if (o[topp] < 1 && (ey + 1) < (NY - 1)){
+			v[cent] = make_float4(v[topp].x, -v[topp].y, v[topp].z, 0.1);
 		}
-		else if(o[back] < 1 && (ez - 1) >= 0){
-			v[cent] = make_float4(v[back].x, v[back].y, -v[back].z, 0);
+		else if(o[back] < 1 && (ez - 1) > 0){
+			v[cent] = make_float4(v[back].x, v[back].y, -v[back].z, 0.1);
 		}
-		else if(o[fron] < 1 && (ez + 1) <= (NZ - 1)){
-			v[cent] = make_float4(v[fron].x, v[fron].y, -v[fron].z, 0);
+		else if(o[fron] < 1 && (ez + 1) < (NZ - 1)){
+			v[cent] = make_float4(v[fron].x, v[fron].y, -v[fron].z, 0.1);
 		}
+		/*else if (o[righ] < 1 && (ex + 1) <= (NX - 1) &&
+				 o[back] < 1 && (ez - 1) >= 0){
+			v[cent] = make_float4(-v[fron].x, v[fron].y, -v[fron].z, 0.1);
+		}*/
 		else{
 			v[cent] = make_float4(0, 0, 0, 0);
 		}
@@ -2142,16 +2147,16 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 	int far_x = x + size;
 	int far_y = y + size;
 	int far_z = z + size;
-	//if (x >= 0 && far_x < NX && y >= 0 && far_y < NY && z >= 0 && far_z < NZ){
-	//	//location is inside the volume
-	//	if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
-	//		//this thread is inside the location
-	//		v[ez*NX*NY + ey*NX + ex].x -= 0.01;
-	//	//	d[ez*NX*NY + ey*NX + ex] += 10.f;
-	//		l[2*ez*LNX*LNY + 2*ey*LNX + 2*ex] = -5;
-	//	}
-	//}
-	float3 start = make_float3(x - size, y - size, z - size);
+	if (x >= 0 && far_x < NX && y >= 0 && far_y < NY && z >= 0 && far_z < NZ){
+		//location is inside the volume
+		if (ex >= x && ex <= far_x && ey >= y && ey <= far_y && ez >= z && ez <= far_z){
+			//this thread is inside the location
+			v[ez*NX*NY + ey*NX + ex].x += 0.005f;
+		//	d[ez*NX*NY + ey*NX + ex] += 10.f;
+		//	l[2*ez*LNX*LNY + 2*ey*LNX + 2*ex] = -5;
+		}
+	}
+	/*float3 start = make_float3(x - size, y - size, z - size);
 	float3 end = make_float3(x + size, y + size, z + size);
 	float3 center = make_float3(x, y, z);
 	if (ex >= start.x && ex <= end.x && ey >= start.y && ey <= end.y && (ez == start.z || ez == end.z)){
@@ -2176,16 +2181,16 @@ add_source_k(float4 *v, float *d, float *l, int x, int y, int z, int size){
 		int b = size - std::abs(ey - center.y);
 		int c = size - std::abs(ez - center.z);
 		l[ez*LNX*LNY + ey*LNX + ex] = -MIN3(a, b, c);
-	}
+	}*/
 
 }
 
 extern "C"
 void addSource(float4 *v, float *d, float*l, int dx, int dy, int dz, float size){
-	dim3 block_size(LNX / THREAD_X, LNY / THREAD_Y, LNZ / THREAD_Z);
+	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 
 	add_source_k << <block_size, threads_size >> >(v, d, l, dx, dy, dz, size);
-	reinit_Levelset_k << <block_size, threads_size >> >(l);
+//	reinit_Levelset_k << <block_size, threads_size >> >(l);
 	getLastCudaError("add_source_k failed.");
 }

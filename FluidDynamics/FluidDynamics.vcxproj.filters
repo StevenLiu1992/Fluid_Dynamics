@@ -105,6 +105,9 @@
     <ClInclude Include="GameTimer.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Cube.h">
+      <Filter>Rendering\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -149,6 +152,9 @@
     </ClCompile>
     <ClCompile Include="GameTimer.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Cube.cpp">
+      <Filter>Rendering\Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
