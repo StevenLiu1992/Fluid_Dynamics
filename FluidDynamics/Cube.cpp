@@ -21,11 +21,11 @@ void Cube::Create()
 
 	std::vector<VertexFormat> vertices;
 	vertices.push_back(VertexFormat(glm::vec3(0, 0, 1),
-		glm::vec4(0, 0, 1, 1), glm::vec2(1, 0)));
+		glm::vec4(0, 0, 1, 1), glm::vec2(0, 0)));
 	vertices.push_back(VertexFormat(glm::vec3(1, 0, 1),
-		glm::vec4(0, 0, 1, 1), glm::vec2(1, 1)));
+		glm::vec4(0, 0, 1, 1), glm::vec2(1, 0)));
 	vertices.push_back(VertexFormat(glm::vec3(1, 1, 1),
-		glm::vec4(1, 0, 0, 1), glm::vec2(0, 0)));
+		glm::vec4(1, 0, 0, 1), glm::vec2(1, 1)));
 	vertices.push_back(VertexFormat(glm::vec3(0, 1, 1),
 		glm::vec4(1, 0, 0, 1), glm::vec2(0, 1)));
 	vertices.push_back(VertexFormat(glm::vec3(0, 0, 0),
@@ -76,7 +76,8 @@ void Cube::Create()
 	this->vao = vao;
 	this->vbos.push_back(vbo);
 
-	texture = SOIL_load_OGL_texture("../Textures/ground.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	texture = SOIL_load_OGL_texture("../Textures/ncl.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	texture1 = SOIL_load_OGL_texture("../Textures/openglogo.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 }
 
 void Cube::Update(Matrix4 viewMatrix)
@@ -91,23 +92,62 @@ void Cube::Draw()
 	glBindVertexArray(vao);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	
 
-	Matrix4 modelMatrix = worldTransform*Matrix4::Translation(Vector3(5.5, 0, 5.5))*Matrix4::Scale(Vector3(1, 10, 1));
+	Matrix4 modelMatrix;
 
 	//*Matrix4::Rotation(90,Vector3(1,0,0))
 	//	std::cout << viewMatrix.GetPositionVector() << std::endl;
 	glUniformMatrix4fv(glGetUniformLocation(program, "projMatrix"), 1, false, (float*)&projMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glUniformMatrix4fv(glGetUniformLocation(program, "viewMatrix"), 1, false, (float*)&viewMatrix);
-
 	glUniform1i(glGetUniformLocation(program, "diffuse_texture"), 0);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	
+	//wall back/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	glUniform1i(glGetUniformLocation(program, "iswall"), 1);
+
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(0.5, 0, 0))*Matrix4::Scale(Vector3(9.5, 4, 0.1));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	//wall right//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(9.5, 0, 0))*Matrix4::Scale(Vector3(0.5, 4, 9.5));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	//wall front//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(0, 0, 9.5))*Matrix4::Scale(Vector3(9.5, 4, 0.1));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	//wall left//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(0, 0, 0))*Matrix4::Scale(Vector3(0.5, 4, 9.5));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	//wall bottom//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(0, 0, 0))*Matrix4::Scale(Vector3(10, 0.1, 9.5));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glUniform1i(glGetUniformLocation(program, "iswall"), 0);
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(4.7, 0, 4.7))*Matrix4::Scale(Vector3(1.4, 2.8, 1.4));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	glBindTexture(GL_TEXTURE_2D, texture);
+	modelMatrix = worldTransform*Matrix4::Translation(Vector3(4.7, 2.8, 4.7))*Matrix4::Scale(Vector3(1.4, 1.4, 1.4));
+	glUniformMatrix4fv(glGetUniformLocation(program, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	
+
+
 	glBindVertexArray(0);
 	glUseProgram(0);
 }

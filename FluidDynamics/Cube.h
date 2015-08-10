@@ -15,6 +15,7 @@ namespace Rendering
 			virtual void Draw() override final;
 			virtual void Update(Matrix4 viewMatrix) override final;
 			void setTexture(GLuint t) { this->texture = t; }
+			GLuint texture1;
 		};
 	}
 }

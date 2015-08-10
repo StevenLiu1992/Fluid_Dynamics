@@ -306,26 +306,24 @@ void Water::Draw()
 	glUseProgram(0);
 
 	//draw velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	glUseProgram(program1);
+	//glUseProgram(program1);
 
-	
-	//*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
-	modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0));
+	//
+	////*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0))
+	//modelMatrix = worldTransform*Matrix4::Scale(Vector3(10, 10, 10))*Matrix4::Translation(Vector3(-1, 0, 0));
 
-	glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
-	glUniformMatrix4fv(glGetUniformLocation(program1, "viewMatrix"), 1, false, (float*)&viewMatrix);
-	
-	
-//	std::cout << cameraPos << std::endl;
-//	glPointSize(1);
-	glBindVertexArray(grid_vao);
+	//glUniformMatrix4fv(glGetUniformLocation(program1, "projMatrix"), 1, false, (float*)&projMatrix);
+	//glUniformMatrix4fv(glGetUniformLocation(program1, "modelMatrix"), 1, false, (float*)&modelMatrix);
+	//glUniformMatrix4fv(glGetUniformLocation(program1, "viewMatrix"), 1, false, (float*)&viewMatrix);
+	//
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glBindVertexArray(grid_vao);
 
-	glDrawArrays(GL_POINTS, 0, DS);
-	glUseProgram(0);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//glDrawArrays(GL_POINTS, 0, DS);
+	//glUseProgram(0);
 
 
 	//draw density field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -370,8 +368,9 @@ void Water::Draw()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-//	glEnable(GL_DEPTHM)
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
 	glDrawArrays(GL_POINTS, 0, 1024 * 1024);
 	glUseProgram(0);
 
@@ -386,7 +385,7 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-int3 center = make_int3(16, 20, 20);
+int3 center = make_int3(16, 30, 20);
 int3 length = make_int3(12, 18, 18);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
@@ -502,9 +501,9 @@ void Water::init_obstacle(int *h, int*d){
 					i == 0 || i == (NX - 1)){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
-				if (k > 15 && k < 25 &&
+				if (k > 15 && k < 22 &&
 					j > 0 && j < 30 &&
-					i > 15 && i < 25){
+					i > 15 && i < 22){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
 				/*if (k>15 && i > 15){

@@ -13,10 +13,10 @@ Models_Manager::Models_Manager(Core::Camera* c)
 	gameModelList["triangle"] = triangle;
 
 
-	Models::Quad* quad = new Models::Quad();
+	/*Models::Quad* quad = new Models::Quad();
 	quad->SetProgram(Shader_Manager::GetShader("colorShader"));
 	quad->Create();
-	gameModelList["quad"] = quad;
+	gameModelList["quad"] = quad;*/
 
 	Models::Cube* cube = new Models::Cube();
 	cube->SetProgram(Shader_Manager::GetShader("colorShader"));
