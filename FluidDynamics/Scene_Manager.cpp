@@ -60,8 +60,8 @@ Scene_Manager::~Scene_Manager()
 //	
 //}
 
-#define RENDER_HZ	30
-#define PHYSICS_HZ	120
+#define RENDER_HZ	24
+#define PHYSICS_HZ	60
 
 #define PHYSICS_TIMESTEP (1000.0f / (float)PHYSICS_HZ)
 

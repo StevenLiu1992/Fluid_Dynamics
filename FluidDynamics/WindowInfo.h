@@ -15,8 +15,8 @@ namespace Core
 		{
 			name = "OpenGL tutorial";
 			width = 1920; height = 1080;
-			position_x = 300;
-			position_y = 300;
+			position_x = 0;
+			position_y = 0;
 			isReshapable = true;
 		}
 

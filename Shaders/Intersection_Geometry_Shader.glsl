@@ -27,7 +27,7 @@ out vec3 worldPos1;
 
 void main()
 {
-	float size = 0.03;
+	float size = 0.05;
 	for(int i = 0; i < gl_in.length(); ++i){
 		color1 = IN[i].color;
 		normal1 = IN[i].normal;

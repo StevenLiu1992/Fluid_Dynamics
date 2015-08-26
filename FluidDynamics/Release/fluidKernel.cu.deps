@@ -242,8 +242,8 @@ c:\program files\nvidia gpu computing toolkit\cuda\v6.5\include\host_defines.h
 c:\program files\nvidia gpu computing toolkit\cuda\v6.5\include\vector_functions.h
 c:\program files\nvidia gpu computing toolkit\cuda\v6.5\include\device_launch_parameters.h
 c:\program files\nvidia gpu computing toolkit\cuda\v6.5\include\vector_types.h
-d:\github\fluid_dynamics\fluiddynamics\fluidKernel.cuh
-d:\github\fluid_dynamics\fluiddynamics\fluidDefine.h
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\fluidKernel.cuh
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\fluidDefine.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\stdio.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\crtdefs.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\swprintf.inl
@@ -324,12 +324,12 @@ C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\crtdefs.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\share.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\string
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\iterator
-d:\github\fluid_dynamics\fluiddynamics\Dependencies/glew/glew.h
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\Dependencies/glew/glew.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\GL/glu.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\shared\winapifamily.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\GL/gl.h
-d:\github\fluid_dynamics\fluiddynamics\Dependencies/freeglut/freeglut.h
-d:\github\fluid_dynamics\fluiddynamics\dependencies\freeglut\freeglut_std.h
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\Dependencies/freeglut/freeglut.h
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\dependencies\freeglut\freeglut_std.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\windows.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\shared\sdkddkver.h
 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\excpt.h
@@ -431,4 +431,4 @@ C:\Program Files (x86)\Windows Kits\8.1\Include\um\mcx.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\imm.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\ime_cmodes.h
 C:\Program Files (x86)\Windows Kits\8.1\Include\um\GL/gl.h
-d:\github\fluid_dynamics\fluiddynamics\dependencies\freeglut\freeglut_ext.h
+c:\users\siyu\documents\github\fluiddynamics\fluiddynamics\dependencies\freeglut\freeglut_ext.h

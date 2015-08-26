@@ -62,7 +62,7 @@ int main(int argc, char **argv){
 
 
 	WindowInfo window(std::string("XXX"),
-		50, 50,//position
+		0, 0,//position
 		window_width, window_height, //size
 		true);//reshape
 

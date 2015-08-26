@@ -7,10 +7,10 @@ Models_Manager::Models_Manager(Core::Camera* c)
 {
 	camera = c;
 	//triangle game object
-	Models::Triangle* triangle = new Models::Triangle();
+	/*Models::Triangle* triangle = new Models::Triangle();
 	triangle->SetProgram(Shader_Manager::GetShader("colorShader"));
 	triangle->Create();
-	gameModelList["triangle"] = triangle;
+	gameModelList["triangle"] = triangle;*/
 
 
 	/*Models::Quad* quad = new Models::Quad();

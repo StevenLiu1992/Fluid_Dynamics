@@ -8,9 +8,13 @@
 #define NY 32
 #define NZ 32
 
-#define LNX 64
-#define LNY 64
-#define LNZ 64
+#define LNX 32
+#define LNY 32
+#define LNZ 32
+
+#define PAMOUNT 64*64*64
+#define TI (LNX/NX)
+
 #define LDS LNX*LNY*LNZ
 
 #define DT 0.1f

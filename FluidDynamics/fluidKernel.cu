@@ -566,7 +566,7 @@ advect_k(float4 *v){
 		float density;
 		velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 		
-		float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
+	//	float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
 		//if (ls > 0){
 		////	v[ez*NY*NZ + ey*NX + ex] = make_float4(0,0,0,0);
 		//	return;
@@ -599,7 +599,7 @@ advect_obstacle_k(float4 *v, int *o){
 
 	velocity = tex3D(texref_vel, ex + 0.5, ey + 0.5, ez + 0.5);
 
-	float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
+//	float ls = tex3D(texref_levelset, 2 * ex + 0.5, 2 * ey + 0.5, 2 * ez + 0.5);
 	
 	ploc.x = ex + 0.5 - DT * velocity.x * NX;
 	ploc.y = ey + 0.5 - DT * velocity.y * NY;
@@ -642,19 +642,19 @@ divergence_k(float4 *d, float4 *v, float *l, size_t pitch){
 		float4 p6 = v[fron];
 
 		float tf = 0;
-
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
+		
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex] > tf){
+			if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)] > tf && (ex - 1) != 0)
 				p1 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
+			if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)] > tf && (ex + 1) != (NX - 1))
 				p2 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
+			if (l[TI * ez*LNX*LNY + TI * (ey - 1)*LNX + TI * ex] > tf && (ey - 1) != 0)
 				p3 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
+			if (l[TI * ez*LNX*LNY + TI * (ey + 1)*LNX + TI * ex] > tf && (ey + 1) != (NY - 1))
 				p4 = make_float4(0, 0, 0, 0);					
-			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
+			if (l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez - 1) != 0)
 				p5 = make_float4(0, 0, 0, 0);					
-			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
+			if (l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez + 1) != (NZ - 1))
 				p6 = make_float4(0, 0, 0, 0);
 		}
 
@@ -752,18 +752,18 @@ divergence_obstacle_k(float4 *d, float4 *v, float *l, size_t pitch, int*o){
 
 	float tf = 0;
 
-	if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
+	if (l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex] > tf){
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)] > tf && (ex - 1) != 0)
 			p1 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)] > tf && (ex + 1) != (NX - 1))
 			p2 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
+		if (l[TI * ez*LNX*LNY + TI * (ey - 1)*LNX + TI * ex] > tf && (ey - 1) != 0)
 			p3 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
+		if (l[TI * ez*LNX*LNY + TI * (ey + 1)*LNX + TI * ex] > tf && (ey + 1) != (NY - 1))
 			p4 = make_float4(0, 0, 0, 0);
-		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
+		if (l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez - 1) != 0)
 			p5 = make_float4(0, 0, 0, 0);
-		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
+		if (l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez + 1) != (NZ - 1))
 			p6 = make_float4(0, 0, 0, 0);
 	}
 
@@ -786,16 +786,7 @@ jacobi_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, float rBeta,
 	float th = 0;
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		//if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
-		//												l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
-		//												l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
-		//												l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
-		//												l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
-		//												l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
-		//												l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
-		//												//outside of liquid
-		//												return;
-
+		
 		int offset = pitch / sizeof(float4);
 
 		int left = ez*offset + ey*NX + (ex - 1);
@@ -814,18 +805,18 @@ jacobi_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, float rBeta,
 
 		float tf = 0;
 
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
-				p1 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
-				p2 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
-				p3 = make_float4(0, 0, 0, 0);					
-			if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
-				p4 = make_float4(0, 0, 0, 0);					
-			if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
-				p5 = make_float4(0, 0, 0, 0);					
-			if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex] > tf){
+			if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)] > tf && (ex - 1) != 0)
+				p1 = make_float4(0, 0, 0, 0);
+			if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)] > tf && (ex + 1) != (NX - 1))
+				p2 = make_float4(0, 0, 0, 0);
+			if (l[TI * ez*LNX*LNY + TI * (ey - 1)*LNX + TI * ex] > tf && (ey - 1) != 0)
+				p3 = make_float4(0, 0, 0, 0);
+			if (l[TI * ez*LNX*LNY + TI * (ey + 1)*LNX + TI * ex] > tf && (ey + 1) != (NY - 1))
+				p4 = make_float4(0, 0, 0, 0);
+			if (l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez - 1) != 0)
+				p5 = make_float4(0, 0, 0, 0);
+			if (l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez + 1) != (NZ - 1))
 				p6 = make_float4(0, 0, 0, 0);
 		}
 
@@ -890,18 +881,18 @@ jacobi_obstacle_k(float4 *v, float4 *temp, float4 *b, float *l, float alpha, flo
 
 	float tf = 0;
 
-	if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf){
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > tf && (ex - 1) != 0)
+	if (l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex] > tf){
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)] > tf && (ex - 1) != 0)
 			p1 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > tf && (ex + 1) != (NX - 1))
+		if (l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)] > tf && (ex + 1) != (NX - 1))
 			p2 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * (ey - 1)*LNX + 2 * ex] > tf && (ey - 1) != 0)
+		if (l[TI * ez*LNX*LNY + TI * (ey - 1)*LNX + TI * ex] > tf && (ey - 1) != 0)
 			p3 = make_float4(0, 0, 0, 0);
-		if (l[2 * ez*LNX*LNY + 2 * (ey + 1)*LNX + 2 * ex] > tf && (ey + 1) != (NY - 1))
+		if (l[TI * ez*LNX*LNY + TI * (ey + 1)*LNX + TI * ex] > tf && (ey + 1) != (NY - 1))
 			p4 = make_float4(0, 0, 0, 0);
-		if (l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez - 1) != 0)
+		if (l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez - 1) != 0)
 			p5 = make_float4(0, 0, 0, 0);
-		if (l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > tf && (ez + 1) != (NZ - 1))
+		if (l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex] > tf && (ez + 1) != (NZ - 1))
 			p6 = make_float4(0, 0, 0, 0);
 	}
 
@@ -922,15 +913,7 @@ gradient_k(float4 *v, float4 *p, float *l, size_t pitch){
 	float th = 0;
 	
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		//if (l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex] > th/* &&
-		//	l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)] > th &&
-		//	l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)] > th &&
-		//	l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex] > th &&
-		//	l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex] > th &&
-		//	l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th &&
-		//	l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex] > th*/)
-		//	//outside of liquid
-		//	return;
+		
 		int offset = pitch / sizeof(float4);
 
 		int left = ez*offset + ey*NX + (ex - 1);
@@ -1072,7 +1055,7 @@ force_k(float4 *v, float *l, size_t pitch, int* o){
 		int offset = pitch / sizeof(float4);
 		if (o[ez*offset + ey*NX + ex] != 1){
 		
-			if (l[2*ez*LNX*LNY + 2*ey*LNX + 2* ex] <= 2){
+			if (l[TI*ez*LNX*LNY + TI*ey*LNX + TI * ex] <= 2){
 				v[ez*offset + ey*NX + ex] = v[ez*offset + ey*NX + ex] - DT * make_float4(0, 0.002, 0, 0);
 				v[ez*offset + ey*NX + ex].w = 1;
 			}
@@ -1103,17 +1086,17 @@ exterapolation_k(float4 *v, float4 *temp, float *l){
 
 
 	if (ex != 0 && ex != (NX - 1) && ey != 0 && ey != (NY - 1) && ez != 0 && ez != (NZ - 1)){
-		float midd_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex];
+		float midd_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex];
 		if (midd_levelset <= 0)
 			return;//in the liquid
 		if (temp[ez*NX*NY + ey*NX + ex].w == 1)
 			return;//has velocity
-		float left_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)];
-		float righ_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)];
-		float bott_levelset = l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex];
-		float topp_levelset = l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex];
-		float back_levelset = l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
-		float fron_levelset = l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
+		float left_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)];
+		float righ_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)];
+		float bott_levelset = l[TI * ez*LNX*LNY + (TI * ey - 1)*LNX + TI * ex];
+		float topp_levelset = l[TI * ez*LNX*LNY + (TI * ey + 1)*LNX + TI * ex];
+		float back_levelset = l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex];
+		float fron_levelset = l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex];
 
 		
 
@@ -1177,9 +1160,9 @@ exterapolation_k(float4 *v, float4 *temp, float *l){
 
 		float3 fi0 = make_float3(midd_levelset, midd_levelset, midd_levelset);
 		float3 fi1 = make_float3(
-			l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + s0)],
-			l[2 * ez*LNX*LNY + (2 * ey + s1)*LNX + 2 * ex],
-			l[(2 * ez + s2)*LNX*LNY + 2 * ey*LNX + 2 * ex]);
+			l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + s0)],
+			l[TI * ez*LNX*LNY + (TI * ey + s1)*LNX + TI * ex],
+			l[(TI * ez + s2)*LNX*LNY + TI * ey*LNX + TI * ex]);
 		float3 vx0 = make_float3(
 			temp[ez*NX*NY + ey*NX + (ex + s0)].x,
 			temp[ez*NX*NY + (ey + s1)*NX + ex].x,
@@ -1224,17 +1207,17 @@ exterapolation_obstacle_k(float4 *v, float4 *temp, float *l, int *o){
 	if (o[ez*NX*NY + ey*NX + ex] == 1)
 		return;//this is obstacle
 	
-	float midd_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + 2 * ex];
+	float midd_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + TI * ex];
 	if (midd_levelset <= 0)
 		return;//in the liquid
 	if (temp[ez*NX*NY + ey*NX + ex].w == 1)
 		return;//has velocity
-	float left_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex - 1)];
-	float righ_levelset = l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + 1)];
-	float bott_levelset = l[2 * ez*LNX*LNY + (2 * ey - 1)*LNX + 2 * ex];
-	float topp_levelset = l[2 * ez*LNX*LNY + (2 * ey + 1)*LNX + 2 * ex];
-	float back_levelset = l[(2 * ez - 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
-	float fron_levelset = l[(2 * ez + 1)*LNX*LNY + 2 * ey*LNX + 2 * ex];
+	float left_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex - 1)];
+	float righ_levelset = l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + 1)];
+	float bott_levelset = l[TI * ez*LNX*LNY + (TI * ey - 1)*LNX + TI * ex];
+	float topp_levelset = l[TI * ez*LNX*LNY + (TI * ey + 1)*LNX + TI * ex];
+	float back_levelset = l[(TI * ez - 1)*LNX*LNY + TI * ey*LNX + TI * ex];
+	float fron_levelset = l[(TI * ez + 1)*LNX*LNY + TI * ey*LNX + TI * ex];
 
 
 
@@ -1298,9 +1281,9 @@ exterapolation_obstacle_k(float4 *v, float4 *temp, float *l, int *o){
 
 	float3 fi0 = make_float3(midd_levelset, midd_levelset, midd_levelset);
 	float3 fi1 = make_float3(
-		l[2 * ez*LNX*LNY + 2 * ey*LNX + (2 * ex + s0)],
-		l[2 * ez*LNX*LNY + (2 * ey + s1)*LNX + 2 * ex],
-		l[(2 * ez + s2)*LNX*LNY + 2 * ey*LNX + 2 * ex]);
+		l[TI * ez*LNX*LNY + TI * ey*LNX + (TI * ex + s0)],
+		l[TI * ez*LNX*LNY + (TI * ey + s1)*LNX + TI * ex],
+		l[(TI * ez + s2)*LNX*LNY + TI * ey*LNX + TI * ex]);
 	float3 vx0 = make_float3(
 		temp[ez*NX*NY + ey*NX + (ex + s0)].x,
 		temp[ez*NX*NY + (ey + s1)*NX + ex].x,
@@ -1339,11 +1322,7 @@ void exterapolation(float4 *v, float4 *temp, float *ls, int* obstacle){
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	cudaMemcpy(temp, v, sizeof(float4) * DS, cudaMemcpyDeviceToDevice);
-	for (int i = 0; i < 10; i++){
-
-	//	exterapolation_k << <block_size, threads_size >> >(v, temp, ls);
-	//	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
-
+	for (int i = 0; i < 6; i++){
 		exterapolation_obstacle_k << <block_size, threads_size >> >(v, temp, ls, obstacle);
 		SWAP(v, temp);
 	}
@@ -1405,7 +1384,7 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	divergence_obstacle_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v, obstacle);
 #endif
 	update_vel_texture(divergence, NX, NY, tPitch_v);//use for b
-	for (int i = 0; i < 60; i++){
+	for (int i = 0; i < 50; i++){
 #ifdef OBSTACLE
 		jacobi_k << <block_size, threads_size >> >(temp, pressure, divergence, l, -1.f, 1.f / 6, tPitch_v);
 		bc_k << <block_size, threads_size >> >(temp, tPitch_p, 1.f);
@@ -1506,24 +1485,7 @@ advectParticles_Runge_Kutta_k(float3 *particle, float4 *v, size_t pitch){
 	newPosition.y = (position.y + DT * midVelocity.y);
 	newPosition.z = (position.z + DT * midVelocity.z);
 
-	/*if (newPosition.x <= 1.f / NX){
-		newPosition.x += 0.01;
-	}
-	if (newPosition.x >= (1 - 1.f / NX)){
-		newPosition.x -= 0.01;
-	}
-	if (newPosition.y <= 1.f / NY){
-		newPosition.y += 0.01;
-	}
-	if (newPosition.y >= (1 - 1.f / NY)){
-		newPosition.y -= 0.01;
-	}
-	if (newPosition.z <= 1.f / NZ){
-		newPosition.z += 0.01;
-	}
-	if (newPosition.z >= (1 - 1.f / NZ)){
-		newPosition.z -= 0.01;
-	}*/
+	
 	particle[index] = newPosition;
 	__syncthreads();
 
@@ -1641,7 +1603,10 @@ advect_levelset_k(float *ls, size_t pitch){
 	float new_levelset;
 	if (ex != 0 && ex != (LNX - 1) && ey != 0 && ey != (LNY - 1) && ez != 0 && ez != (LNZ - 1)){
 		//	find the velocity of this position
-		velocity = tex3D(texref_vel, ex * 0.5 + 0.5, ey * 0.5 + 0.5, ez * 0.5 + 0.5);
+		velocity = tex3D(texref_vel, 
+			ex * ((float)NX) / LNX + 0.5, 
+			ey * ((float)NY) / LNY + 0.5,
+			ez * ((float)NZ) / LNZ + 0.5);
 
 		//tracing back
 		ploc.x = (ex)-DT * velocity.x * LNX;

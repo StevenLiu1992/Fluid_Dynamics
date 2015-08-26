@@ -138,7 +138,7 @@ void Water::Create(Core::Camera* c)
 	hvfield		= (float4 *)malloc(sizeof(float4) * DS);
 	hdensity	= (float *)malloc(sizeof(float) * DS);
 	hlsf		= (float *)malloc(sizeof(float) * LDS);
-	particles	= (float3 *)malloc(sizeof(float3) * LDS);
+	particles	= (float3 *)malloc(sizeof(float3)* PAMOUNT);
 	hobstacle   = (int *)malloc(sizeof(int) * DS);
 
 	//Allocate device data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -147,9 +147,10 @@ void Water::Create(Core::Camera* c)
 	cudaMallocPitch((void **)&ddivergence, &tPitch_d, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&dpressure, &tPitch_p, sizeof(float4)*NX*NY, NZ);
 	cudaMallocPitch((void **)&ddensity, &tPitch_den, sizeof(float)*NX*NY, NZ);
+	cudaMallocPitch((void **)&dobstacle, &tPitch_obs, sizeof(int)*NX*NY, NZ);
+	
 	cudaMallocPitch((void **)&dlsf, &tPitch_lsf, sizeof(float)*LNX*LNY, LNZ);
 	cudaMallocPitch((void **)&dcontribution, &tPitch_ctb, sizeof(float2)*LNX*LNY, LNZ);
-	cudaMallocPitch((void **)&dobstacle, &tPitch_obs, sizeof(int)*NX*NY, NZ);
 	//initilize data>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	initParticles_velocity(hvfield, dvfield);
 	initLevelSetFunc(hlsf, dlsf);
@@ -165,9 +166,9 @@ void Water::Create(Core::Camera* c)
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float3) * LDS, particles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float3)* PAMOUNT, particles, GL_DYNAMIC_DRAW);
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bsize);
-	if (bsize != (sizeof(float3) * LDS)) return;
+	if (bsize != (sizeof(float3)* PAMOUNT)) return;
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float3), (void*)0);
 
@@ -302,7 +303,7 @@ void Water::Draw()
 	glPointSize(3);
 	glBindVertexArray(vao);
 
-	glDrawArrays(GL_POINTS, 0, LDS);
+	glDrawArrays(GL_POINTS, 0, PAMOUNT);
 	glUseProgram(0);
 
 	//draw velocity field>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -385,8 +386,11 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-int3 center = make_int3(16, 30, 20);
-int3 length = make_int3(12, 18, 18);
+//int3 center = make_int3(16, 30, 20);
+//int3 length = make_int3(12, 18, 18);
+
+int3 center = make_int3(8, 15, 10);
+int3 length = make_int3(6, 9, 9);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
@@ -455,11 +459,13 @@ void Water::initParticles(float3 *p, float *l){
 	int i, j, k;
 	int count = 0;
 	int num = 64;
-	memset(p, 0, sizeof(float3) * LDS);
+	memset(p, 0, sizeof(float3)* PAMOUNT);
 	for (k = 0; k < NZ; k++){
 		for (i = 0; i < NY; i++){
 			for (j = 0; j < NX; j++){
-				if (j >= start.x/2 && j < end.x/2 && i >= start.y/2 && i < end.y/2 && (k == start.z/2 || k == end.z/2)){
+				if (j >= start.x / TI && j < end.x / TI && 
+					i >= start.y / TI && i < end.y / TI && 
+					(k == start.z / TI || k == end.z / TI)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
@@ -467,7 +473,9 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (j >= start.x / 2 && j < end.x / 2 && k >= start.z / 2 && k < end.z / 2 && (i == start.y / 2 || i == end.y / 2)){
+				if (j >= start.x / TI && j < end.x / TI &&
+					k >= start.z / TI && k < end.z / TI &&
+					(i == start.y / TI || i == end.y / TI)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)(j + MYRAND) / NX;
 						p[count].y = (float)i / NY;
@@ -475,7 +483,9 @@ void Water::initParticles(float3 *p, float *l){
 						count++;
 					}
 				}
-				if (i >= start.y / 2 && i < end.y / 2 && k >= start.z / 2 && k < end.z / 2 && (j == start.x / 2 || j == end.x / 2)){
+				if (i >= start.y / TI && i < end.y / TI &&
+					k >= start.z / TI && k < end.z / TI &&
+					(j == start.x / TI || j == end.x / TI)){
 					for (int m = 0; m < num; m++){
 						p[count].x = (float)j / NX;
 						p[count].y = (float)(i + MYRAND) / NY;
@@ -501,11 +511,11 @@ void Water::init_obstacle(int *h, int*d){
 					i == 0 || i == (NX - 1)){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
-				if (k > 15 && k < 22 &&
+				/*if (k > 15 && k < 22 &&
 					j > 0 && j < 30 &&
 					i > 15 && i < 22){
 					h[i*NX*NY + j*NX + k] = 1;
-				}
+				}*/
 				/*if (k>15 && i > 15){
 					if (k > i){
 						for (int xx = 0; xx < (i - 15); xx++){
