@@ -1334,15 +1334,30 @@ void advect(float4 *v, float *ls, int* obstacle)
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
-
+	
 	update_vel_texture(v, NX, NY, tPitch_v);
 	//update_1f_texture(array_den, d, NX, NY, tPitch_den);
 	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
 #ifdef OBSTACLE
+	
 	advect_k << <block_size, threads_size >> >(v);
 	bc_k << <block_size, threads_size >> >(v, tPitch_v, -1.f);
 #else
+	
+	/*clock_t t1, t2;
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start, 0);*/
 	advect_obstacle_k << <block_size, threads_size >> >(v, obstacle);
+	/*cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	float elapsedTime;
+	cudaEventElapsedTime(&elapsedTime, start, stop);
+	
+	printf("A: %f\n", elapsedTime);
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);*/
 #endif
 	getLastCudaError("advectVelocity_k failed.");
 }
@@ -1373,10 +1388,18 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 {
 	dim3 block_size(NX / THREAD_X, NY / THREAD_Y, NZ / THREAD_Z);
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
+	/*cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start, 0);*/
 
 	cudaMemset(divergence, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(temp, 0, sizeof(float4)*NX*NY*NZ);
 	cudaMemset(pressure, 0, sizeof(float4)*NX*NY*NZ);
+	
+	
+
+	
 #ifdef OBSTACLE
 	divergence_k << <block_size, threads_size >> >(divergence, v, l, tPitch_v);
 	bc_k << <block_size, threads_size >> >(divergence, tPitch_p, 1.f);
@@ -1400,6 +1423,15 @@ void projection(float4 *v, float4 *temp, float4 *pressure, float4* divergence, f
 	gradient_obstacle_k << <block_size, threads_size >> >(v, pressure, l, tPitch_v, obstacle);
 	bc_obstacle_k << <block_size, threads_size >> >(v, tPitch_v, -1.f, obstacle);
 #endif
+
+	/*cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	float elapsedTime;
+	cudaEventElapsedTime(&elapsedTime, start, stop);
+	printf("%f\n", elapsedTime);
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);*/
+
 	getLastCudaError("diffuse_k failed.");
 }
 
@@ -1933,6 +1965,12 @@ void correctLevelSet(float *ls, float2 *con){
 
 	dim3 threads_size(THREAD_X, THREAD_Y, THREAD_Z);
 	//get location of particles>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	/*clock_t t1, t2;
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start, 0);*/
+
 	float3 *particle;
 	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);
 	getLastCudaError("cudaGraphicsMapResources failed");
@@ -1943,12 +1981,25 @@ void correctLevelSet(float *ls, float2 *con){
 	
 	cudaMemset(con, 0, sizeof(float2)*LNX*LNY*LNZ);//reset contribution data
 	update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
+
+	
+	
+	
 	correctLevelset_first_k << <block_size, threads_size >> >(particle, con);
 	correctLevelset_second_k << <block_size, threads_size >> >(ls, con);
 	for (int i = 0; i < 5; i++){
 		update_1f_texture(array_levelset, ls, LNX, LNY, tPitch_lsf);
 		reinit_Levelset_k << <block_size, threads_size >> >(ls);
 	}
+	/*cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	float elapsedTime;
+	cudaEventElapsedTime(&elapsedTime, start, stop);
+
+	printf("LC: %f\n", elapsedTime);
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
+*/
 //	bc_levelset_k << <block_size, threads_size >> >(ls, tPitch_lsf, 1.f);
 	getLastCudaError("advectParticles_k failed.");
 
@@ -2058,7 +2109,6 @@ extern "C"
 void raycasting(int x, int y, float *ls, float3 camera){
 	dim3 block_size(128, 128);
 	dim3 threads_size(8, 8);
-
 	float4 *intersection;
 	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_intersection, 0));
 	getLastCudaError("cudaGraphicsMapResources failed");
@@ -2078,21 +2128,24 @@ void raycasting(int x, int y, float *ls, float3 camera){
 	checkCudaErrors(cudaMemset(intersection, 0, sizeof(float4) * 1024 * 1024));//reset intersection data
 	checkCudaErrors(cudaMemset(normal, 0, sizeof(float3) * 1024 * 1024));//reset intersection data
 	getLastCudaError("cudaGraphicsUnmapResources failed");
+	clock_t t1, t2;
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start, 0);
+	
 	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, normal, camera);
-	/*cudaMemcpy(hintersection, intersection, sizeof(float4) * 1024 * 1024, cudaMemcpyDeviceToHost);
-	for (int i = 500; i < 600; i++){
-		printf("(%f,%f,%f,%f)\n", hintersection[1024 * 512 + i].x, hintersection[1024 * 512 + i].y, hintersection[1024 * 512 + i].z, hintersection[1024 * 512 + i].w);
-	}
-	printf("====================================================\n");*/
-	/*cudaMemcpy(hnormal, normal, sizeof(float3) * 1024 * 1024, cudaMemcpyDeviceToHost);
-	for (int j = 0; j < 1024; j++){
-		for (int i = 0; i < 1024; i++){
-			if (hnormal[1024 * j + i].y!=0)
-				if (i>500 && i<520 && j>500 && j<520)
-					printf("(%f,%f,%f)\n", hnormal[1024 * j + i].x, hnormal[1024 * j + i].y, hnormal[1024 * j + i].z);
-		}
-	}
-	printf("====================================================\n");*/
+	
+	cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	float elapsedTime;
+	cudaEventElapsedTime(&elapsedTime, start, stop);
+
+	printf("R: %f\n", elapsedTime);
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
+	
+	
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_intersection, 0));
 	getLastCudaError("cudaGraphicsUnmapResources failed");
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_normal, 0));

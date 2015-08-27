@@ -6,6 +6,7 @@
 #include "fluidDefine.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <cuda_runtime.h>
 #include <helper_cuda.h>    // Helper functions for CUDA Error handling

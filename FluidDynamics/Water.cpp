@@ -389,8 +389,8 @@ void Water::Draw()
 //int3 center = make_int3(16, 30, 20);
 //int3 length = make_int3(12, 18, 18);
 
-int3 center = make_int3(8, 15, 10);
-int3 length = make_int3(6, 9, 9);
+int3 center = make_int3(4, 8, 5);
+int3 length = make_int3(3, 3, 3);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
