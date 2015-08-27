@@ -1,39 +1,7 @@
-﻿Build started 27/08/2015 13:21:39.
+﻿Build started 27/08/2015 16:52:51.
      1>Project "D:\GitHub\Fluid_Dynamics\FluidDynamics\FluidDynamics.vcxproj" on node 2 (Build target(s)).
-     1>AddCudaCompileDeps:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /DNDEBUG /D_CONSOLE /D_MBCS /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I. /FIcuda_runtime.h /c D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu 
-       CudaBuild:
-         Compiling CUDA source file fluidKernel.cu...
-         cmd.exe /C "C:\Users\b4008001\AppData\Local\Temp\tmp3cca638cea5d4760830c6a09e13db379.cmd"
-         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"     --keep-dir Release -maxrregcount=0  --machine 32 --compile -cudart static     -DWIN32 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o Release\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu"
-         
-         D:\GitHub\Fluid_Dynamics\FluidDynamics>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include"     --keep-dir Release -maxrregcount=0  --machine 32 --compile -cudart static     -DWIN32 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MD  " -o Release\fluidKernel.cu.obj "D:\GitHub\Fluid_Dynamics\FluidDynamics\fluidKernel.cu" 
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(566): warning : variable "density" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(786): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(842): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(913): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(977): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2105): warning : statement is unreachable
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2028): warning : variable "reverse" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning : variable "t1" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning : variable "t2" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(566): warning : variable "density" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(786): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(842): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(913): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(977): warning : variable "th" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2105): warning : statement is unreachable
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2028): warning : variable "reverse" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning : variable "t1" was declared but never referenced
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning : variable "t2" was declared but never referenced
-         fluidKernel.cu
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning C4101: 't2' : unreferenced local variable
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2131): warning C4101: 't1' : unreferenced local variable
-     1>D:/GitHub/Fluid_Dynamics/FluidDynamics/fluidKernel.cu(2211): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
-       ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Models_Manager.cpp Scene_Manager.cpp Water.cpp main.cpp
-         Models_Manager.cpp
-         Scene_Manager.cpp
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Water.cpp
          Water.cpp
      1>Water.cpp(379): warning C4305: 'argument' : truncation from 'double' to 'const float'
      1>Water.cpp(386): warning C4005: 'MAX' : macro redefinition
@@ -51,8 +19,6 @@
      1>Water.cpp(613): warning C4101: 'c' : unreferenced local variable
      1>Water.cpp(613): warning C4101: 'e' : unreferenced local variable
      1>Water.cpp(612): warning C4101: 'j' : unreferenced local variable
-         main.cpp
-     1>main.cpp(11): warning C4067: unexpected tokens following preprocessor directive - expected a newline
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.exe" /NOLOGO /LIBPATH:Dependencies\freeglut /LIBPATH:Dependencies\glew /LIBPATH:Dependencies\soil /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cufft.lib freeglut.lib glew32.lib SOIL.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\Fluid_Dynamics\Release\FluidDynamics.lib" /MACHINE:X86 /SAFESEH Release\fluidKernel.cu.obj
          Release\Camera.obj
@@ -92,4 +58,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:09.54
+Time Elapsed 00:00:01.71

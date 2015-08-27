@@ -386,11 +386,11 @@ void Water::Draw()
 #define MAX(a,b,c) (((a) > (b) ? (a) : (b)) > (c) ? ((a) > (b) ? (a) : (b)):(c))
 #define MIN(a,b,c) (((a) < (b) ? (a) : (b)) < (c) ? ((a) < (b) ? (a) : (b)):(c))
 
-//int3 center = make_int3(16, 30, 20);
-//int3 length = make_int3(12, 18, 18);
+int3 center = make_int3(16, 30, 20);
+int3 length = make_int3(12, 18, 18);
 
-int3 center = make_int3(4, 8, 5);
-int3 length = make_int3(3, 3, 3);
+//int3 center = make_int3(4, 8, 5);
+//int3 length = make_int3(3, 3, 3);
 
 int3 start = make_int3(center.x - length.x, center.y - length.y, center.z - length.z);
 int3 end = make_int3(center.x + length.x, center.y + length.y, center.z + length.z);
@@ -511,11 +511,11 @@ void Water::init_obstacle(int *h, int*d){
 					i == 0 || i == (NX - 1)){
 					h[i*NX*NY + j*NX + k] = 1;
 				}
-				/*if (k > 15 && k < 22 &&
+				if (k > 15 && k < 22 &&
 					j > 0 && j < 30 &&
 					i > 15 && i < 22){
 					h[i*NX*NY + j*NX + k] = 1;
-				}*/
+				}
 				/*if (k>15 && i > 15){
 					if (k > i){
 						for (int xx = 0; xx < (i - 15); xx++){

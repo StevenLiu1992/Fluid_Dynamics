@@ -2128,22 +2128,22 @@ void raycasting(int x, int y, float *ls, float3 camera){
 	checkCudaErrors(cudaMemset(intersection, 0, sizeof(float4) * 1024 * 1024));//reset intersection data
 	checkCudaErrors(cudaMemset(normal, 0, sizeof(float3) * 1024 * 1024));//reset intersection data
 	getLastCudaError("cudaGraphicsUnmapResources failed");
-	clock_t t1, t2;
+	/*clock_t t1, t2;
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
-	cudaEventRecord(start, 0);
+	cudaEventRecord(start, 0);*/
 	
 	raycasting_k << <block_size, threads_size >> >(x, y, ls, intersection, normal, camera);
 	
-	cudaEventRecord(stop, 0);
+	/*cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);
 	float elapsedTime;
 	cudaEventElapsedTime(&elapsedTime, start, stop);
 
 	printf("R: %f\n", elapsedTime);
 	cudaEventDestroy(start);
-	cudaEventDestroy(stop);
+	cudaEventDestroy(stop);*/
 	
 	
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_intersection, 0));

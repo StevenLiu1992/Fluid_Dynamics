@@ -64,7 +64,7 @@ Scene_Manager::~Scene_Manager()
 #define PHYSICS_HZ	60
 
 #define PHYSICS_TIMESTEP (1000.0f / (float)PHYSICS_HZ)
-
+int cc = 0;
 void Scene_Manager::notifyBeginFrame()
 {
 	updateCounter += updateTimer->GetTimedMS();
@@ -74,8 +74,13 @@ void Scene_Manager::notifyBeginFrame()
 		models_manager->Update(camera->BuildViewMatrix());
 		updateCounter -= PHYSICS_TIMESTEP;
 	}
-
-	
+	/*cc++;
+	models_manager->Update(camera->BuildViewMatrix());
+	if (updateCounter > 1000){
+		printf("%d\n", cc);
+		cc = 0;
+		updateCounter = 0;
+	}*/
 }
 
 void Scene_Manager::notifyDisplayFrame()
